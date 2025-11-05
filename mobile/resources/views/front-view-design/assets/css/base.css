@@ -1,0 +1,170 @@
+/* ================= Satoshi Variable Font ================= */
+@font-face {
+  font-family: "Satoshi Variable";
+  src: url("../fonts/Satoshi-Variable.woff2") format("woff2"),
+    url("../fonts/Satoshi-Variable.woff") format("woff");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+/* ============ Satoshi Font Family Setup ============ */
+@font-face {
+  font-family: "Satoshi";
+  src: url("../fonts/Satoshi-Light.woff") format("woff");
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("../fonts/Satoshi-LightItalic.woff") format("woff");
+  font-weight: 300;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("../fonts/Satoshi-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("../fonts/Satoshi-Italic.woff") format("woff");
+  font-weight: 400;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("../fonts/Satoshi-Medium.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("../fonts/Satoshi-MediumItalic.woff") format("woff");
+  font-weight: 500;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("../fonts/Satoshi-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("../fonts/Satoshi-BoldItalic.woff") format("woff");
+  font-weight: 700;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("../fonts/Satoshi-Black.woff") format("woff");
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("../fonts/Satoshi-BlackItalic.woff") format("woff");
+  font-weight: 900;
+  font-style: italic;
+}
+/* ================= Color Variables ================= */
+:root {
+  --heading-font: #393a3a;
+  --body-font: #475156;
+  --muted: #6e6e6e;
+  --promo: #dd5252;
+  --white: #ffffff;
+  --primary: #5b265d;
+  --secondary: #2da5f3;
+  --danger: #ee5858;
+  --gray: #fafafa;
+  --gray-600: #5f6c72;
+}
+
+/* ================= Global Reset & Base ================= */
+html,
+body {
+  font-family: "Poppins", sans-serif;
+  scroll-snap-type: y mandatory !important;
+  scroll-behavior: smooth !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-font-smoothing: antialiased;
+  background-color: var(--white);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  scroll-behavior: smooth !important;
+}
+
+hr {
+  color: #2630381a;
+  opacity: 1;
+}
+
+.container {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 992px) {
+  .container {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+}
+
+a {
+  text-decoration: none !important;
+  display: inline-block;
+}
+
+h1 {
+  font-size: clamp(27px, 3.2vw, 40px);
+
+  @media (max-width: 468px) {
+    font-size: 1.3rem;
+    line-height: 1.4;
+  }
+} /* ~40px max */
+h2 {
+  font-size: clamp(24px, 4vw, 32px);
+} /* ~32px max */
+h3 {
+  font-size: clamp(20px, 3.5vw, 28px);
+} /* ~28px max */
+h4 {
+  font-size: clamp(18px, 3vw, 24px);
+} /* ~24px max */
+h5 {
+  font-size: clamp(16px, 2.5vw, 20px);
+} /* ~20px max */
+h6 {
+  font-size: clamp(14px, 2vw, 16px);
+} /* ~16px max */
+/* Headings & paragraph text colors */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--heading-font);
+  font-weight: 700;
+  font-family: "Satoshi Variable", "Inter", sans-serif;
+}
+p {
+  color: var(--muted);
+}

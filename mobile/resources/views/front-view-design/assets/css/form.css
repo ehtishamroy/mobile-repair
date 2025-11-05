@@ -1,0 +1,96 @@
+.custom-input {
+  background: #f6f6f6;
+  border: 0;
+  border-radius: 0.5rem;
+  width: 100%;
+  font-weight: 300;
+  font-size: clamp(14px, 1.2vw, 18px);
+  padding: 0.75rem 1rem;
+  color: var(--muted);
+
+  &:focus {
+    border: none;
+    outline: none;
+  }
+  &::placeholder {
+    font-weight: 300;
+    font-size: clamp(14px, 1.2vw, 18px);
+  }
+}
+
+.form-label {
+  color: var(--heading-font);
+  font-weight: 500;
+  font-size: clamp(15px, 1.3vw, 20px);
+
+  margin-bottom: 10px;
+}
+.custom-select {
+  background: #f6f6f6;
+  border: 0;
+  border-radius: 0.5rem;
+  width: 100%;
+  font-weight: 300;
+  font-size: clamp(14px, 1.3vw, 18px);
+  padding: 0.75rem 1rem;
+  color: var(--muted);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M14.5835 20.833L25.0002 31.2497L35.4168 20.833' fill='black'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1.2rem center;
+  background-size: 2rem;
+
+  &:focus {
+    outline: none;
+  }
+
+  @media (max-width: 768px) {
+    background-size: 1.5rem;
+  }
+}
+
+.form-check-label {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: clamp(14px, 1.3vw, 18px);
+}
+
+.custom-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.custom-check .form-check-input {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #f6f6f6;
+  border-radius: 8px; /* smooth rounded square */
+  background-color: #f6f6f6;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  @media (max-width: 768px) {
+    width: 25px;
+    height: 25px;
+  }
+  @media (max-width: 468px) {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.custom-check .form-check-input:checked {
+  background-color: var(--primary); /* your primary color */
+  border-color: var(--primary);
+}
