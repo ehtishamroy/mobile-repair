@@ -12,10 +12,29 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\OrderTrackingController;
+use App\Http\Controllers\Admin\HomepageContentController;
+use App\Http\Controllers\Admin\AboutPageContentController;
+use App\Http\Controllers\Admin\ServicePageContentController;
+use App\Http\Controllers\Admin\JoinPageContentController;
+use App\Http\Controllers\Frontend\HomeController;
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/about', [HomeController::class, 'about'])->name('frontend.about');
+Route::get('/contact', [HomeController::class, 'contact'])->name('frontend.contact');
+Route::get('/join', [HomeController::class, 'join'])->name('frontend.join');
+Route::get('/checkout', [HomeController::class, 'checkout'])->name('frontend.checkout');
+Route::get('/marketplace', [HomeController::class, 'marketplace'])->name('frontend.marketplace');
+Route::get('/service', [HomeController::class, 'service'])->name('frontend.service');
+Route::get('/wishlist', [HomeController::class, 'wishlist'])->name('frontend.wishlist');
+Route::get('/track-order', [HomeController::class, 'trackOrder'])->name('frontend.track-order');
+Route::get('/cart', [HomeController::class, 'cart'])->name('frontend.cart');
+Route::get('/select', [HomeController::class, 'select'])->name('frontend.select');
+Route::get('/product/{slug}', [HomeController::class, 'productDetail'])->name('frontend.product-detail');
+Route::get('/place-order', [HomeController::class, 'placeOrder'])->name('frontend.place-order');
+Route::get('/mobile-repair', [HomeController::class, 'mobileRepair'])->name('frontend.mobile-repair');
 
 // Frontend Authentication Routes (for regular users/customers)
 Route::middleware('guest')->group(function () {
@@ -53,6 +72,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware(['admin'])->group(function () {
             Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
             Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
+            
+            // Homepage Content Management (Admin/Superadmin only)
+            Route::get('/homepage-content', [HomepageContentController::class, 'index'])->name('homepage-content.index');
+            Route::put('/homepage-content', [HomepageContentController::class, 'update'])->name('homepage-content.update');
+            
+            // About Page Content Management (Admin/Superadmin only)
+            Route::get('/about-page-content', [AboutPageContentController::class, 'index'])->name('about-page-content.index');
+            Route::put('/about-page-content', [AboutPageContentController::class, 'update'])->name('about-page-content.update');
+            
+            // Service Page Content Management (Admin/Superadmin only)
+            Route::get('/service-page-content', [ServicePageContentController::class, 'index'])->name('service-page-content.index');
+            Route::put('/service-page-content', [ServicePageContentController::class, 'update'])->name('service-page-content.update');
+            
+            // Join Page Content Management (Admin/Superadmin only)
+            Route::get('/join-page-content', [JoinPageContentController::class, 'index'])->name('join-page-content.index');
+            Route::put('/join-page-content', [JoinPageContentController::class, 'update'])->name('join-page-content.update');
         });
         
         // Roles Management - Only users with manage-roles permission
@@ -72,6 +107,19 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::resource('tags', TagController::class);
             Route::resource('products', ProductController::class);
             Route::post('/products/gallery/{id}/delete', [ProductController::class, 'deleteGalleryImage'])->name('products.gallery.delete');
+        });
+        
+        // Coupon Management - Only users with manage-products permission
+        Route::middleware(['permission:manage-products'])->group(function () {
+            Route::resource('coupons', CouponController::class);
+        });
+        
+        // Order Management - Only users with manage-orders permission
+        Route::middleware(['permission:manage-orders'])->group(function () {
+            Route::resource('orders', OrderController::class)->only(['index', 'show', 'update']);
+            Route::post('/orders/{order}/tracking', [OrderTrackingController::class, 'store'])->name('orders.tracking.store');
+            Route::put('/orders/{order}/tracking/{tracking}', [OrderTrackingController::class, 'update'])->name('orders.tracking.update');
+            Route::delete('/orders/{order}/tracking/{tracking}', [OrderTrackingController::class, 'destroy'])->name('orders.tracking.destroy');
         });
     });
 });

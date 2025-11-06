@@ -117,8 +117,8 @@
                     @endif
                     
                     @if(Auth::user()->hasPermission('manage-products'))
-                    <li class="nav-item {{ request()->routeIs('admin.categories.*') || request()->routeIs('admin.brands.*') || request()->routeIs('admin.tags.*') || request()->routeIs('admin.products.*') ? 'menu-open' : '' }}">
-                        <a href="#" class="nav-link {{ request()->routeIs('admin.categories.*') || request()->routeIs('admin.brands.*') || request()->routeIs('admin.tags.*') || request()->routeIs('admin.products.*') ? 'active' : '' }}">
+                    <li class="nav-item {{ request()->routeIs('admin.categories.*') || request()->routeIs('admin.brands.*') || request()->routeIs('admin.tags.*') || request()->routeIs('admin.products.*') || request()->routeIs('admin.coupons.*') ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link {{ request()->routeIs('admin.categories.*') || request()->routeIs('admin.brands.*') || request()->routeIs('admin.tags.*') || request()->routeIs('admin.products.*') || request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-mobile-alt"></i>
                             <p>
                                 Products
@@ -150,13 +150,19 @@
                                     <p>Tags</p>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.coupons.index') }}" class="nav-link {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Coupons</p>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     @endif
                     
                     @if(Auth::user()->hasPermission('manage-orders'))
                     <li class="nav-item">
-                        <a href="#" class="nav-link">
+                        <a href="{{ route('admin.orders.index') }}" class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-shopping-cart"></i>
                             <p>Orders</p>
                         </a>
@@ -182,6 +188,30 @@
                     @endif
                     
                     @if(Auth::user()->isAdmin())
+                    <li class="nav-item">
+                        <a href="{{ route('admin.homepage-content.index') }}" class="nav-link {{ request()->routeIs('admin.homepage-content.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-home"></i>
+                            <p>Homepage Content</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.about-page-content.index') }}" class="nav-link {{ request()->routeIs('admin.about-page-content.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-info-circle"></i>
+                            <p>About Page Content</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.service-page-content.index') }}" class="nav-link {{ request()->routeIs('admin.service-page-content.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-tools"></i>
+                            <p>Service Page Content</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.join-page-content.index') }}" class="nav-link {{ request()->routeIs('admin.join-page-content.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-users"></i>
+                            <p>Join Page Content</p>
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a href="{{ route('admin.settings.index') }}" class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-cog"></i>
