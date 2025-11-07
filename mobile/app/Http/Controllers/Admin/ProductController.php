@@ -15,6 +15,7 @@ use App\Models\ProductGalleryImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
@@ -24,12 +25,127 @@ class ProductController extends Controller
         return view('admin.products.index', compact('products'));
     }
 
+    public function duplicate(Product $product)
+    {
+        $product->load(['tags', 'galleryImages', 'variants.options', 'variantValues', 'features']);
+
+        DB::beginTransaction();
+        try {
+            $newProduct = $product->replicate(['slug', 'sku', 'featured_image']);
+            $newProduct->name = $product->name . ' (Copy)';
+            $newProduct->slug = $this->generateUniqueSlug($newProduct->name);
+            $newProduct->sku = $this->generateUniqueSku($product->sku);
+
+            if ($product->featured_image && Storage::disk('public')->exists($product->featured_image)) {
+                $newProduct->featured_image = $this->copyFile($product->featured_image, 'products');
+            }
+
+            $newProduct->push();
+
+            if ($product->tags && $product->tags->count() > 0) {
+                $newProduct->tags()->sync($product->tags->pluck('id')->toArray());
+            }
+
+            foreach ($product->galleryImages as $galleryImage) {
+                $newImage = $galleryImage->replicate(['image']);
+                $newImage->product_id = $newProduct->id;
+                if ($galleryImage->image && Storage::disk('public')->exists($galleryImage->image)) {
+                    $newImage->image = $this->copyFile($galleryImage->image, 'products/gallery');
+                }
+                $newImage->save();
+            }
+
+            $variantMapping = [];
+
+            foreach ($product->variants as $variant) {
+                $newVariant = $variant->replicate();
+                $newVariant->product_id = $newProduct->id;
+                $newVariant->save();
+                $variantMapping[$variant->id] = $newVariant;
+
+                foreach ($variant->options as $option) {
+                    $newOption = $option->replicate(['image']);
+                    $newOption->product_variant_id = $newVariant->id;
+                    if ($option->image && Storage::disk('public')->exists($option->image)) {
+                        $newOption->image = $this->copyFile($option->image, 'variant-options');
+                    }
+                    $newOption->save();
+                }
+            }
+
+            foreach ($product->variantValues as $variantValue) {
+                $newVariantValue = $variantValue->replicate();
+                $newVariantValue->product_id = $newProduct->id;
+                $newVariantValue->save();
+            }
+
+            foreach ($product->features as $feature) {
+                $newFeature = $feature->replicate(['icon']);
+                $newFeature->product_id = $newProduct->id;
+                if ($feature->icon && Storage::disk('public')->exists($feature->icon)) {
+                    $newFeature->icon = $this->copyFile($feature->icon, 'features');
+                }
+                $newFeature->save();
+            }
+
+            DB::commit();
+
+            return redirect()->route('admin.products.edit', $newProduct->id)
+                ->with('success', 'Product duplicated successfully.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return redirect()->route('admin.products.index')
+                ->with('error', 'Failed to duplicate product: ' . $e->getMessage());
+        }
+    }
+
     public function create()
     {
         $categories = Category::where('is_active', true)->get();
         $brands = Brand::where('is_active', true)->get();
         $tags = Tag::all();
         return view('admin.products.create', compact('categories', 'brands', 'tags'));
+    }
+
+    protected function copyFile(string $path, string $directory): ?string
+    {
+        if (!Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        $newPath = $directory . '/' . Str::random(40) . ($extension ? '.' . $extension : '');
+
+        Storage::disk('public')->copy($path, $newPath);
+
+        return $newPath;
+    }
+
+    protected function generateUniqueSlug(string $name): string
+    {
+        $baseSlug = Str::slug($name) ?: Str::random(8);
+        $slug = $baseSlug;
+        $counter = 1;
+
+        while (Product::where('slug', $slug)->exists()) {
+            $slug = $baseSlug . '-' . $counter++;
+        }
+
+        return $slug;
+    }
+
+    protected function generateUniqueSku(string $sku): string
+    {
+        $baseSku = trim($sku) !== '' ? $sku . '-COPY' : 'SKU-' . Str::upper(Str::random(6));
+        $newSku = $baseSku;
+        $counter = 1;
+
+        while (Product::where('sku', $newSku)->exists()) {
+            $newSku = $baseSku . '-' . $counter++;
+        }
+
+        return $newSku;
     }
 
     public function store(Request $request)

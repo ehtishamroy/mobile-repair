@@ -141,7 +141,7 @@
                 </h3>
             </div>
             <div class="card-body">
-                <p>Welcome to the Mobile Repair Admin Panel. Use the sidebar navigation to access different modules based on your permissions.</p>
+                <p>Welcome to the Harrow Mobiles Admin Panel. Use the sidebar navigation to access different modules based on your permissions.</p>
                 
                 @if(Auth::user()->roles->count() > 0)
                     <h5>Your Permissions:</h5>

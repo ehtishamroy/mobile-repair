@@ -1,12 +1,12 @@
 ﻿@extends('frontend.layouts.app')
 
-@section('title', 'Mobile Repair')
+@section('title', 'Harrow Mobiles')
 
 @section('content')
 <section class="service-hero-section flex-stack mb-custom">
       <div class="container flex-stack flex-column">
         <h1 class="display-2 fw-900 font-satoshi text-white mb-3">
-          Mobile Repairs
+          Harrow Mobiles
         </h1>
 
         <p class="text-white text-center fw-400 fs-18 mb-4">

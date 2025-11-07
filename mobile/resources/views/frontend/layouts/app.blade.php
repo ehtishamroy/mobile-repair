@@ -31,7 +31,7 @@
     />
     <link rel="stylesheet" href="{{ asset('front-assets/css/style.css') }}" />
     @stack('styles')
-    <title>@yield('title', 'Mobile Repair')</title>
+    <title>@yield('title', 'Harrow Mobiles')</title>
 </head>
 <body>
     <!-- Header Section Start -->
@@ -95,7 +95,7 @@
                   <img src="{{ asset('storage/' . $settings->website_logo) }}" alt="{{ $settings->website_name ?? 'Logo' }}" style="max-height: 40px; max-width: 150px;">
                 </a>
               @else
-                <h6 class="mb-0">{{ $settings->website_name ?? 'Mobile Repair' }}</h6>
+                <h6 class="mb-0">{{ $settings->website_name ?? 'Harrow Mobiles' }}</h6>
               @endif
             </div>
 
@@ -128,7 +128,7 @@
           @if($settings->website_logo ?? false)
             <img src="{{ asset('storage/' . $settings->website_logo) }}" alt="{{ $settings->website_name ?? 'Logo' }}" style="max-height: 30px; max-width: 120px;">
           @else
-            <h5 class="offcanvas-title" id="mobileMenuLabel">{{ $settings->website_name ?? 'Mobile Repair' }}</h5>
+            <h5 class="offcanvas-title" id="mobileMenuLabel">{{ $settings->website_name ?? 'Harrow Mobiles' }}</h5>
           @endif
           <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>

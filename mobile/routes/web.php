@@ -106,7 +106,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::resource('brands', BrandController::class);
             Route::resource('tags', TagController::class);
             Route::resource('products', ProductController::class);
+            Route::post('/products/{product}/duplicate', [ProductController::class, 'duplicate'])->name('products.duplicate');
             Route::post('/products/gallery/{id}/delete', [ProductController::class, 'deleteGalleryImage'])->name('products.gallery.delete');
+            Route::delete('/products/bulk-delete', [ProductController::class, 'bulkDelete'])->name('products.bulk-delete');
         });
         
         // Coupon Management - Only users with manage-products permission

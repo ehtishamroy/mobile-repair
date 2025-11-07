@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login | Mobile Repair</title>
+    <title>Login | Harrow Mobiles</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
@@ -68,7 +68,7 @@
 <body>
     <div class="login-card">
         <div class="login-logo">
-            <h2><i class="bi bi-phone"></i> Mobile Repair</h2>
+            <h2><i class="bi bi-phone"></i> Harrow Mobiles</h2>
             <p class="text-muted">Sign in to your account</p>
         </div>
 

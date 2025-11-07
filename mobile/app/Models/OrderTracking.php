@@ -22,6 +22,8 @@ class OrderTracking extends Model
         'is_customer_notified' => 'boolean',
     ];
 
+    protected $table = 'order_tracking';
+
     public function order()
     {
         return $this->belongsTo(Order::class);
