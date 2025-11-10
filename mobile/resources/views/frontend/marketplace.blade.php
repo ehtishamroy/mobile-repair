@@ -7,19 +7,40 @@
 
     <div class="marketplace-header py-3">
       <div class="container flex-center flex-wrap gap-3">
-        <div class="dropdown">
+        <div class="dropdown show-on-hover">
           <button
             class="btn dropdown-toggle category-btn"
             type="button"
+            id="categoryDropdown"
             data-bs-toggle="dropdown"
+            data-bs-auto-close="true"
             aria-expanded="false"
           >
-            All Category
+            @if(request('category'))
+              @php
+                $selectedCategory = $categories->firstWhere('id', request('category'));
+              @endphp
+              {{ $selectedCategory ? $selectedCategory->name : 'All Category' }}
+            @else
+              All Category
+            @endif
           </button>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#">Mobiles</a></li>
-            <li><a class="dropdown-item" href="#">Laptops</a></li>
-            <li><a class="dropdown-item" href="#">Accessories</a></li>
+          <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
+            <li>
+              <a class="dropdown-item {{ !request('category') ? 'active' : '' }}" href="{{ route('frontend.marketplace') }}">
+                <i class="bi bi-grid me-2"></i> All Category
+              </a>
+            </li>
+            @if($categories->count() > 0)
+            <li><hr class="dropdown-divider"></li>
+            @endif
+            @foreach($categories as $category)
+            <li>
+              <a class="dropdown-item {{ request('category') == $category->id ? 'active' : '' }}" href="{{ route('frontend.marketplace', ['category' => $category->id]) }}">
+                {{ $category->name }}
+              </a>
+            </li>
+            @endforeach
           </ul>
         </div>
 
@@ -135,9 +156,28 @@
               <a href="{{ route('home') }}">Home</a>
             </li>
             <li class="breadcrumb-item"><a href="{{ route('frontend.marketplace') }}">Marketplace</a></li>
-            <li class="breadcrumb-item active" aria-current="page">
-              Electronics Devices
-            </li>
+            @php
+              $categoryFilter = collect($activeFilters)->firstWhere('type', 'category');
+              $brandFilter = collect($activeFilters)->firstWhere('type', 'brand');
+              $tagFilter = collect($activeFilters)->firstWhere('type', 'tag');
+            @endphp
+            @if($categoryFilter)
+              <li class="breadcrumb-item active" aria-current="page">
+                {{ $categoryFilter['label'] }}
+              </li>
+            @elseif($brandFilter)
+              <li class="breadcrumb-item active" aria-current="page">
+                {{ $brandFilter['label'] }}
+              </li>
+            @elseif($tagFilter)
+              <li class="breadcrumb-item active" aria-current="page">
+                {{ $tagFilter['label'] }}
+              </li>
+            @else
+              <li class="breadcrumb-item active" aria-current="page">
+                All Products
+              </li>
+            @endif
           </ol>
         </nav>
       </div>
@@ -165,15 +205,64 @@
               <button
                 class="btn dropdown-toggle sortby-btn"
                 type="button"
+                id="sortDropdownMobile"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
               >
-                Most Popular
+                @php
+                  $sortOptions = [
+                    'popular' => 'Most Popular',
+                    'price_low' => 'Price: Low to High',
+                    'price_high' => 'Price: High to Low',
+                    'newest' => 'Newest First',
+                    'oldest' => 'Oldest First',
+                    'name_asc' => 'Name: A to Z',
+                    'name_desc' => 'Name: Z to A',
+                  ];
+                  $currentSortLabel = $sortOptions[$sortBy] ?? 'Most Popular';
+                @endphp
+                {{ $currentSortLabel }}
               </button>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#">Mobiles</a></li>
-                <li><a class="dropdown-item" href="#">Laptops</a></li>
-                <li><a class="dropdown-item" href="#">Accessories</a></li>
+              <ul class="dropdown-menu" aria-labelledby="sortDropdownMobile">
+                @php
+                  $currentParams = request()->query();
+                  unset($currentParams['sort']);
+                @endphp
+                <li>
+                  <a class="dropdown-item {{ $sortBy == 'popular' ? 'active' : '' }}" href="{{ route('frontend.marketplace', array_merge($currentParams, ['sort' => 'popular'])) }}">
+                    Most Popular
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item {{ $sortBy == 'price_low' ? 'active' : '' }}" href="{{ route('frontend.marketplace', array_merge($currentParams, ['sort' => 'price_low'])) }}">
+                    Price: Low to High
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item {{ $sortBy == 'price_high' ? 'active' : '' }}" href="{{ route('frontend.marketplace', array_merge($currentParams, ['sort' => 'price_high'])) }}">
+                    Price: High to Low
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item {{ $sortBy == 'newest' ? 'active' : '' }}" href="{{ route('frontend.marketplace', array_merge($currentParams, ['sort' => 'newest'])) }}">
+                    Newest First
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item {{ $sortBy == 'oldest' ? 'active' : '' }}" href="{{ route('frontend.marketplace', array_merge($currentParams, ['sort' => 'oldest'])) }}">
+                    Oldest First
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item {{ $sortBy == 'name_asc' ? 'active' : '' }}" href="{{ route('frontend.marketplace', array_merge($currentParams, ['sort' => 'name_asc'])) }}">
+                    Name: A to Z
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item {{ $sortBy == 'name_desc' ? 'active' : '' }}" href="{{ route('frontend.marketplace', array_merge($currentParams, ['sort' => 'name_desc'])) }}">
+                    Name: Z to A
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
@@ -184,124 +273,31 @@
           <!-- Sidebar (lg+) -->
           <aside class="col-lg-3 d-none d-lg-block">
             <h3 class="sidebar-heading">Category</h3>
-            <form class="filter-options mt-3">
+            <form class="filter-options mt-3" id="categoryFilter">
               <div class="form-check">
                 <input
                   class="form-check-input"
                   type="radio"
                   name="category"
-                  id="cat1"
+                  id="cat_all"
+                  value=""
+                  {{ !request('category') ? 'checked' : '' }}
                 />
-                <label class="form-check-label" for="cat1"
-                  >Computer &amp; Laptop</label
-                >
+                <label class="form-check-label" for="cat_all">All Categories</label>
               </div>
+              @foreach($categories as $category)
               <div class="form-check">
                 <input
                   class="form-check-input"
                   type="radio"
                   name="category"
-                  id="cat2"
+                  id="cat_{{ $category->id }}"
+                  value="{{ $category->id }}"
+                  {{ request('category') == $category->id ? 'checked' : '' }}
                 />
-                <label class="form-check-label" for="cat2"
-                  >Computer Accessories</label
-                >
+                <label class="form-check-label" for="cat_{{ $category->id }}">{{ $category->name }}</label>
               </div>
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  name="category"
-                  id="cat3"
-                />
-                <label class="form-check-label" for="cat3">SmartPhone</label>
-              </div>
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  name="category"
-                  id="cat4"
-                />
-                <label class="form-check-label" for="cat4">Headphone</label>
-              </div>
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  name="category"
-                  id="cat5"
-                />
-                <label class="form-check-label" for="cat5"
-                  >Mobile Accessories</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  name="category"
-                  id="cat6"
-                />
-                <label class="form-check-label" for="cat6"
-                  >Gaming Console</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  name="category"
-                  id="cat7"
-                />
-                <label class="form-check-label" for="cat7"
-                  >Camera &amp; Photo</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  name="category"
-                  id="cat8"
-                />
-                <label class="form-check-label" for="cat8"
-                  >TV &amp; Homes Appliances</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  name="category"
-                  id="cat9"
-                />
-                <label class="form-check-label" for="cat9"
-                  >Watches &amp; Accessories</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  name="category"
-                  id="cat10"
-                />
-                <label class="form-check-label" for="cat10"
-                  >GPS &amp; Navigation</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  name="category"
-                  id="cat11"
-                />
-                <label class="form-check-label" for="cat11"
-                  >Wearable Technology</label
-                >
-              </div>
+              @endforeach
             </form>
             <hr />
             <h3 class="sidebar-heading">Price Range</h3>
@@ -315,7 +311,7 @@
                 class="min_range"
                 min="0"
                 max="10000"
-                value="3000"
+                value="{{ request('min_price') ?? 0 }}"
                 step="1"
               />
               <input
@@ -323,7 +319,7 @@
                 class="max_range"
                 min="0"
                 max="10000"
-                value="7000"
+                value="{{ request('max_price') ?? 10000 }}"
                 step="1"
               />
             </div>
@@ -334,292 +330,230 @@
                 id="minInput"
                 placeholder="Min price"
                 class="custom-range-input"
+                value="{{ request('min_price') ?? '' }}"
               />
               <input
                 type="text"
                 id="maxInput"
                 placeholder="Max price"
                 class="custom-range-input"
+                value="{{ request('max_price') ?? '' }}"
               />
             </div>
 
-            <form class="filter-options mt-3">
+            <form class="filter-options mt-3" id="priceRadioFilter">
+              @php
+                $currentMin = (int)request('min_price', 0);
+                $currentMax = (int)request('max_price', 0);
+                $hasPriceFilter = request()->has('min_price') || request()->has('max_price');
+              @endphp
               <div class="form-check">
                 <input
-                  class="form-check-input"
+                  class="form-check-input price-radio"
                   type="radio"
                   name="price"
                   id="price1"
+                  value="all"
+                  data-min=""
+                  data-max=""
+                  {{ !$hasPriceFilter ? 'checked' : '' }}
                 />
                 <label class="form-check-label" for="price1"> All Price </label>
               </div>
 
               <div class="form-check">
                 <input
-                  class="form-check-input"
+                  class="form-check-input price-radio"
                   type="radio"
                   name="price"
                   id="price2"
+                  value="under_20"
+                  data-min="0"
+                  data-max="20"
+                  {{ $currentMin == 0 && $currentMax == 20 ? 'checked' : '' }}
                 />
-                <label class="form-check-label" for="price2"> Under $20 </label>
+                <label class="form-check-label" for="price2"> Under {{ $settings->currency_symbol ?? '$' }}20 </label>
               </div>
 
               <div class="form-check">
                 <input
-                  class="form-check-input"
+                  class="form-check-input price-radio"
                   type="radio"
                   name="price"
                   id="price3"
+                  value="25_100"
+                  data-min="25"
+                  data-max="100"
+                  {{ $currentMin == 25 && $currentMax == 100 ? 'checked' : '' }}
                 />
                 <label class="form-check-label" for="price3">
-                  $25 to $100
+                  {{ $settings->currency_symbol ?? '$' }}25 to {{ $settings->currency_symbol ?? '$' }}100
                 </label>
               </div>
 
               <div class="form-check">
                 <input
-                  class="form-check-input"
+                  class="form-check-input price-radio"
                   type="radio"
                   name="price"
                   id="price4"
+                  value="100_300"
+                  data-min="100"
+                  data-max="300"
+                  {{ $currentMin == 100 && $currentMax == 300 ? 'checked' : '' }}
                 />
                 <label class="form-check-label" for="price4">
-                  $100 to $300
+                  {{ $settings->currency_symbol ?? '$' }}100 to {{ $settings->currency_symbol ?? '$' }}300
                 </label>
               </div>
 
               <div class="form-check">
                 <input
-                  class="form-check-input"
+                  class="form-check-input price-radio"
                   type="radio"
                   name="price"
                   id="price5"
+                  value="300_500"
+                  data-min="300"
+                  data-max="500"
+                  {{ $currentMin == 300 && $currentMax == 500 ? 'checked' : '' }}
                 />
                 <label class="form-check-label" for="price5">
-                  $300 to $500
+                  {{ $settings->currency_symbol ?? '$' }}300 to {{ $settings->currency_symbol ?? '$' }}500
                 </label>
               </div>
 
               <div class="form-check">
                 <input
-                  class="form-check-input"
+                  class="form-check-input price-radio"
                   type="radio"
                   name="price"
                   id="price6"
+                  value="500_1000"
+                  data-min="500"
+                  data-max="1000"
+                  {{ $currentMin == 500 && $currentMax == 1000 ? 'checked' : '' }}
                 />
                 <label class="form-check-label" for="price6">
-                  $500 to $1,000
+                  {{ $settings->currency_symbol ?? '$' }}500 to {{ $settings->currency_symbol ?? '$' }}1,000
                 </label>
               </div>
 
               <div class="form-check">
                 <input
-                  class="form-check-input"
+                  class="form-check-input price-radio"
                   type="radio"
                   name="price"
                   id="price7"
+                  value="1000_10000"
+                  data-min="1000"
+                  data-max="10000"
+                  {{ $currentMin == 1000 && $currentMax == 10000 ? 'checked' : '' }}
                 />
                 <label class="form-check-label" for="price7">
-                  $1,000 to $10,000
+                  {{ $settings->currency_symbol ?? '$' }}1,000 to {{ $settings->currency_symbol ?? '$' }}10,000
                 </label>
               </div>
             </form>
             <hr />
             <div class="brand-filter">
               <h3 class="sidebar-heading">popular Brands</h3>
-              <div class="row g-2 mt-3">
+              <div class="row g-2 mt-3" id="brandFilter">
+                @php
+                  $brandChunks = $brands->chunk(ceil($brands->count() / 2));
+                @endphp
+                @foreach($brandChunks as $chunk)
                 <div class="col-6">
+                  @foreach($chunk as $brand)
                   <div class="form-check">
                     <input
-                      class="form-check-input"
+                      class="form-check-input brand-checkbox"
                       type="checkbox"
-                      id="apple"
-                      checked
+                      id="brand_{{ $brand->id }}"
+                      value="{{ $brand->id }}"
+                      {{ request('brand') == $brand->id ? 'checked' : '' }}
                     />
-                    <label class="form-check-label" for="apple">Apple</label>
+                    <label class="form-check-label" for="brand_{{ $brand->id }}">{{ $brand->name }}</label>
                   </div>
-                  <div class="form-check">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      id="microsoft"
-                      checked
-                    />
-                    <label class="form-check-label" for="microsoft"
-                      >Microsoft</label
-                    >
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="dell" />
-                    <label class="form-check-label" for="dell">Dell</label>
-                  </div>
-                  <div class="form-check">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      id="symphony"
-                    />
-                    <label class="form-check-label" for="symphony"
-                      >Symphony</label
-                    >
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="sony" />
-                    <label class="form-check-label" for="sony">Sony</label>
-                  </div>
-                  <div class="form-check">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      id="lg"
-                      checked
-                    />
-                    <label class="form-check-label" for="lg">LG</label>
-                  </div>
-                  <div class="form-check">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      id="oneplus"
-                    />
-                    <label class="form-check-label" for="oneplus"
-                      >One Plus</label
-                    >
-                  </div>
+                  @endforeach
                 </div>
-
-                <div class="col-6">
-                  <div class="form-check">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      id="google"
-                      checked
-                    />
-                    <label class="form-check-label" for="google">Google</label>
-                  </div>
-                  <div class="form-check">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      id="samsung"
-                    />
-                    <label class="form-check-label" for="samsung"
-                      >Samsung</label
-                    >
-                  </div>
-                  <div class="form-check">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      id="hp"
-                      checked
-                    />
-                    <label class="form-check-label" for="hp">HP</label>
-                  </div>
-                  <div class="form-check">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      id="xiaomi"
-                    />
-                    <label class="form-check-label" for="xiaomi">Xiaomi</label>
-                  </div>
-                  <div class="form-check">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      id="panasonic"
-                      checked
-                    />
-                    <label class="form-check-label" for="panasonic"
-                      >Panasonic</label
-                    >
-                  </div>
-                  <div class="form-check">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      id="intel"
-                    />
-                    <label class="form-check-label" for="intel">Intel</label>
-                  </div>
-                </div>
+                @endforeach
               </div>
             </div>
             <hr />
             <div class="popular-tags mt-4">
               <h6 class="fw-bold mb-3">POPULAR TAG</h6>
               <div class="d-flex flex-wrap gap-2">
-                <button class="tag-btn">Game</button>
-                <button class="tag-btn">iPhone</button>
-                <button class="tag-btn">TV</button>
-                <button class="tag-btn">Asus Laptops</button>
-                <button class="tag-btn">Macbook</button>
-                <button class="tag-btn">SSD</button>
-                <button class="tag-btn active">Graphics Card</button>
-                <button class="tag-btn">Power Bank</button>
-                <button class="tag-btn">Smart TV</button>
-                <button class="tag-btn">Speaker</button>
-                <button class="tag-btn">Tablet</button>
-                <button class="tag-btn">Microwave</button>
-                <button class="tag-btn">Samsung</button>
+                <a href="{{ route('frontend.marketplace') }}" class="tag-btn {{ !request('tag') ? 'active' : '' }}">All</a>
+                @foreach($tags as $tag)
+                <a href="{{ route('frontend.marketplace', ['tag' => $tag->id]) }}" class="tag-btn {{ request('tag') == $tag->id ? 'active' : '' }}">{{ $tag->name }}</a>
+                @endforeach
               </div>
             </div>
-            <div class="side-product-card text-center p-4 mt-3">
-              <img
-                src="{{ asset('front-assets/img/watch-collection.svg') }}"
-                alt="Apple Watch"
-                class="img-fluid mb-3"
-              />
+            @if($featuredProducts->count() > 0)
+            <div class="side-product-card text-center p-4 mt-3" id="featuredProductCard">
+              @foreach($featuredProducts as $index => $product)
+              <div class="featured-product-item {{ $index === 0 ? 'active' : '' }}" data-index="{{ $index }}">
+                <img
+                  src="{{ $product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/watch-collection.svg') }}"
+                  alt="{{ $product->name }}"
+                  class="img-fluid mb-3"
+                />
 
-              <img
-                src="{{ asset('front-assets/img/apple-watch-7.svg') }}"
-                alt="Apple Logo"
-                class="apple-logo"
-              />
+                @if($product->brand && $product->brand->logo)
+                <img
+                  src="{{ asset('storage/' . $product->brand->logo) }}"
+                  alt="{{ $product->brand->name }}"
+                  class="apple-logo"
+                />
+                @endif
 
-              <h6 class="product-subtitle mb-3">
-                Heavy on Features. <br />
-                Light on Price.
-              </h6>
+                <h6 class="product-subtitle mb-3">
+                  {{ Str::limit($product->name, 50) }}
+                </h6>
 
-              <p class="price-text mb-4">
-                Only for: <span class="price-tag">$299 USD</span>
-              </p>
+                <p class="price-text mb-4">
+                  Only for: <span class="price-tag">{{ $settings->currency_symbol ?? '$' }}{{ number_format($product->price, 2) }}</span>
+                  @if($product->compare_at_price)
+                  <small class="text-muted text-decoration-line-through d-block">{{ $settings->currency_symbol ?? '$' }}{{ number_format($product->compare_at_price, 2) }}</small>
+                  @endif
+                </p>
 
-              <div class="d-grid gap-2">
-                <button class="add-cart-btn">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M3.125 10H16.875"
-                      stroke="#5B265D"
-                      stroke-width="1.8"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M11.25 4.375L16.875 10L11.25 15.625"
-                      stroke="#5B265D"
-                      stroke-width="1.8"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                  ADD TO CART
-                </button>
+                <div class="d-grid gap-2">
+                  <button class="add-cart-btn" onclick="addToCart({{ $product->id }})">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M3.125 10H16.875"
+                        stroke="#5B265D"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M11.25 4.375L16.875 10L11.25 15.625"
+                        stroke="#5B265D"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                    ADD TO CART
+                  </button>
 
-                <button class="view-details-btn">
-                  VIEW DETAILS <i class="bi bi-arrow-right"></i>
-                </button>
+                  <a href="{{ route('frontend.product-detail', $product->slug) }}" class="view-details-btn text-decoration-none">
+                    VIEW DETAILS <i class="bi bi-arrow-right"></i>
+                  </a>
+                </div>
               </div>
+              @endforeach
             </div>
+            @endif
           </aside>
 
           <!-- Main Content -->
@@ -627,7 +561,7 @@
             <div class="h-100">
               <header class="flex-between">
                 <div class="search w-100 w-sm-50">
-                  <input type="text" placeholder="Search for anything..." />
+                  <input type="text" id="searchInput" placeholder="Search for anything..." value="{{ request('search') ?? '' }}" />
                   <i class="bi bi-search"></i>
                 </div>
                 <div class="sort-section flex-center gap-3 d-none d-sm-flex">
@@ -636,15 +570,64 @@
                     <button
                       class="btn dropdown-toggle sortby-btn"
                       type="button"
+                      id="sortDropdownDesktop"
                       data-bs-toggle="dropdown"
                       aria-expanded="false"
                     >
-                      Most Popular
+                      @php
+                        $sortOptions = [
+                          'popular' => 'Most Popular',
+                          'price_low' => 'Price: Low to High',
+                          'price_high' => 'Price: High to Low',
+                          'newest' => 'Newest First',
+                          'oldest' => 'Oldest First',
+                          'name_asc' => 'Name: A to Z',
+                          'name_desc' => 'Name: Z to A',
+                        ];
+                        $currentSortLabel = $sortOptions[$sortBy] ?? 'Most Popular';
+                      @endphp
+                      {{ $currentSortLabel }}
                     </button>
-                    <ul class="dropdown-menu">
-                      <li><a class="dropdown-item" href="#">Mobiles</a></li>
-                      <li><a class="dropdown-item" href="#">Laptops</a></li>
-                      <li><a class="dropdown-item" href="#">Accessories</a></li>
+                    <ul class="dropdown-menu" aria-labelledby="sortDropdownDesktop">
+                      @php
+                        $currentParams = request()->query();
+                        unset($currentParams['sort']);
+                      @endphp
+                      <li>
+                        <a class="dropdown-item {{ $sortBy == 'popular' ? 'active' : '' }}" href="{{ route('frontend.marketplace', array_merge($currentParams, ['sort' => 'popular'])) }}">
+                          Most Popular
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item {{ $sortBy == 'price_low' ? 'active' : '' }}" href="{{ route('frontend.marketplace', array_merge($currentParams, ['sort' => 'price_low'])) }}">
+                          Price: Low to High
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item {{ $sortBy == 'price_high' ? 'active' : '' }}" href="{{ route('frontend.marketplace', array_merge($currentParams, ['sort' => 'price_high'])) }}">
+                          Price: High to Low
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item {{ $sortBy == 'newest' ? 'active' : '' }}" href="{{ route('frontend.marketplace', array_merge($currentParams, ['sort' => 'newest'])) }}">
+                          Newest First
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item {{ $sortBy == 'oldest' ? 'active' : '' }}" href="{{ route('frontend.marketplace', array_merge($currentParams, ['sort' => 'oldest'])) }}">
+                          Oldest First
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item {{ $sortBy == 'name_asc' ? 'active' : '' }}" href="{{ route('frontend.marketplace', array_merge($currentParams, ['sort' => 'name_asc'])) }}">
+                          Name: A to Z
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item {{ $sortBy == 'name_desc' ? 'active' : '' }}" href="{{ route('frontend.marketplace', array_merge($currentParams, ['sort' => 'name_desc'])) }}">
+                          Name: Z to A
+                        </a>
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -654,32 +637,38 @@
                 <div
                   class="d-flex align-items-center justify-content-between py-2"
                 >
-                  <div class="d-flex align-items-center flex-wrap gap-2">
+                  <div class="d-flex align-items-center flex-wrap gap-2" id="activeFiltersContainer">
+                    @if(count($activeFilters) > 0)
                     <span class="text-secondary me-1 fs-14 fw-400"
                       >Active Filters:</span
                     >
-
-                    <span class="d-inline-flex align-items-center fs-14 fw-400">
-                      Electronics Devices
+                    @foreach($activeFilters as $filter)
+                    <span class="d-inline-flex align-items-center fs-14 fw-400 badge bg-light text-dark border">
+                      {{ $filter['label'] }}
                       <button
                         type="button"
                         class="btn-close ms-2"
                         aria-label="Remove"
+                        onclick="removeFilter('{{ $filter['type'] }}')"
                       ></button>
                     </span>
-
-                    <span class="d-inline-flex align-items-center fs-14 fw-400">
-                      5 Star Rating
-                      <button
-                        type="button"
-                        class="btn-close ms-2"
-                        aria-label="Remove"
-                      ></button>
-                    </span>
+                    @endforeach
+                    @if(count($activeFilters) > 0)
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary"
+                      onclick="clearAllFilters()"
+                    >
+                      Clear All
+                    </button>
+                    @endif
+                    @else
+                    <span class="text-secondary fs-14 fw-400">No active filters</span>
+                    @endif
                   </div>
 
                   <div class="text-heading fs-14 fw-400">
-                    <span class="fw-600 text-dark">65,867</span> Results found.
+                    <span class="fw-600 text-dark" id="totalResults">{{ number_format($totalResults) }}</span> Results found.
                   </div>
                 </div>
               </section>
@@ -689,71 +678,22 @@
                 class="row row-cols-xxl-5 row-cols-xl-4 row-cols-lg-3 row-cols-sm-2 row-cols-1 g-3"
                 id="productGrid"
               >
-                <!-- Static Product Cards -->
+                @forelse($products as $product)
                 <div class="col">
                   <div class="product-card h-100 position-relative">
+                    @if($product->is_hot_product)
                     <span class="product-badge badge-danger">HOT</span>
-                    <div class="card-body">
-                      <div class="ratio ratio-1x1 thumb">
-                        <img src="{{ asset('front-assets/img/phone-1.svg') }}" alt="img" class="w-100 h-100 p-2 rounded" />
-                        <div class="product-actions">
-                          <div class="action-btn"><i class="bi bi-heart"></i></div>
-                          <div class="action-btn"><i class="bi bi-cart"></i></div>
-                          <div class="action-btn"><i class="bi bi-eye"></i></div>
-                        </div>
-                      </div>
-                      <div class="rating mt-3 d-flex align-items-center">
-                        <span class="text-primary-custom">
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                        </span>
-                        <span class="rating-count">(738)</span>
-                      </div>
-                      <p class="product-title mt-2 mb-0">TOZO T6 True Wireless Earbuds Bluetooth Headphones</p>
-                      <div class="product-price text-promo">$70</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col">
-                  <div class="product-card h-100 position-relative">
-                    <div class="card-body">
-                      <div class="ratio ratio-1x1 thumb">
-                        <img src="{{ asset('front-assets/img/phone-2.svg') }}" alt="img" class="w-100 h-100 p-2 rounded" />
-                        <div class="product-actions">
-                          <div class="action-btn"><i class="bi bi-heart"></i></div>
-                          <div class="action-btn"><i class="bi bi-cart"></i></div>
-                          <div class="action-btn"><i class="bi bi-eye"></i></div>
-                        </div>
-                      </div>
-                      <div class="rating mt-3 d-flex align-items-center">
-                        <span class="text-primary-custom">
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                        </span>
-                        <span class="rating-count">(512)</span>
-                      </div>
-                      <p class="product-title mt-2 mb-0">Noise Cancelling Bluetooth Headphones</p>
-                      <div class="product-price text-promo">$55</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col">
-                  <div class="product-card h-100 position-relative">
+                    @elseif($product->is_best_deal)
                     <span class="product-badge badge-danger">BEST DEALS</span>
+                    @endif
                     <div class="card-body">
                       <div class="ratio ratio-1x1 thumb">
-                        <img src="{{ asset('front-assets/img/phone-3.svg') }}" alt="img" class="w-100 h-100 p-2 rounded" />
+                        <img src="{{ $product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg') }}" alt="{{ $product->name }}" class="w-100 h-100 p-2 rounded" />
                         <div class="product-actions">
                           <div class="action-btn"><i class="bi bi-heart"></i></div>
-                          <div class="action-btn"><i class="bi bi-cart"></i></div>
+                          <div class="action-btn add-to-cart-btn" data-product-id="{{ $product->id }}" title="Add to Cart">
+                            <i class="bi bi-cart"></i>
+                          </div>
                           <div class="action-btn"><i class="bi bi-eye"></i></div>
                         </div>
                       </div>
@@ -765,300 +705,34 @@
                           <i class="bi bi-star-fill"></i>
                           <i class="bi bi-star-fill"></i>
                         </span>
-                        <span class="rating-count">(738)</span>
+                        <span class="rating-count">(0)</span>
                       </div>
-                      <p class="product-title mt-2 mb-0">TOZO T6 True Wireless Earbuds Bluetooth Headphones</p>
-                      <div class="product-price text-promo">$70</div>
+                      <p class="product-title mt-2 mb-0">{{ Str::limit($product->name, 50) }}</p>
+                      <div class="product-price text-promo">
+                        {{ $settings->currency_symbol ?? '$' }}{{ number_format($product->price, 2) }}
+                        @if($product->compare_at_price)
+                        <small class="text-muted text-decoration-line-through">{{ $settings->currency_symbol ?? '$' }}{{ number_format($product->compare_at_price, 2) }}</small>
+                        @endif
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                <div class="col">
-                  <div class="product-card h-100 position-relative">
-                    <div class="card-body">
-                      <div class="ratio ratio-1x1 thumb">
-                        <img src="{{ asset('front-assets/img/phone-4.svg') }}" alt="img" class="w-100 h-100 p-2 rounded" />
-                        <div class="product-actions">
-                          <div class="action-btn"><i class="bi bi-heart"></i></div>
-                          <div class="action-btn"><i class="bi bi-cart"></i></div>
-                          <div class="action-btn"><i class="bi bi-eye"></i></div>
-                        </div>
-                      </div>
-                      <div class="rating mt-3 d-flex align-items-center">
-                        <span class="text-primary-custom">
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star"></i>
-                        </span>
-                        <span class="rating-count">(432)</span>
-                      </div>
-                      <p class="product-title mt-2 mb-0">High Bass Bluetooth Earphones</p>
-                      <div class="product-price text-promo">$65</div>
-                    </div>
-                  </div>
+                @empty
+                <div class="col-12">
+                  <p class="text-center py-5">No products found.</p>
                 </div>
-
-                <div class="col">
-                  <div class="product-card h-100 position-relative">
-                    <span class="product-badge badge-danger">HOT</span>
-                    <div class="card-body">
-                      <div class="ratio ratio-1x1 thumb">
-                        <img src="{{ asset('front-assets/img/phone-1.svg') }}" alt="img" class="w-100 h-100 p-2 rounded" />
-                        <div class="product-actions">
-                          <div class="action-btn"><i class="bi bi-heart"></i></div>
-                          <div class="action-btn"><i class="bi bi-cart"></i></div>
-                          <div class="action-btn"><i class="bi bi-eye"></i></div>
-                        </div>
-                      </div>
-                      <div class="rating mt-3 d-flex align-items-center">
-                        <span class="text-primary-custom">
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                        </span>
-                        <span class="rating-count">(738)</span>
-                      </div>
-                      <p class="product-title mt-2 mb-0">TOZO T6 True Wireless Earbuds Bluetooth Headphones</p>
-                      <div class="product-price text-promo">$70</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col">
-                  <div class="product-card h-100 position-relative">
-                    <div class="card-body">
-                      <div class="ratio ratio-1x1 thumb">
-                        <img src="{{ asset('front-assets/img/phone-2.svg') }}" alt="img" class="w-100 h-100 p-2 rounded" />
-                        <div class="product-actions">
-                          <div class="action-btn"><i class="bi bi-heart"></i></div>
-                          <div class="action-btn"><i class="bi bi-cart"></i></div>
-                          <div class="action-btn"><i class="bi bi-eye"></i></div>
-                        </div>
-                      </div>
-                      <div class="rating mt-3 d-flex align-items-center">
-                        <span class="text-primary-custom">
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                        </span>
-                        <span class="rating-count">(512)</span>
-                      </div>
-                      <p class="product-title mt-2 mb-0">Noise Cancelling Bluetooth Headphones</p>
-                      <div class="product-price text-promo">$55</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col">
-                  <div class="product-card h-100 position-relative">
-                    <span class="product-badge badge-danger">BEST DEALS</span>
-                    <div class="card-body">
-                      <div class="ratio ratio-1x1 thumb">
-                        <img src="{{ asset('front-assets/img/phone-3.svg') }}" alt="img" class="w-100 h-100 p-2 rounded" />
-                        <div class="product-actions">
-                          <div class="action-btn"><i class="bi bi-heart"></i></div>
-                          <div class="action-btn"><i class="bi bi-cart"></i></div>
-                          <div class="action-btn"><i class="bi bi-eye"></i></div>
-                        </div>
-                      </div>
-                      <div class="rating mt-3 d-flex align-items-center">
-                        <span class="text-primary-custom">
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                        </span>
-                        <span class="rating-count">(738)</span>
-                      </div>
-                      <p class="product-title mt-2 mb-0">TOZO T6 True Wireless Earbuds Bluetooth Headphones</p>
-                      <div class="product-price text-promo">$70</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col">
-                  <div class="product-card h-100 position-relative">
-                    <div class="card-body">
-                      <div class="ratio ratio-1x1 thumb">
-                        <img src="{{ asset('front-assets/img/phone-4.svg') }}" alt="img" class="w-100 h-100 p-2 rounded" />
-                        <div class="product-actions">
-                          <div class="action-btn"><i class="bi bi-heart"></i></div>
-                          <div class="action-btn"><i class="bi bi-cart"></i></div>
-                          <div class="action-btn"><i class="bi bi-eye"></i></div>
-                        </div>
-                      </div>
-                      <div class="rating mt-3 d-flex align-items-center">
-                        <span class="text-primary-custom">
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star"></i>
-                        </span>
-                        <span class="rating-count">(432)</span>
-                      </div>
-                      <p class="product-title mt-2 mb-0">High Bass Bluetooth Earphones</p>
-                      <div class="product-price text-promo">$65</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col">
-                  <div class="product-card h-100 position-relative">
-                    <span class="product-badge badge-danger">HOT</span>
-                    <div class="card-body">
-                      <div class="ratio ratio-1x1 thumb">
-                        <img src="{{ asset('front-assets/img/phone-1.svg') }}" alt="img" class="w-100 h-100 p-2 rounded" />
-                        <div class="product-actions">
-                          <div class="action-btn"><i class="bi bi-heart"></i></div>
-                          <div class="action-btn"><i class="bi bi-cart"></i></div>
-                          <div class="action-btn"><i class="bi bi-eye"></i></div>
-                        </div>
-                      </div>
-                      <div class="rating mt-3 d-flex align-items-center">
-                        <span class="text-primary-custom">
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                        </span>
-                        <span class="rating-count">(738)</span>
-                      </div>
-                      <p class="product-title mt-2 mb-0">TOZO T6 True Wireless Earbuds Bluetooth Headphones</p>
-                      <div class="product-price text-promo">$70</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col">
-                  <div class="product-card h-100 position-relative">
-                    <div class="card-body">
-                      <div class="ratio ratio-1x1 thumb">
-                        <img src="{{ asset('front-assets/img/phone-2.svg') }}" alt="img" class="w-100 h-100 p-2 rounded" />
-                        <div class="product-actions">
-                          <div class="action-btn"><i class="bi bi-heart"></i></div>
-                          <div class="action-btn"><i class="bi bi-cart"></i></div>
-                          <div class="action-btn"><i class="bi bi-eye"></i></div>
-                        </div>
-                      </div>
-                      <div class="rating mt-3 d-flex align-items-center">
-                        <span class="text-primary-custom">
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                        </span>
-                        <span class="rating-count">(512)</span>
-                      </div>
-                      <p class="product-title mt-2 mb-0">Noise Cancelling Bluetooth Headphones</p>
-                      <div class="product-price text-promo">$55</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col">
-                  <div class="product-card h-100 position-relative">
-                    <span class="product-badge badge-danger">BEST DEALS</span>
-                    <div class="card-body">
-                      <div class="ratio ratio-1x1 thumb">
-                        <img src="{{ asset('front-assets/img/phone-3.svg') }}" alt="img" class="w-100 h-100 p-2 rounded" />
-                        <div class="product-actions">
-                          <div class="action-btn"><i class="bi bi-heart"></i></div>
-                          <div class="action-btn"><i class="bi bi-cart"></i></div>
-                          <div class="action-btn"><i class="bi bi-eye"></i></div>
-                        </div>
-                      </div>
-                      <div class="rating mt-3 d-flex align-items-center">
-                        <span class="text-primary-custom">
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                        </span>
-                        <span class="rating-count">(738)</span>
-                      </div>
-                      <p class="product-title mt-2 mb-0">TOZO T6 True Wireless Earbuds Bluetooth Headphones</p>
-                      <div class="product-price text-promo">$70</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col">
-                  <div class="product-card h-100 position-relative">
-                    <div class="card-body">
-                      <div class="ratio ratio-1x1 thumb">
-                        <img src="{{ asset('front-assets/img/phone-4.svg') }}" alt="img" class="w-100 h-100 p-2 rounded" />
-                        <div class="product-actions">
-                          <div class="action-btn"><i class="bi bi-heart"></i></div>
-                          <div class="action-btn"><i class="bi bi-cart"></i></div>
-                          <div class="action-btn"><i class="bi bi-eye"></i></div>
-                        </div>
-                      </div>
-                      <div class="rating mt-3 d-flex align-items-center">
-                        <span class="text-primary-custom">
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star"></i>
-                        </span>
-                        <span class="rating-count">(432)</span>
-                      </div>
-                      <p class="product-title mt-2 mb-0">High Bass Bluetooth Earphones</p>
-                      <div class="product-price text-promo">$65</div>
-                    </div>
-                  </div>
-                </div>
+                @endforelse
               </div>
-              <nav
-                class="pagination-nav d-flex justify-content-center mt-5"
-                aria-label="Page navigation"
-              >
-                <ul class="pagination custom-pagination">
-                  <li class="page-item">
-                    <a
-                      class="page-link previous-button"
-                      href="#"
-                      aria-label="Previous"
-                    >
-                      <i class="bi bi-arrow-left"></i>
-                    </a>
-                  </li>
-                  <li class="page-item active">
-                    <a class="page-link" href="#">01</a>
-                  </li>
-                  <li class="page-item">
-                    <a class="page-link" href="#">02</a>
-                  </li>
-                  <li class="page-item">
-                    <a class="page-link" href="#">03</a>
-                  </li>
-                  <li class="page-item">
-                    <a class="page-link" href="#">04</a>
-                  </li>
-                  <li class="page-item">
-                    <a class="page-link" href="#">05</a>
-                  </li>
-                  <li class="page-item">
-                    <a class="page-link" href="#">06</a>
-                  </li>
-                  <li class="page-item">
-                    <a class="page-link next-button" href="#" aria-label="Next">
-                      <i class="bi bi-arrow-right"></i>
-                    </a>
-                  </li>
-                </ul>
-              </nav>
+              <div id="paginationContainer">
+                @if($products->hasPages())
+                <nav
+                  class="pagination-nav d-flex justify-content-center mt-5"
+                  aria-label="Page navigation"
+                >
+                  {{ $products->links() }}
+                </nav>
+                @endif
+              </div>
             </div>
           </main>
         </div>
@@ -1212,7 +886,7 @@
                 class="min_range"
                 min="0"
                 max="10000"
-                value="3000"
+                value="{{ request('min_price') ?? 0 }}"
                 step="1"
               />
               <input
@@ -1220,7 +894,7 @@
                 class="max_range"
                 min="0"
                 max="10000"
-                value="7000"
+                value="{{ request('max_price') ?? 10000 }}"
                 step="1"
               />
             </div>
@@ -1231,93 +905,128 @@
                 id="minInput"
                 placeholder="Min price"
                 class="custom-range-input"
+                value="{{ request('min_price') ?? '' }}"
               />
               <input
                 type="text"
                 id="maxInput"
                 placeholder="Max price"
                 class="custom-range-input"
+                value="{{ request('max_price') ?? '' }}"
               />
             </div>
 
-            <form class="filter-options mt-3">
+            <form class="filter-options mt-3" id="priceRadioFilter">
+              @php
+                $currentMin = (int)request('min_price', 0);
+                $currentMax = (int)request('max_price', 0);
+                $hasPriceFilter = request()->has('min_price') || request()->has('max_price');
+              @endphp
               <div class="form-check">
                 <input
-                  class="form-check-input"
+                  class="form-check-input price-radio"
                   type="radio"
                   name="price"
                   id="price1"
+                  value="all"
+                  data-min=""
+                  data-max=""
+                  {{ !$hasPriceFilter ? 'checked' : '' }}
                 />
                 <label class="form-check-label" for="price1"> All Price </label>
               </div>
 
               <div class="form-check">
                 <input
-                  class="form-check-input"
+                  class="form-check-input price-radio"
                   type="radio"
                   name="price"
                   id="price2"
+                  value="under_20"
+                  data-min="0"
+                  data-max="20"
+                  {{ $currentMin == 0 && $currentMax == 20 ? 'checked' : '' }}
                 />
-                <label class="form-check-label" for="price2"> Under $20 </label>
+                <label class="form-check-label" for="price2"> Under {{ $settings->currency_symbol ?? '$' }}20 </label>
               </div>
 
               <div class="form-check">
                 <input
-                  class="form-check-input"
+                  class="form-check-input price-radio"
                   type="radio"
                   name="price"
                   id="price3"
+                  value="25_100"
+                  data-min="25"
+                  data-max="100"
+                  {{ $currentMin == 25 && $currentMax == 100 ? 'checked' : '' }}
                 />
                 <label class="form-check-label" for="price3">
-                  $25 to $100
+                  {{ $settings->currency_symbol ?? '$' }}25 to {{ $settings->currency_symbol ?? '$' }}100
                 </label>
               </div>
 
               <div class="form-check">
                 <input
-                  class="form-check-input"
+                  class="form-check-input price-radio"
                   type="radio"
                   name="price"
                   id="price4"
+                  value="100_300"
+                  data-min="100"
+                  data-max="300"
+                  {{ $currentMin == 100 && $currentMax == 300 ? 'checked' : '' }}
                 />
                 <label class="form-check-label" for="price4">
-                  $100 to $300
+                  {{ $settings->currency_symbol ?? '$' }}100 to {{ $settings->currency_symbol ?? '$' }}300
                 </label>
               </div>
 
               <div class="form-check">
                 <input
-                  class="form-check-input"
+                  class="form-check-input price-radio"
                   type="radio"
                   name="price"
                   id="price5"
+                  value="300_500"
+                  data-min="300"
+                  data-max="500"
+                  {{ $currentMin == 300 && $currentMax == 500 ? 'checked' : '' }}
                 />
                 <label class="form-check-label" for="price5">
-                  $300 to $500
+                  {{ $settings->currency_symbol ?? '$' }}300 to {{ $settings->currency_symbol ?? '$' }}500
                 </label>
               </div>
 
               <div class="form-check">
                 <input
-                  class="form-check-input"
+                  class="form-check-input price-radio"
                   type="radio"
                   name="price"
                   id="price6"
+                  value="500_1000"
+                  data-min="500"
+                  data-max="1000"
+                  {{ $currentMin == 500 && $currentMax == 1000 ? 'checked' : '' }}
                 />
                 <label class="form-check-label" for="price6">
-                  $500 to $1,000
+                  {{ $settings->currency_symbol ?? '$' }}500 to {{ $settings->currency_symbol ?? '$' }}1,000
                 </label>
               </div>
 
               <div class="form-check">
                 <input
-                  class="form-check-input"
+                  class="form-check-input price-radio"
                   type="radio"
                   name="price"
                   id="price7"
+                  value="1000_10000"
+                  data-min="1000"
+                  data-max="10000"
+                  {{ $currentMin == 1000 && $currentMax == 10000 ? 'checked' : '' }}
                 />
                 <label class="form-check-label" for="price7">
-                  $1,000 to $10,000
+                  {{ $settings->currency_symbol ?? '$' }}1,000 to {{ $settings->currency_symbol ?? '$' }}10,000
                 </label>
               </div>
             </form>
@@ -1522,8 +1231,831 @@
       </div>
     </section>
 
-    
-
+    <!-- Cart Bar -->
+    <div id="cartBar" class="cart-bar" style="display: none;">
+      <div class="container">
+        <div class="cart-bar-content">
+          <div class="cart-bar-info">
+            <div class="cart-icon-wrapper">
+              <i class="bi bi-cart-fill"></i>
+              <span class="cart-count-badge" id="cartCountBadge">0</span>
+            </div>
+            <div class="cart-summary">
+              <span class="cart-items-text" id="cartItemsText">0 items</span>
+              <span class="cart-total-text" id="cartTotalText">$0.00</span>
+            </div>
+          </div>
+          <div class="cart-bar-actions">
+            <a href="{{ route('frontend.cart') }}" class="btn btn-view-cart">View Cart</a>
+            <a href="{{ route('frontend.checkout') }}" class="btn btn-checkout">Checkout</a>
+          </div>
+        </div>
+      </div>
+    </div>
 
 @endsection
 
+@push('styles')
+<style>
+.featured-product-item {
+  display: none;
+}
+.featured-product-item.active {
+  display: block;
+}
+
+/* Category dropdown hover effect */
+.dropdown.show-on-hover {
+  position: relative;
+}
+
+.dropdown.show-on-hover .dropdown-menu {
+  display: none;
+  margin-top: 0;
+  min-width: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.dropdown.show-on-hover:hover .dropdown-menu,
+.dropdown.show-on-hover.show .dropdown-menu {
+  display: block;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+}
+
+.dropdown.show-on-hover .dropdown-menu:hover {
+  display: block;
+}
+
+.dropdown-item.active {
+  background-color: #f8f9fa;
+  color: #5B265D;
+  font-weight: 500;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+  color: #5B265D;
+}
+
+/* Cart Bar Styles */
+.cart-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 2px solid #5B265D;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1050;
+  padding: 1rem 0;
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Add padding to body when cart bar is visible */
+body:has(#cartBar[style*="display: block"]) {
+  padding-bottom: 100px;
+}
+
+@media (max-width: 768px) {
+  body:has(#cartBar[style*="display: block"]) {
+    padding-bottom: 140px;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.cart-bar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.cart-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.cart-icon-wrapper {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #5B265D 0%, #7a3a7d 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.5rem;
+}
+
+.cart-count-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ff4444;
+  color: #fff;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 2px solid #fff;
+}
+
+.cart-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.cart-items-text {
+  font-size: 0.875rem;
+  color: #5F6C72;
+  font-weight: 400;
+}
+
+.cart-total-text {
+  font-size: 1.25rem;
+  color: #5B265D;
+  font-weight: 600;
+}
+
+.cart-bar-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn-view-cart {
+  background: #fff;
+  color: #5B265D;
+  border: 2px solid #5B265D;
+  padding: 0.75rem 1.5rem;
+  border-radius: 5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.btn-view-cart:hover {
+  background: #5B265D;
+  color: #fff;
+}
+
+.btn-checkout {
+  background: linear-gradient(135deg, #5B265D 0%, #7a3a7d 100%);
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.btn-checkout:hover {
+  background: linear-gradient(135deg, #7a3a7d 0%, #5B265D 100%);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(91, 38, 93, 0.3);
+}
+
+/* Cart Notification */
+.cart-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 1rem 1.5rem;
+  border-radius: 5px;
+  color: #fff;
+  font-weight: 500;
+  z-index: 9999;
+  opacity: 0;
+  transform: translateX(400px);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cart-notification.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.cart-notification-success {
+  background: #28a745;
+}
+
+.cart-notification-error {
+  background: #dc3545;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .cart-bar {
+    padding: 0.75rem 0;
+  }
+  
+  .cart-bar-content {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .cart-bar-info {
+    justify-content: center;
+  }
+  
+  .cart-bar-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .btn-view-cart,
+  .btn-checkout {
+    width: 100%;
+    text-align: center;
+  }
+  
+  .cart-summary {
+    text-align: center;
+  }
+  
+  .cart-notification {
+    right: 10px;
+    left: 10px;
+    transform: translateY(-100px);
+  }
+  
+  .cart-notification.show {
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 576px) {
+  .cart-icon-wrapper {
+    width: 45px;
+    height: 45px;
+    font-size: 1.25rem;
+  }
+  
+  .cart-total-text {
+    font-size: 1.1rem;
+  }
+  
+  .cart-items-text {
+    font-size: 0.8rem;
+  }
+}
+</style>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const featuredProducts = document.querySelectorAll('.featured-product-item');
+  if (featuredProducts.length > 1) {
+    let currentIndex = 0;
+    setInterval(function() {
+      featuredProducts[currentIndex].classList.remove('active');
+      currentIndex = (currentIndex + 1) % featuredProducts.length;
+      featuredProducts[currentIndex].classList.add('active');
+    }, 7000); // Rotate every 7 seconds
+  }
+  
+  // Loading state
+  let isLoading = false;
+  let searchTimeout = null;
+  
+  // Unified AJAX filter function
+  function applyFilters() {
+    if (isLoading) return;
+    
+    isLoading = true;
+    const productGrid = document.getElementById('productGrid');
+    const paginationContainer = document.getElementById('paginationContainer');
+    const activeFiltersContainer = document.getElementById('activeFiltersContainer');
+    const totalResults = document.getElementById('totalResults');
+    
+    // Show loading state
+    if (productGrid) {
+      productGrid.style.opacity = '0.5';
+      productGrid.style.pointerEvents = 'none';
+    }
+    
+    // Collect all filter values
+    const formData = new FormData();
+    
+    // Search
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput && searchInput.value.trim()) {
+      formData.append('search', searchInput.value.trim());
+    }
+    
+    // Category
+    const categoryInput = document.querySelector('#categoryFilter input[type="radio"]:checked');
+    if (categoryInput && categoryInput.value) {
+      formData.append('category', categoryInput.value);
+    }
+    
+    // Brand
+    const brandCheckbox = document.querySelector('.brand-checkbox:checked');
+    if (brandCheckbox) {
+      formData.append('brand', brandCheckbox.value);
+    }
+    
+    // Price range
+    const minInput = document.getElementById('minInput');
+    const maxInput = document.getElementById('maxInput');
+    if (minInput && minInput.value.trim()) {
+      formData.append('min_price', minInput.value.trim());
+    }
+    if (maxInput && maxInput.value.trim()) {
+      formData.append('max_price', maxInput.value.trim());
+    }
+    
+    // Sort
+    const urlParams = new URLSearchParams(window.location.search);
+    const sortParam = urlParams.get('sort');
+    if (sortParam) {
+      formData.append('sort', sortParam);
+    }
+    
+    // Tag
+    const tagParam = urlParams.get('tag');
+    if (tagParam) {
+      formData.append('tag', tagParam);
+    }
+    
+    // Page
+    const pageParam = urlParams.get('page');
+    if (pageParam) {
+      formData.append('page', pageParam);
+    }
+    
+    // Update URL without reload
+    const newUrl = new URL(window.location.pathname, window.location.origin);
+    if (searchInput && searchInput.value.trim()) {
+      newUrl.searchParams.set('search', searchInput.value.trim());
+    } else {
+      newUrl.searchParams.delete('search');
+    }
+    if (categoryInput && categoryInput.value) {
+      newUrl.searchParams.set('category', categoryInput.value);
+    } else {
+      newUrl.searchParams.delete('category');
+    }
+    if (brandCheckbox) {
+      newUrl.searchParams.set('brand', brandCheckbox.value);
+    } else {
+      newUrl.searchParams.delete('brand');
+    }
+    if (minInput && minInput.value.trim()) {
+      newUrl.searchParams.set('min_price', minInput.value.trim());
+    } else {
+      newUrl.searchParams.delete('min_price');
+    }
+    if (maxInput && maxInput.value.trim()) {
+      newUrl.searchParams.set('max_price', maxInput.value.trim());
+    } else {
+      newUrl.searchParams.delete('max_price');
+    }
+    if (sortParam) {
+      newUrl.searchParams.set('sort', sortParam);
+    }
+    if (tagParam) {
+      newUrl.searchParams.set('tag', tagParam);
+    }
+    if (pageParam) {
+      newUrl.searchParams.set('page', pageParam);
+    } else {
+      newUrl.searchParams.delete('page');
+    }
+    
+    window.history.pushState({}, '', newUrl.toString());
+    
+    // Make AJAX request
+    fetch('{{ route("frontend.marketplace.filter") }}', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Update product grid
+        if (productGrid) {
+          productGrid.innerHTML = data.products_html;
+          productGrid.style.opacity = '1';
+          productGrid.style.pointerEvents = 'auto';
+        }
+        
+        // Update pagination
+        if (paginationContainer) {
+          paginationContainer.innerHTML = data.pagination_html;
+        }
+        
+        // Update active filters
+        if (activeFiltersContainer) {
+          if (data.has_filters) {
+            activeFiltersContainer.innerHTML = '<span class="text-secondary me-1 fs-14 fw-400">Active Filters:</span>' + data.active_filters_html + '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllFilters()">Clear All</button>';
+          } else {
+            activeFiltersContainer.innerHTML = '<span class="text-secondary fs-14 fw-400">No active filters</span>';
+          }
+        }
+        
+        // Update total results
+        if (totalResults) {
+          totalResults.textContent = new Intl.NumberFormat().format(data.total_results);
+        }
+      }
+      isLoading = false;
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      isLoading = false;
+      if (productGrid) {
+        productGrid.style.opacity = '1';
+        productGrid.style.pointerEvents = 'auto';
+      }
+    });
+  }
+  
+  // Make applyFilters globally accessible
+  window.applyFilters = applyFilters;
+  
+  // Search input with debouncing
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(function() {
+        applyFilters();
+      }, 500); // 500ms debounce
+    });
+  }
+  
+  // Category filter
+  const categoryInputs = document.querySelectorAll('#categoryFilter input[type="radio"]');
+  categoryInputs.forEach(input => {
+    input.addEventListener('change', function() {
+      applyFilters();
+    });
+  });
+  
+  // Brand filter
+  const brandCheckboxes = document.querySelectorAll('.brand-checkbox');
+  brandCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+      applyFilters();
+    });
+  });
+  
+  // Price range filter
+  const minInput = document.getElementById('minInput');
+  const maxInput = document.getElementById('maxInput');
+  const minRange = document.querySelector('.min_range');
+  const maxRange = document.querySelector('.max_range');
+  
+  // Apply filter on Enter key or when input loses focus
+  if (minInput && maxInput) {
+    minInput.addEventListener('blur', applyFilters);
+    maxInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        applyFilters();
+      }
+    });
+    maxInput.addEventListener('blur', applyFilters);
+  }
+  
+  // Update range sliders
+  if (minRange && maxRange && minInput && maxInput) {
+    minRange.addEventListener('input', function() {
+      minInput.value = this.value;
+    });
+    maxRange.addEventListener('input', function() {
+      maxInput.value = this.value;
+    });
+    minRange.addEventListener('change', applyFilters);
+    maxRange.addEventListener('change', applyFilters);
+  }
+  
+  // Price radio buttons
+  const priceRadios = document.querySelectorAll('.price-radio');
+  priceRadios.forEach(radio => {
+    radio.addEventListener('change', function() {
+      const minPrice = this.getAttribute('data-min');
+      const maxPrice = this.getAttribute('data-max');
+      
+      // Update the manual price inputs to match
+      if (minInput && maxInput) {
+        if (this.value === 'all') {
+          minInput.value = '';
+          maxInput.value = '';
+        } else {
+          minInput.value = minPrice;
+          maxInput.value = maxPrice;
+        }
+      }
+      
+      // Update range sliders if they exist
+      if (minRange && maxRange) {
+        if (this.value === 'all') {
+          minRange.value = 0;
+          maxRange.value = 10000;
+        } else {
+          minRange.value = minPrice;
+          maxRange.value = maxPrice;
+        }
+      }
+      
+      applyFilters();
+    });
+  });
+  
+  // Tag links - convert to AJAX
+  const tagLinks = document.querySelectorAll('.popular-tags a.tag-btn');
+  tagLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const tagId = this.getAttribute('href').split('tag=')[1];
+      const url = new URL(window.location.href);
+      if (tagId && tagId !== '') {
+        url.searchParams.set('tag', tagId);
+      } else {
+        url.searchParams.delete('tag');
+      }
+      window.history.pushState({}, '', url.toString());
+      applyFilters();
+    });
+  });
+  
+  // Category dropdown - ensure it works on both click and hover
+  const categoryDropdown = document.querySelector('.show-on-hover');
+  const categoryDropdownMenu = categoryDropdown?.querySelector('.dropdown-menu');
+  
+  if (categoryDropdown && categoryDropdownMenu) {
+    let hoverTimeout;
+    
+    // Show dropdown on hover
+    categoryDropdown.addEventListener('mouseenter', function() {
+      clearTimeout(hoverTimeout);
+      this.classList.add('show');
+      categoryDropdownMenu.classList.add('show');
+    });
+    
+    // Hide dropdown when mouse leaves (with small delay to allow moving to menu)
+    categoryDropdown.addEventListener('mouseleave', function() {
+      const self = this;
+      hoverTimeout = setTimeout(function() {
+        self.classList.remove('show');
+        categoryDropdownMenu.classList.remove('show');
+      }, 200); // 200ms delay
+    });
+    
+    // Keep dropdown open when hovering over menu
+    categoryDropdownMenu.addEventListener('mouseenter', function() {
+      clearTimeout(hoverTimeout);
+      categoryDropdown.classList.add('show');
+      this.classList.add('show');
+    });
+    
+    // Handle click to toggle (for mobile/touch devices)
+    const categoryButton = categoryDropdown.querySelector('[data-bs-toggle="dropdown"]');
+    if (categoryButton) {
+      categoryButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const isOpen = categoryDropdown.classList.contains('show');
+        if (isOpen) {
+          categoryDropdown.classList.remove('show');
+          categoryDropdownMenu.classList.remove('show');
+        } else {
+          categoryDropdown.classList.add('show');
+          categoryDropdownMenu.classList.add('show');
+        }
+      });
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!categoryDropdown.contains(e.target)) {
+        categoryDropdown.classList.remove('show');
+        categoryDropdownMenu.classList.remove('show');
+      }
+    });
+  }
+  
+  // Handle pagination links with AJAX (delegated event listener)
+  document.addEventListener('click', function(e) {
+    const paginationLink = e.target.closest('.pagination a, .pagination-nav a');
+    if (paginationLink) {
+      e.preventDefault();
+      const url = new URL(paginationLink.href);
+      const page = url.searchParams.get('page');
+      if (page) {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('page', page);
+        window.history.pushState({}, '', currentUrl.toString());
+        if (typeof window.applyFilters === 'function') {
+          window.applyFilters();
+        }
+      }
+    }
+  });
+});
+
+// Cart functionality
+function addToCart(productId) {
+  fetch(`{{ url('/cart/add') }}/${productId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      updateCartBar();
+      // Show success notification
+      showCartNotification('Product added to cart!', 'success');
+    } else {
+      showCartNotification(data.message || 'Failed to add product to cart', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showCartNotification('An error occurred. Please try again.', 'error');
+  });
+}
+
+function updateCartBar() {
+  fetch('{{ route("frontend.cart.get") }}', {
+    method: 'GET',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      const cartBar = document.getElementById('cartBar');
+      const cartCountBadge = document.getElementById('cartCountBadge');
+      const cartItemsText = document.getElementById('cartItemsText');
+      const cartTotalText = document.getElementById('cartTotalText');
+      
+      if (data.cart_count > 0) {
+        cartBar.style.display = 'block';
+        cartCountBadge.textContent = data.cart_count;
+        cartItemsText.textContent = data.cart_count === 1 ? '1 item' : `${data.cart_count} items`;
+        cartTotalText.textContent = data.cart_total_formatted;
+        // Add padding to body to prevent content from being hidden
+        document.body.style.paddingBottom = window.innerWidth <= 768 ? '140px' : '100px';
+      } else {
+        cartBar.style.display = 'none';
+        // Remove padding when cart is empty
+        document.body.style.paddingBottom = '0';
+      }
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
+}
+
+function showCartNotification(message, type) {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `cart-notification cart-notification-${type}`;
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  
+  // Show notification
+  setTimeout(() => {
+    notification.classList.add('show');
+  }, 10);
+  
+  // Hide and remove notification after 3 seconds
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => {
+      notification.remove();
+    }, 300);
+  }, 3000);
+}
+
+// Initialize cart bar on page load
+document.addEventListener('DOMContentLoaded', function() {
+  updateCartBar();
+  
+  // Add click handlers to all cart icons (including dynamically loaded ones)
+  document.addEventListener('click', function(e) {
+    const cartBtn = e.target.closest('.add-to-cart-btn');
+    if (cartBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const productId = cartBtn.getAttribute('data-product-id');
+      if (productId) {
+        addToCart(productId);
+      }
+    }
+  });
+});
+
+function removeFilter(filterType) {
+  const url = new URL(window.location.href);
+  url.searchParams.delete(filterType);
+  
+  // Also uncheck the corresponding filter
+  if (filterType === 'category') {
+    const categoryInput = document.querySelector('#categoryFilter input[value=""]');
+    if (categoryInput) categoryInput.checked = true;
+  } else if (filterType === 'brand') {
+    const brandCheckbox = document.querySelector('.brand-checkbox:checked');
+    if (brandCheckbox) brandCheckbox.checked = false;
+  } else if (filterType === 'min_price' || filterType === 'max_price') {
+    const minInput = document.getElementById('minInput');
+    const maxInput = document.getElementById('maxInput');
+    if (filterType === 'min_price' && minInput) minInput.value = '';
+    if (filterType === 'max_price' && maxInput) maxInput.value = '';
+    const allPriceRadio = document.querySelector('.price-radio[value="all"]');
+    if (allPriceRadio) allPriceRadio.checked = true;
+  } else if (filterType === 'tag') {
+    url.searchParams.delete('tag');
+  } else if (filterType === 'search') {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.value = '';
+  }
+  
+  window.history.pushState({}, '', url.toString());
+  
+  // Trigger filter update
+  if (typeof window.applyFilters === 'function') {
+    window.applyFilters();
+  }
+}
+
+function clearAllFilters() {
+  const url = new URL(window.location.href);
+  // Remove all filter parameters
+  url.searchParams.delete('category');
+  url.searchParams.delete('brand');
+  url.searchParams.delete('tag');
+  url.searchParams.delete('min_price');
+  url.searchParams.delete('max_price');
+  url.searchParams.delete('search');
+  url.searchParams.delete('page');
+  
+  // Reset form elements
+  const categoryInput = document.querySelector('#categoryFilter input[value=""]');
+  if (categoryInput) categoryInput.checked = true;
+  
+  const brandCheckboxes = document.querySelectorAll('.brand-checkbox');
+  brandCheckboxes.forEach(cb => cb.checked = false);
+  
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) searchInput.value = '';
+  
+  const minInput = document.getElementById('minInput');
+  const maxInput = document.getElementById('maxInput');
+  if (minInput) minInput.value = '';
+  if (maxInput) maxInput.value = '';
+  
+  const allPriceRadio = document.querySelector('.price-radio[value="all"]');
+  if (allPriceRadio) allPriceRadio.checked = true;
+  
+  window.history.pushState({}, '', url.toString());
+  
+  // Trigger filter update
+  if (typeof window.applyFilters === 'function') {
+    window.applyFilters();
+  }
+}
+</script>
+@endpush

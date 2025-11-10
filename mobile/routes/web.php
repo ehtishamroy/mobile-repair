@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\AboutPageContentController;
 use App\Http\Controllers\Admin\ServicePageContentController;
 use App\Http\Controllers\Admin\JoinPageContentController;
 use App\Http\Controllers\Frontend\HomeController;
+use App\Http\Controllers\Frontend\CartController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/about', [HomeController::class, 'about'])->name('frontend.about');
@@ -27,6 +28,7 @@ Route::get('/contact', [HomeController::class, 'contact'])->name('frontend.conta
 Route::get('/join', [HomeController::class, 'join'])->name('frontend.join');
 Route::get('/checkout', [HomeController::class, 'checkout'])->name('frontend.checkout');
 Route::get('/marketplace', [HomeController::class, 'marketplace'])->name('frontend.marketplace');
+Route::post('/marketplace/filter', [HomeController::class, 'marketplaceFilter'])->name('frontend.marketplace.filter');
 Route::get('/service', [HomeController::class, 'service'])->name('frontend.service');
 Route::get('/wishlist', [HomeController::class, 'wishlist'])->name('frontend.wishlist');
 Route::get('/track-order', [HomeController::class, 'trackOrder'])->name('frontend.track-order');
@@ -35,6 +37,13 @@ Route::get('/select', [HomeController::class, 'select'])->name('frontend.select'
 Route::get('/product/{slug}', [HomeController::class, 'productDetail'])->name('frontend.product-detail');
 Route::get('/place-order', [HomeController::class, 'placeOrder'])->name('frontend.place-order');
 Route::get('/mobile-repair', [HomeController::class, 'mobileRepair'])->name('frontend.mobile-repair');
+
+// Cart Routes
+Route::post('/cart/add/{product}', [CartController::class, 'add'])->name('frontend.cart.add');
+Route::post('/cart/remove/{product}', [CartController::class, 'remove'])->name('frontend.cart.remove');
+Route::post('/cart/update/{product}', [CartController::class, 'update'])->name('frontend.cart.update');
+Route::get('/cart/get', [CartController::class, 'getCart'])->name('frontend.cart.get');
+Route::post('/cart/clear', [CartController::class, 'clear'])->name('frontend.cart.clear');
 
 // Frontend Authentication Routes (for regular users/customers)
 Route::middleware('guest')->group(function () {

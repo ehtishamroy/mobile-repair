@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 use App\Models\Setting;
+use App\Models\Category;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,7 +25,9 @@ class AppServiceProvider extends ServiceProvider
         // Share settings with all views
         View::composer('*', function ($view) {
             $settings = Setting::getSettings();
+            $categories = Category::where('is_active', true)->orderBy('name')->get();
             $view->with('settings', $settings);
+            $view->with('categories', $categories);
         });
     }
 }
