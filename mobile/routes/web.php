@@ -19,6 +19,8 @@ use App\Http\Controllers\Admin\HomepageContentController;
 use App\Http\Controllers\Admin\AboutPageContentController;
 use App\Http\Controllers\Admin\ServicePageContentController;
 use App\Http\Controllers\Admin\JoinPageContentController;
+use App\Http\Controllers\Admin\ShippingOptionController;
+use App\Http\Controllers\Admin\GlobalFeatureController;
 use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\CartController;
 
@@ -27,6 +29,8 @@ Route::get('/about', [HomeController::class, 'about'])->name('frontend.about');
 Route::get('/contact', [HomeController::class, 'contact'])->name('frontend.contact');
 Route::get('/join', [HomeController::class, 'join'])->name('frontend.join');
 Route::get('/checkout', [HomeController::class, 'checkout'])->name('frontend.checkout');
+Route::post('/checkout/process', [HomeController::class, 'processCheckout'])->name('frontend.checkout.process');
+Route::post('/checkout/create-paypal-order', [HomeController::class, 'createPayPalOrder'])->name('frontend.checkout.create-paypal-order');
 Route::get('/marketplace', [HomeController::class, 'marketplace'])->name('frontend.marketplace');
 Route::post('/marketplace/filter', [HomeController::class, 'marketplaceFilter'])->name('frontend.marketplace.filter');
 Route::get('/service', [HomeController::class, 'service'])->name('frontend.service');
@@ -35,6 +39,10 @@ Route::get('/track-order', [HomeController::class, 'trackOrder'])->name('fronten
 Route::get('/cart', [HomeController::class, 'cart'])->name('frontend.cart');
 Route::get('/select', [HomeController::class, 'select'])->name('frontend.select');
 Route::get('/product/{slug}', [HomeController::class, 'productDetail'])->name('frontend.product-detail');
+Route::post('/product/{slug}/variant-price', [HomeController::class, 'getVariantPrice'])->name('frontend.product.variant-price');
+Route::post('/product/{slug}/reviews', [HomeController::class, 'storeReview'])->name('frontend.product.reviews.store');
+Route::post('/wishlist/add/{product}', [HomeController::class, 'addToWishlist'])->name('frontend.wishlist.add');
+Route::post('/wishlist/remove/{product}', [HomeController::class, 'removeFromWishlist'])->name('frontend.wishlist.remove');
 Route::get('/place-order', [HomeController::class, 'placeOrder'])->name('frontend.place-order');
 Route::get('/mobile-repair', [HomeController::class, 'mobileRepair'])->name('frontend.mobile-repair');
 
@@ -44,6 +52,10 @@ Route::post('/cart/remove/{product}', [CartController::class, 'remove'])->name('
 Route::post('/cart/update/{product}', [CartController::class, 'update'])->name('frontend.cart.update');
 Route::get('/cart/get', [CartController::class, 'getCart'])->name('frontend.cart.get');
 Route::post('/cart/clear', [CartController::class, 'clear'])->name('frontend.cart.clear');
+
+// Coupon Routes
+Route::post('/coupon/validate', [CartController::class, 'validateCoupon'])->name('frontend.coupon.validate');
+Route::post('/coupon/remove', [CartController::class, 'removeCoupon'])->name('frontend.coupon.remove');
 
 // Frontend Authentication Routes (for regular users/customers)
 Route::middleware('guest')->group(function () {
@@ -97,6 +109,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
             // Join Page Content Management (Admin/Superadmin only)
             Route::get('/join-page-content', [JoinPageContentController::class, 'index'])->name('join-page-content.index');
             Route::put('/join-page-content', [JoinPageContentController::class, 'update'])->name('join-page-content.update');
+            
+            // Shipping Options Management (Admin/Superadmin only)
+            Route::get('/shipping-options', [ShippingOptionController::class, 'index'])->name('shipping-options.index');
+            Route::post('/shipping-options', [ShippingOptionController::class, 'store'])->name('shipping-options.store');
+            Route::put('/shipping-options/{shippingOption}', [ShippingOptionController::class, 'update'])->name('shipping-options.update');
+            Route::delete('/shipping-options/{shippingOption}', [ShippingOptionController::class, 'destroy'])->name('shipping-options.destroy');
+            
+            // Global Features Management (Admin/Superadmin only)
+            Route::get('/global-features', [GlobalFeatureController::class, 'index'])->name('global-features.index');
+            Route::post('/global-features', [GlobalFeatureController::class, 'store'])->name('global-features.store');
+            Route::put('/global-features/{globalFeature}', [GlobalFeatureController::class, 'update'])->name('global-features.update');
+            Route::delete('/global-features/{globalFeature}', [GlobalFeatureController::class, 'destroy'])->name('global-features.destroy');
         });
         
         // Roles Management - Only users with manage-roles permission

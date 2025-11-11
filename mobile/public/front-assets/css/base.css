@@ -1,4 +1,5 @@
 /* ================= Satoshi Variable Font ================= */
+/* Commented out - Variable font files not available
 @font-face {
   font-family: "Satoshi Variable";
   src: url("../fonts/Satoshi-Variable.woff2") format("woff2"),
@@ -7,6 +8,7 @@
   font-style: normal;
   font-display: swap;
 }
+*/
 /* ============ Satoshi Font Family Setup ============ */
 @font-face {
   font-family: "Satoshi";
@@ -163,7 +165,7 @@ h5,
 h6 {
   color: var(--heading-font);
   font-weight: 700;
-  font-family: "Satoshi Variable", "Inter", sans-serif;
+  font-family: "Satoshi", "Inter", sans-serif;
 }
 p {
   color: var(--muted);

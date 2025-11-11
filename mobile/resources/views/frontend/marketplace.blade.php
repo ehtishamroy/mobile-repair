@@ -688,26 +688,50 @@
                     @endif
                     <div class="card-body">
                       <div class="ratio ratio-1x1 thumb">
-                        <img src="{{ $product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg') }}" alt="{{ $product->name }}" class="w-100 h-100 p-2 rounded" />
+                        <a href="{{ route('frontend.product-detail', $product->slug) }}" class="d-block h-100">
+                          <img src="{{ $product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg') }}" alt="{{ $product->name }}" class="w-100 h-100 p-2 rounded" />
+                        </a>
                         <div class="product-actions">
                           <div class="action-btn"><i class="bi bi-heart"></i></div>
                           <div class="action-btn add-to-cart-btn" data-product-id="{{ $product->id }}" title="Add to Cart">
                             <i class="bi bi-cart"></i>
                           </div>
-                          <div class="action-btn"><i class="bi bi-eye"></i></div>
+                          <a href="{{ route('frontend.product-detail', $product->slug) }}" class="action-btn" title="View Product">
+                            <i class="bi bi-eye"></i>
+                          </a>
                         </div>
                       </div>
-                      <div class="rating mt-3 d-flex align-items-center">
-                        <span class="text-primary-custom">
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
-                          <i class="bi bi-star-fill"></i>
+                      @php
+                        $marketplaceRating = round($product->approved_rating ?? 0, 1);
+                        $marketplaceReviewCount = $product->approved_reviews_count ?? 0;
+                        $marketplaceRounded = $marketplaceReviewCount > 0 ? round($marketplaceRating * 2) / 2 : 0;
+                        $marketplaceFull = (int) floor($marketplaceRounded);
+                        $marketplaceHalf = ($marketplaceRounded - $marketplaceFull) === 0.5;
+                        $marketplaceEmpty = 5 - $marketplaceFull - ($marketplaceHalf ? 1 : 0);
+                      @endphp
+                      <div class="rating mt-3 d-flex align-items-center gap-2">
+                        <span class="text-primary-custom rating-stars-sm">
+                          @for ($i = 0; $i < $marketplaceFull; $i++)
+                            <i class="bi bi-star-fill"></i>
+                          @endfor
+                          @if ($marketplaceHalf)
+                            <i class="bi bi-star-half"></i>
+                          @endif
+                          @for ($i = 0; $i < $marketplaceEmpty; $i++)
+                            <i class="bi bi-star"></i>
+                          @endfor
                         </span>
-                        <span class="rating-count">(0)</span>
+                        <span class="rating-count">
+                          @if($marketplaceReviewCount > 0)
+                            {{ number_format($marketplaceRating, 1) }} ({{ $marketplaceReviewCount }})
+                          @else
+                            (0)
+                          @endif
+                        </span>
                       </div>
-                      <p class="product-title mt-2 mb-0">{{ Str::limit($product->name, 50) }}</p>
+                      <a href="{{ route('frontend.product-detail', $product->slug) }}" class="text-decoration-none text-dark">
+                        <p class="product-title mt-2 mb-0">{{ Str::limit($product->name, 50) }}</p>
+                      </a>
                       <div class="product-price text-promo">
                         {{ $settings->currency_symbol ?? '$' }}{{ number_format($product->price, 2) }}
                         @if($product->compare_at_price)
@@ -1299,6 +1323,11 @@
 .dropdown-item:hover {
   background-color: #f8f9fa;
   color: #5B265D;
+}
+
+.rating-stars-sm i {
+  color: #ffb648;
+  font-size: 1rem;
 }
 
 /* Cart Bar Styles */

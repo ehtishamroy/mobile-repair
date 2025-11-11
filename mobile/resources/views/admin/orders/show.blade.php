@@ -64,7 +64,16 @@
                     <tbody>
                         @foreach($order->items as $item)
                         <tr>
-                            <td>{{ $item->product_name }}</td>
+                            <td>
+                                {{ $item->product_name }}
+                                @if(!empty($item->variant_data))
+                                    <div class="text-muted small mt-1">
+                                        @foreach($item->variant_data as $variantName => $variantValue)
+                                            <div><strong>{{ $variantName }}:</strong> {{ $variantValue }}</div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </td>
                             <td>{{ $item->product_sku ?? 'N/A' }}</td>
                             <td>{{ $settings->currency_symbol ?? '$' }}{{ number_format($item->price, 2) }}</td>
                             <td>{{ $item->quantity }}</td>

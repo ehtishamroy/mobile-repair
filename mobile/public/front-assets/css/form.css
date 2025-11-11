@@ -4,7 +4,7 @@
   border-radius: 0.5rem;
   width: 100%;
   font-weight: 300;
-  font-size: clamp(14px, 1.2vw, 18px);
+  font-size: clamp(14px, 1vw, 16px);
   padding: 0.75rem 1rem;
   color: var(--muted);
 
@@ -14,14 +14,14 @@
   }
   &::placeholder {
     font-weight: 300;
-    font-size: clamp(14px, 1.2vw, 18px);
+    font-size: clamp(14px, 1vw, 16px);
   }
 }
 
 .form-label {
   color: var(--heading-font);
   font-weight: 500;
-  font-size: clamp(15px, 1.3vw, 20px);
+  font-size: clamp(14px, 1vw, 16px);
 
   margin-bottom: 10px;
 }
@@ -31,7 +31,7 @@
   border-radius: 0.5rem;
   width: 100%;
   font-weight: 300;
-  font-size: clamp(14px, 1.3vw, 18px);
+  font-size: clamp(14px, 1vw, 16px);
   padding: 0.75rem 1rem;
   color: var(--muted);
   appearance: none;

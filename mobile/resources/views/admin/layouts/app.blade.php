@@ -213,6 +213,18 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="{{ route('admin.shipping-options.index') }}" class="nav-link {{ request()->routeIs('admin.shipping-options.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-shipping-fast"></i>
+                            <p>Shipping Options</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.global-features.index') }}" class="nav-link {{ request()->routeIs('admin.global-features.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-star"></i>
+                            <p>Global Features</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="{{ route('admin.settings.index') }}" class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-cog"></i>
                             <p>Settings</p>

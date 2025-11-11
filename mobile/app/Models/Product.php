@@ -65,6 +65,16 @@ class Product extends Model
         return $this->belongsToMany(Tag::class, 'product_tags');
     }
 
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    public function approvedReviews()
+    {
+        return $this->reviews()->where('is_approved', true);
+    }
+
     public function variants()
     {
         return $this->hasMany(ProductVariant::class)->orderBy('order');

@@ -11,8 +11,15 @@ use App\Models\Category;
 use App\Models\Brand;
 use App\Models\Tag;
 use App\Models\Product;
+use App\Models\ProductReview;
+use App\Models\ShippingOption;
+use App\Models\GlobalFeature;
 use App\Models\Setting;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Coupon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
 {
@@ -41,7 +48,56 @@ class HomeController extends Controller
 
     public function checkout()
     {
-        return view('frontend.checkout');
+        $cart = session()->get('cart', []);
+        
+        if (empty($cart)) {
+            return redirect()->route('frontend.cart')->with('error', 'Your cart is empty.');
+        }
+        
+        $settings = Setting::getSettings();
+        $currencySymbol = $settings->currency_symbol ?? '£';
+        
+        $cartItems = [];
+        $subtotal = 0;
+        
+        foreach ($cart as $key => $item) {
+            $itemSubtotal = $item['price'] * $item['quantity'];
+            $subtotal += $itemSubtotal;
+            
+            $cartItems[] = [
+                'id' => $item['id'],
+                'cart_key' => $key,
+                'name' => $item['name'],
+                'slug' => $item['slug'],
+                'price' => $item['price'],
+                'compare_at_price' => $item['compare_at_price'] ?? null,
+                'featured_image' => $item['featured_image'],
+                'quantity' => $item['quantity'],
+                'subtotal' => $itemSubtotal,
+                'variants' => $item['variants'] ?? []
+            ];
+        }
+        
+        // Get applied coupon from session
+        $appliedCoupon = session()->get('applied_coupon', null);
+        $discount = 0;
+        
+        if ($appliedCoupon) {
+            $coupon = \App\Models\Coupon::where('code', $appliedCoupon)->first();
+            if ($coupon && $coupon->isValid()) {
+                $discount = $coupon->calculateDiscount($subtotal);
+            } else {
+                session()->forget('applied_coupon');
+                $appliedCoupon = null;
+            }
+        }
+        
+        // Calculate totals
+        $shipping = 0; // Free shipping for now
+        $tax = 0; // VAT will be calculated if needed
+        $total = $subtotal + $shipping + $tax - $discount;
+        
+        return view('frontend.checkout', compact('cartItems', 'subtotal', 'shipping', 'discount', 'tax', 'total', 'settings', 'currencySymbol', 'appliedCoupon'));
     }
 
     public function marketplace(Request $request)
@@ -58,7 +114,14 @@ class HomeController extends Controller
             ->get();
         
         // Get all products for the main grid (with filters)
-        $query = Product::where('is_active', true)->with(['category', 'brand', 'tags']);
+        $query = Product::where('is_active', true)
+            ->with(['category', 'brand', 'tags'])
+            ->withAvg(['approvedReviews as approved_rating' => function ($query) {
+                $query->where('is_approved', true);
+            }], 'rating')
+            ->withCount(['approvedReviews as approved_reviews_count' => function ($query) {
+                $query->where('is_approved', true);
+            }]);
         
         // Apply search filter if provided
         if ($request->has('search') && $request->search) {
@@ -188,7 +251,14 @@ class HomeController extends Controller
         $currencySymbol = $settings->currency_symbol ?? '$';
         
         // Get all products for the main grid (with filters)
-        $query = Product::where('is_active', true)->with(['category', 'brand', 'tags']);
+        $query = Product::where('is_active', true)
+            ->with(['category', 'brand', 'tags'])
+            ->withAvg(['approvedReviews as approved_rating' => function ($query) {
+                $query->where('is_approved', true);
+            }], 'rating')
+            ->withCount(['approvedReviews as approved_reviews_count' => function ($query) {
+                $query->where('is_approved', true);
+            }]);
         
         // Apply search filter if provided
         if ($request->has('search') && $request->search) {
@@ -320,20 +390,40 @@ class HomeController extends Controller
                 } elseif ($product->is_best_deal) {
                     $productsHtml .= '<span class="product-badge badge-danger">BEST DEALS</span>';
                 }
+                $ratingValue = round($product->approved_rating ?? 0, 1);
+                $reviewsCountValue = $product->approved_reviews_count ?? 0;
+                $roundedRatingValue = $reviewsCountValue > 0 ? round($ratingValue * 2) / 2 : 0;
+                $fullStarsValue = (int) floor($roundedRatingValue);
+                $hasHalfStarValue = ($roundedRatingValue - $fullStarsValue) === 0.5;
+                $emptyStarsValue = 5 - $fullStarsValue - ($hasHalfStarValue ? 1 : 0);
+                $starsHtml = '';
+                for ($i = 0; $i < $fullStarsValue; $i++) {
+                    $starsHtml .= '<i class="bi bi-star-fill"></i>';
+                }
+                if ($hasHalfStarValue) {
+                    $starsHtml .= '<i class="bi bi-star-half"></i>';
+                }
+                for ($i = 0; $i < $emptyStarsValue; $i++) {
+                    $starsHtml .= '<i class="bi bi-star"></i>';
+                }
                 $productsHtml .= '<div class="card-body">';
                 $productsHtml .= '<div class="ratio ratio-1x1 thumb">';
-                $productsHtml .= '<a href="' . $productUrl . '"><img src="' . ($product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg')) . '" alt="' . htmlspecialchars($product->name) . '" class="w-100 h-100 p-2 rounded" /></a>';
+                $productsHtml .= '<a href="' . $productUrl . '" class="d-block h-100"><img src="' . ($product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg')) . '" alt="' . htmlspecialchars($product->name) . '" class="w-100 h-100 p-2 rounded" /></a>';
                 $productsHtml .= '<div class="product-actions">';
                 $productsHtml .= '<div class="action-btn"><i class="bi bi-heart"></i></div>';
                 $productsHtml .= '<div class="action-btn add-to-cart-btn" data-product-id="' . $product->id . '" title="Add to Cart"><i class="bi bi-cart"></i></div>';
-                $productsHtml .= '<div class="action-btn"><i class="bi bi-eye"></i></div>';
+                $productsHtml .= '<a href="' . $productUrl . '" class="action-btn" title="View Product"><i class="bi bi-eye"></i></a>';
                 $productsHtml .= '</div>';
                 $productsHtml .= '</div>';
                 $productsHtml .= '<div class="rating mt-3 d-flex align-items-center">';
-                $productsHtml .= '<span class="text-primary-custom">';
-                $productsHtml .= '<i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>';
+                $productsHtml .= '<span class="text-primary-custom rating-stars-sm">';
+                $productsHtml .= $starsHtml;
                 $productsHtml .= '</span>';
-                $productsHtml .= '<span class="rating-count">(0)</span>';
+                if ($reviewsCountValue > 0) {
+                    $productsHtml .= '<span class="rating-count">' . number_format($ratingValue, 1) . ' (' . $reviewsCountValue . ')</span>';
+                } else {
+                    $productsHtml .= '<span class="rating-count">(0)</span>';
+                }
                 $productsHtml .= '</div>';
                 $productsHtml .= '<a href="' . $productUrl . '" class="text-decoration-none text-dark"><p class="product-title mt-2 mb-0">' . htmlspecialchars(\Illuminate\Support\Str::limit($product->name, 50)) . '</p></a>';
                 $productsHtml .= '<div class="product-price text-promo">';
@@ -395,17 +485,436 @@ class HomeController extends Controller
 
     public function cart()
     {
-        return view('frontend.cart');
+        $cart = session()->get('cart', []);
+        $settings = Setting::getSettings();
+        $currencySymbol = $settings->currency_symbol ?? '$';
+        
+        $cartItems = [];
+        $subtotal = 0;
+        
+        foreach ($cart as $key => $item) {
+            $itemSubtotal = $item['price'] * $item['quantity'];
+            $subtotal += $itemSubtotal;
+            
+            $cartItems[] = [
+                'id' => $item['id'],
+                'cart_key' => $key,
+                'name' => $item['name'],
+                'slug' => $item['slug'],
+                'price' => $item['price'],
+                'compare_at_price' => $item['compare_at_price'] ?? null,
+                'featured_image' => $item['featured_image'],
+                'quantity' => $item['quantity'],
+                'subtotal' => $itemSubtotal,
+                'variants' => $item['variants'] ?? [],
+                'variant_data' => $item['variant_data'] ?? []
+            ];
+        }
+        
+        // Get applied coupon from session
+        $appliedCoupon = session()->get('applied_coupon', null);
+        $discount = 0;
+        
+        if ($appliedCoupon) {
+            $coupon = \App\Models\Coupon::where('code', $appliedCoupon)->first();
+            if ($coupon && $coupon->isValid()) {
+                $discount = $coupon->calculateDiscount($subtotal);
+            } else {
+                session()->forget('applied_coupon');
+                $appliedCoupon = null;
+            }
+        }
+        
+        // Calculate totals
+        $shipping = 0; // Free shipping for now
+        $tax = 0; // No tax for now
+        $total = $subtotal + $shipping + $tax - $discount;
+        
+        return view('frontend.cart', compact('cartItems', 'subtotal', 'shipping', 'discount', 'tax', 'total', 'settings', 'currencySymbol', 'appliedCoupon'));
     }
 
     public function select()
     {
         return view('frontend.select');
     }
-
-    public function productDetail()
+    
+    public function processCheckout(Request $request)
     {
-        return view('frontend.product-detail');
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:20',
+            'address_line_1' => 'required|string|max:255',
+            'address_line_2' => 'nullable|string|max:255',
+            'city' => 'required|string|max:255',
+            'county' => 'required|string|max:255',
+            'postcode' => 'required|string|max:10',
+            'country' => 'required|string|max:2',
+            'company_name' => 'nullable|string|max:255',
+            'ship_to_different_address' => 'nullable|boolean',
+            'shipping_first_name' => 'required_if:ship_to_different_address,1|nullable|string|max:255',
+            'shipping_last_name' => 'required_if:ship_to_different_address,1|nullable|string|max:255',
+            'shipping_address_line_1' => 'required_if:ship_to_different_address,1|nullable|string|max:255',
+            'shipping_address_line_2' => 'nullable|string|max:255',
+            'shipping_city' => 'required_if:ship_to_different_address,1|nullable|string|max:255',
+            'shipping_county' => 'required_if:ship_to_different_address,1|nullable|string|max:255',
+            'shipping_postcode' => 'required_if:ship_to_different_address,1|nullable|string|max:10',
+            'shipping_country' => 'required_if:ship_to_different_address,1|nullable|string|max:2',
+            'payment_method' => 'required|in:stripe,paypal',
+            'stripe_token' => 'required_if:payment_method,stripe|nullable|string',
+            'paypal_order_id' => 'required_if:payment_method,paypal|nullable|string',
+            'order_notes' => 'nullable|string|max:1000',
+        ]);
+        
+        $cart = session()->get('cart', []);
+        
+        if (empty($cart)) {
+            return redirect()->route('frontend.cart')->with('error', 'Your cart is empty.');
+        }
+        
+        $settings = Setting::getSettings();
+        $currencySymbol = $settings->currency_symbol ?? '£';
+        
+        // Calculate totals
+        $subtotal = 0;
+        foreach ($cart as $item) {
+            $subtotal += $item['price'] * $item['quantity'];
+        }
+        
+        $appliedCoupon = session()->get('applied_coupon', null);
+        $couponId = null;
+        $discount = 0;
+        
+        if ($appliedCoupon) {
+            $coupon = Coupon::where('code', $appliedCoupon)->first();
+            if ($coupon && $coupon->isValid()) {
+                $discount = $coupon->calculateDiscount($subtotal);
+                $couponId = $coupon->id;
+            }
+        }
+        
+        $shipping = 0;
+        $tax = 0;
+        $total = $subtotal + $shipping + $tax - $discount;
+        
+        // Process payment
+        $paymentStatus = 'pending';
+        if ($validated['payment_method'] === 'stripe') {
+            // In a real implementation, you would charge the card using Stripe API
+            // For now, we'll mark as paid if token is provided
+            $paymentStatus = $validated['stripe_token'] ? 'paid' : 'pending';
+        } elseif ($validated['payment_method'] === 'paypal') {
+            // Verify PayPal order
+            $paymentStatus = $validated['paypal_order_id'] ? 'paid' : 'pending';
+        }
+        
+        DB::beginTransaction();
+        try {
+            // Build addresses
+            $billingAddress = $validated['address_line_1'];
+            if (!empty($validated['address_line_2'])) {
+                $billingAddress .= ', ' . $validated['address_line_2'];
+            }
+            
+            $shippingAddress = $billingAddress;
+            if ($request->has('ship_to_different_address') && $request->ship_to_different_address) {
+                $shippingAddress = $validated['shipping_address_line_1'];
+                if (!empty($validated['shipping_address_line_2'])) {
+                    $shippingAddress .= ', ' . $validated['shipping_address_line_2'];
+                }
+            }
+            
+            // Create order
+            $order = Order::create([
+                'user_id' => auth()->id(),
+                'customer_name' => $validated['first_name'] . ' ' . $validated['last_name'],
+                'customer_email' => $validated['email'],
+                'customer_phone' => $validated['phone'],
+                'billing_address' => $billingAddress,
+                'shipping_address' => $shippingAddress,
+                'city' => $validated['city'],
+                'state' => $validated['county'], // Using state field for county
+                'zip_code' => $validated['postcode'],
+                'country' => $validated['country'],
+                'subtotal' => $subtotal,
+                'tax' => $tax,
+                'shipping_cost' => $shipping,
+                'discount' => $discount,
+                'coupon_id' => $couponId,
+                'total' => $total,
+                'status' => 'pending',
+                'payment_status' => $paymentStatus,
+                'payment_method' => $validated['payment_method'],
+                'notes' => $validated['order_notes'] ?? null,
+            ]);
+            
+            // Create order items
+            foreach ($cart as $key => $item) {
+                $product = Product::find($item['id']);
+                
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $item['id'],
+                    'product_name' => $item['name'],
+                    'product_sku' => $product->sku ?? '',
+                    'price' => $item['price'],
+                    'quantity' => $item['quantity'],
+                    'subtotal' => $item['price'] * $item['quantity'],
+                    'variant_data' => $item['variants'] ?? [],
+                ]);
+            }
+            
+            // Clear cart and coupon
+            session()->forget('cart');
+            session()->forget('applied_coupon');
+            
+            DB::commit();
+            
+            return redirect()->route('frontend.track-order')
+                ->with('success', 'Order placed successfully! Order Number: ' . $order->order_number);
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to process order. Please try again.')->withInput();
+        }
+    }
+    
+    public function createPayPalOrder(Request $request)
+    {
+        $validated = $request->validate([
+            'total' => 'required|numeric|min:0',
+            'currency' => 'required|string|size:3',
+        ]);
+        
+        // In a real implementation, you would create a PayPal order using PayPal API
+        // For now, we'll return a mock order ID
+        $orderId = 'PAYPAL-' . strtoupper(\Illuminate\Support\Str::random(16));
+        
+        // Store PayPal order in session temporarily
+        session()->put('paypal_order_' . $orderId, [
+            'total' => $validated['total'],
+            'currency' => $validated['currency'],
+            'created_at' => now(),
+        ]);
+        
+        return response()->json([
+            'id' => $orderId,
+            'status' => 'CREATED'
+        ]);
+    }
+
+    public function productDetail($slug)
+    {
+        $product = Product::where('slug', $slug)
+            ->where('is_active', true)
+            ->with(['category', 'brand', 'tags', 'variants.options', 'features', 'galleryImages', 'variantValues'])
+            ->firstOrFail();
+        
+        $settings = Setting::getSettings();
+        
+        // Get related products (same category, exclude current product)
+        $relatedProducts = Product::where('category_id', $product->category_id)
+            ->where('id', '!=', $product->id)
+            ->where('is_active', true)
+            ->with(['category', 'brand'])
+            ->limit(3)
+            ->get();
+        
+        // Get featured products
+        $featuredProducts = Product::where('is_featured', true)
+            ->where('id', '!=', $product->id)
+            ->where('is_active', true)
+            ->with(['category', 'brand'])
+            ->limit(3)
+            ->get();
+        
+        // Get products from same brand
+        $brandProducts = Product::where('brand_id', $product->brand_id)
+            ->where('id', '!=', $product->id)
+            ->where('is_active', true)
+            ->with(['category', 'brand'])
+            ->limit(3)
+            ->get();
+
+        // Reviews data
+        $approvedReviewsQuery = $product->approvedReviews();
+        $reviewsCount = (clone $approvedReviewsQuery)->count();
+        $averageRating = (float) round((clone $approvedReviewsQuery)->avg('rating') ?? 0, 1);
+        $recentReviews = (clone $approvedReviewsQuery)->latest()->take(10)->get();
+        
+        // Get shipping options
+        $shippingOptions = ShippingOption::getActive();
+        
+        // Get features: product-specific first, then global as fallback
+        $productFeatures = $product->features()->orderBy('order')->get();
+        $globalFeatures = GlobalFeature::getActive();
+        $displayFeatures = $productFeatures->count() > 0 ? $productFeatures : $globalFeatures;
+        
+        $wishlistIds = session()->get('wishlist', []);
+        $isInWishlist = in_array($product->id, $wishlistIds);
+
+        return view('frontend.product-detail', compact(
+            'product',
+            'settings',
+            'relatedProducts',
+            'featuredProducts',
+            'brandProducts',
+            'averageRating',
+            'reviewsCount',
+            'recentReviews',
+            'shippingOptions',
+            'displayFeatures',
+            'isInWishlist'
+        ));
+    }
+
+    public function storeReview(Request $request, $slug)
+    {
+        $product = Product::where('slug', $slug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'reviewer_name' => 'required|string|max:120',
+            'reviewer_email' => 'nullable|email|max:150',
+            'rating' => 'required|integer|min:1|max:5',
+            'title' => 'nullable|string|max:150',
+            'comment' => 'required|string|max:1500',
+        ]);
+
+        ProductReview::create([
+            'product_id' => $product->id,
+            'reviewer_name' => $validated['reviewer_name'],
+            'reviewer_email' => $validated['reviewer_email'] ?? null,
+            'rating' => $validated['rating'],
+            'title' => $validated['title'] ?? null,
+            'comment' => $validated['comment'],
+            'is_approved' => true,
+        ]);
+
+        return redirect()
+            ->route('frontend.product-detail', $product->slug)
+            ->with('success', 'Thank you for sharing your experience! Your review has been added.');
+    }
+
+    public function addToWishlist($productId)
+    {
+        $product = Product::where('id', $productId)->where('is_active', true)->firstOrFail();
+        $wishlist = session()->get('wishlist', []);
+
+        if (!in_array($productId, $wishlist)) {
+            $wishlist[] = $productId;
+            session()->put('wishlist', $wishlist);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Product added to wishlist.',
+            'wishlist_count' => count($wishlist),
+        ]);
+    }
+
+    public function removeFromWishlist($productId)
+    {
+        $wishlist = session()->get('wishlist', []);
+        if (($key = array_search($productId, $wishlist)) !== false) {
+            unset($wishlist[$key]);
+            session()->put('wishlist', $wishlist);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Product removed from wishlist.',
+            'wishlist_count' => count($wishlist),
+        ]);
+    }
+    
+    public function getVariantPrice(Request $request, $slug)
+    {
+        $product = Product::where('slug', $slug)
+            ->where('is_active', true)
+            ->with(['variantValues'])
+            ->firstOrFail();
+        
+        $settings = Setting::getSettings();
+        $currencySymbol = $settings->currency_symbol ?? '$';
+        
+        // Get selected variant option IDs from request
+        $selectedVariants = $request->input('variants', []);
+        
+        // Build variant combination from selected options
+        $variantCombination = [];
+        if (!empty($selectedVariants)) {
+            // Load variants and options to get the combination
+            $product->load(['variants.options']);
+            
+            foreach ($selectedVariants as $variantId => $optionId) {
+                // Convert to integers for comparison
+                $variantId = (int)$variantId;
+                $optionId = (int)$optionId;
+                
+                foreach ($product->variants as $variant) {
+                    if ($variant->id == $variantId) {
+                        $option = $variant->options->firstWhere('id', $optionId);
+                        if ($option) {
+                            $variantCombination[$variant->name] = $option->value;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Find matching variant value
+        $variantValue = null;
+        if (!empty($variantCombination)) {
+            // Sort combination keys for consistent matching
+            ksort($variantCombination);
+            
+            foreach ($product->variantValues as $vv) {
+                $vvCombination = is_array($vv->variant_combination) 
+                    ? $vv->variant_combination 
+                    : json_decode($vv->variant_combination, true);
+                
+                if (!is_array($vvCombination)) {
+                    continue;
+                }
+                
+                ksort($vvCombination);
+                
+                // Compare combinations
+                if (json_encode($vvCombination) === json_encode($variantCombination)) {
+                    $variantValue = $vv;
+                    break;
+                }
+            }
+        }
+        
+        // Get price
+        $price = $variantValue && $variantValue->price !== null 
+            ? $variantValue->price 
+            : $product->price;
+        
+        $compareAtPrice = $variantValue && $variantValue->compare_at_price !== null
+            ? $variantValue->compare_at_price
+            : $product->compare_at_price;
+        
+        // Calculate discount
+        $discount = null;
+        if ($compareAtPrice && $compareAtPrice > $price) {
+            $discount = (($compareAtPrice - $price) / $compareAtPrice) * 100;
+        }
+        
+        return response()->json([
+            'success' => true,
+            'price' => $price,
+            'price_formatted' => $currencySymbol . number_format($price, 2),
+            'compare_at_price' => $compareAtPrice,
+            'compare_at_price_formatted' => $compareAtPrice ? $currencySymbol . number_format($compareAtPrice, 2) : null,
+            'discount' => $discount ? number_format($discount, 0) : null,
+            'currency_symbol' => $currencySymbol
+        ]);
     }
 
     public function placeOrder()

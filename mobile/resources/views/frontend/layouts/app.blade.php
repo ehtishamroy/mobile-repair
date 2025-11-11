@@ -69,11 +69,14 @@
               </div>
             </div>
             <div>
+              @if($settings->promo_title ?? false)
               <div class="d-flex align-items-center justify-content-end gap-3">
-                <button class="btn-promo">Promo!</button>
-                <span class="text-muted-custom fs-12 fw-400 font-satoshi">Special Offer: 20% Off First-Time Repairs at
-                  HarrowMobiles</span>
+                <button class="btn-promo">{{ __('Promo!') }}</button>
+                <span class="text-muted-custom fs-12 fw-400 font-satoshi">
+                  {{ $settings->promo_title }}
+                </span>
               </div>
+              @endif
             </div>
           </div>
         </div>
@@ -114,9 +117,9 @@
             </div>
 
             <div class="flex-center gap-3">
-              <div class="cart-icon">
+              <a href="{{ route('frontend.cart') }}" class="cart-icon" aria-label="View cart">
                 <img src="{{ asset('front-assets/img/cart.svg') }}" alt="">
-              </div>
+              </a>
               <a href="{{ route('frontend.contact') }}" class="btn-gradient">Contact Us</a>
             </div>
           </div>
