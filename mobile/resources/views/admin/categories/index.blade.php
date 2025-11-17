@@ -75,7 +75,7 @@
                     </tbody>
                 </table>
             </div>
-            @if($categories->hasPages())
+            @if($categories instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator && $categories->hasPages())
             <div class="card-footer">
                 {{ $categories->links() }}
             </div>

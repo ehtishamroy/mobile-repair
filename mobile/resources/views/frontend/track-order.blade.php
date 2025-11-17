@@ -46,35 +46,47 @@
             below and press the â€œTrack Orderâ€ button. this was given to you on
             your receipt and in the confirmation email you should have received.
           </p>
-          <form class="track-order-form">
+          <form class="track-order-form" method="GET" action="{{ route('frontend.track-order') }}">
+            @if($order)
+            <div class="alert alert-success mb-3">
+              <i class="bi bi-check-circle me-2"></i><strong>Order Found!</strong> Order #{{ $order->order_number }}
+            </div>
+            @elseif(request('order_id') || request('order'))
+            <div class="alert alert-danger mb-3">
+              <i class="bi bi-x-circle me-2"></i>Order not found. Please check your order number.
+            </div>
+            @endif
+            
             <div class="row gy-4 mt-4">
               <div class="col-md-6">
                 <div>
-                  <label for="" class="fw-400 fs-14 text-heading mb-2"
-                    >Order ID</label
+                  <label for="order_id" class="form-label fw-400 fs-14 text-heading mb-2"
+                    >Order ID <span class="text-danger">*</span></label
                   >
-                  <input type="text" placeholder="ID..." id="" />
+                  <input type="text" name="order_id" class="custom-input" placeholder="Enter order ID..." id="order_id" value="{{ request('order_id') ?? request('order') }}" required />
                 </div>
               </div>
               <div class="col-md-6">
                 <div>
-                  <label for="" class="fw-400 fs-14 text-heading mb-2"
-                    >Billing Email</label
+                  <label for="email" class="form-label fw-400 fs-14 text-heading mb-2"
+                    >Billing Email <span class="text-muted">(Optional)</span></label
                   >
                   <input
-                    type="text"
-                    name=""
-                    placeholder="Email address"
-                    id=""
+                    type="email"
+                    name="email"
+                    class="custom-input"
+                    placeholder="Enter email address"
+                    id="email"
+                    value="{{ request('email') }}"
                   />
                 </div>
               </div>
-              <div class="col-md-6">
-                <small class="mb-4 flex-center gap-3 fw-400 text-muted-custom">
+              <div class="col-md-12">
+                <small class="mb-3 d-block flex-center gap-3 fw-400 text-muted-custom">
                   <i class="bi bi-info-circle"></i>
-                  Order ID that we sended to your in your email address.
+                  Order ID that we sent to you in your email address.
                 </small>
-                <button class="btn-gradient">Track Order</button>
+                <button type="submit" class="btn-gradient">Track Order</button>
               </div>
             </div>
           </form>
@@ -83,6 +95,7 @@
     </section>
 
     <!-- Track Record  -->
+    @if($order)
     <section class="track-record-section container mb-5">
       <div class="row">
         <div class="col-lg-11 mx-auto">
@@ -95,34 +108,48 @@
                   >
                     <div>
                       <div class="mb-1">
-                        <h5 class="mb-0 tracking-number">#96459761</h5>
-                        <small class="text-heading">4 Products</small>
-                        <small class="text-heading">Â·</small>
+                        <h5 class="mb-0 tracking-number">#{{ $order->order_number }}</h5>
+                        <small class="text-heading">{{ $order->items->count() }} {{ Str::plural('Product', $order->items->count()) }}</small>
+                        <small class="text-heading"> · </small>
                         <small class="text-heading"
-                          >Order Placed in 17 Jan, 2021 at 7:32 PM</small
+                          >Order Placed on {{ $order->created_at->format('d M, Y') }} at {{ $order->created_at->format('g:i A') }}</small
                         >
                       </div>
                     </div>
-                    <div class="order-amount">$1199.00</div>
+                    <div class="order-amount">{{ $currencySymbol }}{{ number_format($order->total, 2) }}</div>
                   </div>
                 </div>
 
                 <div class="order-steps mt-4">
+                  @php
+                    $statusSteps = [
+                      'pending' => 1,
+                      'confirmed' => 1,
+                      'processing' => 2,
+                      'shipped' => 3,
+                      'delivered' => 4,
+                    ];
+                    $completedSteps = $statusSteps[$order->status] ?? 1;
+                    $estimatedDelivery = $order->created_at->addDays(7);
+                  @endphp
+                  
+                  @if(!in_array($order->status, ['cancelled', 'refunded']))
                   <div class="order-arrival-date mb-4 fs-14 fw-500">
                     Order expected arrival
-                    <span class="fw-600 text-heading">23 Jan, 2021</span>
+                    <span class="fw-600 text-heading">{{ $estimatedDelivery->format('d M, Y') }}</span>
                   </div>
+                  @endif
 
                   <!-- Stepper -->
                   <div class="order-tracker">
                     <div
                       class="progress-track"
-                      style="--steps: 4; --completed: 2"
+                      style="--steps: 4; --completed: {{ $completedSteps }}"
                     >
                       <div class="progress-line"></div>
 
                       <!-- Step 1 -->
-                      <div class="order-step completed">
+                      <div class="order-step {{ $completedSteps >= 1 ? 'completed' : '' }}">
                         <div class="order-circle">
                           <svg viewBox="0 0 24 24" class="check-icon">
                             <path
@@ -178,7 +205,7 @@
                       </div>
 
                       <!-- Step 2 -->
-                      <div class="order-step completed">
+                      <div class="order-step {{ $completedSteps >= 2 ? 'completed' : '' }}">
                         <div class="order-circle">
                           <svg viewBox="0 0 24 24" class="check-icon">
                             <path
@@ -234,7 +261,7 @@
                       </div>
 
                       <!-- Step 3 -->
-                      <div class="order-step">
+                      <div class="order-step {{ $completedSteps >= 3 ? 'completed' : '' }}">
                         <div class="order-circle">
                           <svg viewBox="0 0 24 24" class="check-icon">
                             <path
@@ -314,7 +341,7 @@
                       </div>
 
                       <!-- Step 4 -->
-                      <div class="order-step">
+                      <div class="order-step {{ $completedSteps >= 4 ? 'completed' : '' }}">
                         <div class="order-circle">
                           <svg viewBox="0 0 24 24" class="check-icon">
                             <path
@@ -399,93 +426,78 @@
                   </div>
 
                   <div class="p-4">
-                    <div class="activity-item">
-                      <div class="icon-badge bg-success-100">
-                        <img src="{{ asset('front-assets/img/double-check.svg') }}" alt="" />
-                      </div>
-                      <div class="flex-1">
-                        <div class="activity-head">
-                          Your order has been delivered. Thank you for shopping
-                          at Clicon!
+                    @if($order->tracking && $order->tracking->count() > 0)
+                      {{-- Display tracking updates from database --}}
+                      @foreach($order->tracking as $tracking)
+                        @php
+                          $badgeClass = match($tracking->status) {
+                            'delivered' => 'bg-success-100',
+                            'shipped' => 'bg-primary-100',
+                            'processing' => 'bg-primary-100',
+                            'confirmed' => 'bg-success-100',
+                            'pending' => 'bg-primary-100',
+                            default => 'bg-primary-100',
+                          };
+                          $iconFile = match($tracking->status) {
+                            'delivered' => 'double-check.svg',
+                            'shipped' => 'MapTrifold.svg',
+                            'processing' => 'CheckCircle.svg',
+                            'confirmed' => 'Notepad.svg',
+                            'pending' => 'CheckCircle.svg',
+                            default => 'user.svg',
+                          };
+                        @endphp
+                        <div class="activity-item">
+                          <div class="icon-badge {{ $badgeClass }}">
+                            <img src="{{ asset('front-assets/img/' . $iconFile) }}" alt="" />
+                          </div>
+                          <div class="flex-1">
+                            <div class="activity-head">
+                              {{ $tracking->title }}
+                              @if($tracking->message)
+                                <br><small class="text-muted">{{ $tracking->message }}</small>
+                              @endif
+                              @if($tracking->location)
+                                <br><small class="text-muted">Location: {{ $tracking->location }}</small>
+                              @endif
+                            </div>
+                            <div class="activity-date mt-1">
+                              {{ ($tracking->tracking_date ?? $tracking->created_at)->format('d M, Y') }} at {{ ($tracking->tracking_date ?? $tracking->created_at)->format('g:i A') }}
+                            </div>
+                          </div>
                         </div>
-                        <div class="activity-date mt-1">
-                          23 Oct, 2025 at 7:32 PM
+                      @endforeach
+                      
+                      {{-- Always show Order Started at the bottom --}}
+                      <div class="activity-item">
+                        <div class="icon-badge bg-primary-100">
+                          <img src="{{ asset('front-assets/img/CheckCircle.svg') }}" alt="" />
                         </div>
-                      </div>
-                    </div>
-
-                    <div class="activity-item">
-                      <div class="icon-badge bg-primary-100">
-                        <img src="{{ asset('front-assets/img/user.svg') }}" alt="" />
-                      </div>
-                      <div class="flex-1">
-                        <div class="activity-head">
-                          Our delivery man (John Wick) Has picked-up your order
-                          for delivery.
-                        </div>
-                        <div class="activity-date mt-1">
-                          23 Oct, 2025 at 2:00 PM
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="activity-item">
-                      <div class="icon-badge bg-primary-100">
-                        <img src="{{ asset('front-assets/img/MapPinLine.svg') }}" alt="" />
-                      </div>
-                      <div class="flex-1">
-                        <div class="activity-head">
-                          Your order has reached at last mile hub.
-                        </div>
-                        <div class="activity-date mt-1">
-                          23 Oct, 2025 at 8:00 AM
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="activity-item">
-                      <div class="icon-badge bg-primary-100">
-                        <img src="{{ asset('front-assets/img/MapTrifold.svg') }}" alt="" />
-                      </div>
-                      <div class="flex-1">
-                        <div class="activity-head">
-                          Your order on the way to (last mile) hub.
-                        </div>
-                        <div class="activity-date mt-1">
-                          23 Oct, 2025 at 5:32 AM
-                        </div>
-                      </div>
-                    </div>
-                    <div class="activity-item">
-                      <div class="icon-badge bg-success-100">
-                        <img src="{{ asset('front-assets/img/CheckCircle.svg') }}" alt="" />
-                      </div>
-                      <div class="flex-1">
-                        <div class="activity-head">
-                          Your order is successfully verified.
-                        </div>
-                        <div class="activity-date mt-1">
-                          23 Oct, 2025 at 7:32 PM
+                        <div class="flex-1">
+                          <div class="activity-head">
+                            Order Started
+                          </div>
+                          <div class="activity-date mt-1">
+                            {{ $order->created_at->format('d M, Y') }} at {{ $order->created_at->format('g:i A') }}
+                          </div>
                         </div>
                       </div>
-                    </div>
-
-                    <div class="activity-item">
-                      <div class="icon-badge bg-primary-100">
-                        <img
-                          src="{{ asset('front-assets/img/Notepad.svg') }}"
-                          alt=""
-                        />
-                      </div>
-                      <div class="flex-1">
-                        <div class="activity-head">
-                          Your order has been confirmed.
+                    @else
+                      {{-- No tracking updates - show default message --}}
+                      <div class="activity-item">
+                        <div class="icon-badge bg-primary-100">
+                          <img src="{{ asset('front-assets/img/CheckCircle.svg') }}" alt="" />
                         </div>
-                        <div class="activity-date mt-1">
-                          23 Oct, 2025 at 2:61 PM
+                        <div class="flex-1">
+                          <div class="activity-head">
+                            Order Started
+                          </div>
+                          <div class="activity-date mt-1">
+                            {{ $order->created_at->format('d M, Y') }} at {{ $order->created_at->format('g:i A') }}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    @endif
                   </div>
                 </div>
               </div>
@@ -494,38 +506,36 @@
         </div>
       </div>
     </section>
+    @endif
 
+    @if($order)
     <script>
-      // Existing tracker setup
-      document
-        .querySelectorAll(".order-tracker .progress-track")
-        .forEach((track) => {
-          const steps = track.querySelectorAll(".order-step").length;
-          const completed = track.querySelectorAll(
-            ".order-step.completed"
-          ).length;
-          track.style.setProperty("--steps", steps);
-          track.style.setProperty(
-            "--completed",
-            Math.max(1, Math.min(completed, steps))
-          );
-        });
+      document.addEventListener('DOMContentLoaded', function() {
+        // Setup tracker progress
+        document
+          .querySelectorAll(".order-tracker .progress-track")
+          .forEach((track) => {
+            const steps = track.querySelectorAll(".order-step").length;
+            const completed = track.querySelectorAll(
+              ".order-step.completed"
+            ).length;
+            track.style.setProperty("--steps", steps);
+            track.style.setProperty(
+              "--completed",
+              Math.max(1, Math.min(completed, steps))
+            );
+          });
 
-      // Show track record when button is clicked
-      document
-        .querySelector(".track-order-form")
-        .addEventListener("submit", function (e) {
-          e.preventDefault(); // prevent form submission / page reload
-
-          const trackRecordSection = document.querySelector(
-            ".track-record-section"
-          );
-
-          // Optional: add smooth reveal animation
-          trackRecordSection.style.display = "block";
-          trackRecordSection.scrollIntoView({ behavior: "smooth" });
-        });
+        // Scroll to order details
+        setTimeout(() => {
+          const trackRecordSection = document.querySelector(".track-record-section");
+          if (trackRecordSection) {
+            trackRecordSection.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 300);
+      });
     </script>
+    @endif
 
     
 

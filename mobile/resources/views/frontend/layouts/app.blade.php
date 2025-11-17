@@ -4,6 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- Favicon -->
+    @if($settings->favicon ?? false)
+    @php
+        $faviconPath = asset('storage/' . $settings->favicon);
+        $faviconExt = strtolower(pathinfo($settings->favicon, PATHINFO_EXTENSION));
+        $faviconType = match($faviconExt) {
+            'ico' => 'image/x-icon',
+            'png' => 'image/png',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'svg' => 'image/svg+xml',
+            default => 'image/x-icon',
+        };
+    @endphp
+    <link rel="icon" type="{{ $faviconType }}" href="{{ $faviconPath }}">
+    <link rel="shortcut icon" type="{{ $faviconType }}" href="{{ $faviconPath }}">
+    <link rel="apple-touch-icon" href="{{ $faviconPath }}">
+    @endif
     <!-- Google Fonts -->
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
@@ -31,6 +48,289 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     />
     <link rel="stylesheet" href="{{ asset('front-assets/css/style.css') }}" />
+    <style>
+    /* Cart Bar Styles */
+    .cart-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-top: 2px solid #5B265D;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+      z-index: 1050;
+      padding: 1rem 0;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .cart-bar-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      position: relative;
+    }
+
+    .cart-bar-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .cart-icon-wrapper {
+      position: relative;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #5B265D 0%, #7a3a7d 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.5rem;
+    }
+
+    .cart-count-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #ff4444;
+      color: #fff;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: 2px solid #fff;
+    }
+
+    .cart-summary {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .cart-items-text {
+      font-size: 0.875rem;
+      color: #5F6C72;
+      font-weight: 400;
+    }
+
+    .cart-total-text {
+      font-size: 1.25rem;
+      color: #5B265D;
+      font-weight: 600;
+    }
+
+    .cart-bar-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .cart-bar-controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .btn-cart-close,
+    .btn-cart-minimize {
+      background: transparent;
+      border: none;
+      color: #5B265D;
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+    }
+
+    .btn-cart-close:hover,
+    .btn-cart-minimize:hover {
+      background: #f0f0f0;
+      color: #7a3a7d;
+    }
+
+    .btn-view-cart {
+      background: #fff;
+      color: #5B265D;
+      border: 2px solid #5B265D;
+      padding: 0.75rem 1.5rem;
+      border-radius: 5px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .btn-view-cart:hover {
+      background: #5B265D;
+      color: #fff;
+    }
+
+    .btn-checkout {
+      background: linear-gradient(135deg, #5B265D 0%, #7a3a7d 100%);
+      color: #fff;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 5px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .btn-checkout:hover {
+      background: linear-gradient(135deg, #7a3a7d 0%, #5B265D 100%);
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(91, 38, 93, 0.3);
+    }
+
+    /* Minimized Cart Bar */
+    .cart-bar-minimized {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1050;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .btn-cart-expand {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #5B265D 0%, #7a3a7d 100%);
+      border: none;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 4px 12px rgba(91, 38, 93, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .btn-cart-expand:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(91, 38, 93, 0.4);
+    }
+
+    .cart-count-badge-mini {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #ff4444;
+      color: #fff;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: 2px solid #fff;
+    }
+
+    @media (max-width: 768px) {
+      .cart-bar {
+        padding: 0.75rem 0;
+      }
+      
+      .cart-bar-content {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+      }
+      
+      .cart-bar-info {
+        justify-content: center;
+      }
+      
+      .cart-bar-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+      
+      .btn-view-cart,
+      .btn-checkout {
+        width: 100%;
+        text-align: center;
+      }
+      
+      .cart-summary {
+        text-align: center;
+      }
+      
+      .cart-bar-controls {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+      }
+      
+      .cart-bar-minimized {
+        bottom: 15px;
+        right: 15px;
+      }
+      
+      .btn-cart-expand {
+        width: 55px;
+        height: 55px;
+        font-size: 1.25rem;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .cart-icon-wrapper {
+        width: 45px;
+        height: 45px;
+        font-size: 1.25rem;
+      }
+      
+      .cart-total-text {
+        font-size: 1.1rem;
+      }
+      
+      .cart-items-text {
+        font-size: 0.8rem;
+      }
+    }
+    </style>
     @stack('styles')
     <title>@yield('title', 'Harrow Mobiles')</title>
 </head>
@@ -112,6 +412,12 @@
                 <span class="nav-separator">&gt;</span>
                 <a href="{{ route('frontend.marketplace') }}" class="nav-link">Marketplace</a>
                 <span class="nav-separator">&gt;</span>
+                <a href="{{ route('frontend.track-order') }}" class="nav-link">Track Order</a>
+                @if($wishlistCount > 0)
+                <span class="nav-separator">&gt;</span>
+                <a href="{{ route('frontend.wishlist') }}" class="nav-link">Wishlist</a>
+                @endif
+                <span class="nav-separator">&gt;</span>
                 <a href="{{ route('frontend.join') }}" class="nav-link">Join Us</a>
               </nav>
             </div>
@@ -141,6 +447,10 @@
             <a href="{{ route('frontend.about') }}" class="nav-link">About Us</a>
             <a href="{{ route('frontend.service') }}" class="nav-link">Our Services</a>
             <a href="{{ route('frontend.marketplace') }}" class="nav-link">Marketplace</a>
+            <a href="{{ route('frontend.track-order') }}" class="nav-link">Track Order</a>
+            @if($wishlistCount > 0)
+            <a href="{{ route('frontend.wishlist') }}" class="nav-link">Wishlist</a>
+            @endif
             <a href="{{ route('frontend.join') }}" class="nav-link">Join Us</a>
             <div class="mt-auto">
               <hr>
@@ -154,6 +464,44 @@
 
     <!-- Main Content -->
     @yield('content')
+
+    <!-- Cart Bar -->
+    <div id="cartBar" class="cart-bar" style="display: none;">
+      <div class="container">
+        <div class="cart-bar-content">
+          <div class="cart-bar-info">
+            <div class="cart-icon-wrapper">
+              <i class="bi bi-cart-fill"></i>
+              <span class="cart-count-badge" id="cartCountBadge">0</span>
+            </div>
+            <div class="cart-summary">
+              <span class="cart-items-text" id="cartItemsText">0 items</span>
+              <span class="cart-total-text" id="cartTotalText">£0.00</span>
+            </div>
+          </div>
+          <div class="cart-bar-actions">
+            <a href="{{ route('frontend.cart') }}" class="btn btn-view-cart">View Cart</a>
+            <a href="{{ route('frontend.checkout') }}" class="btn btn-checkout">Checkout</a>
+          </div>
+          <div class="cart-bar-controls">
+            <button class="btn-cart-minimize" id="cartMinimizeBtn" title="Minimize">
+              <i class="bi bi-chevron-down"></i>
+            </button>
+            <button class="btn-cart-close" id="cartCloseBtn" title="Close">
+              <i class="bi bi-x"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cart Bar Minimized (floating button) -->
+    <div id="cartBarMinimized" class="cart-bar-minimized" style="display: none;">
+      <button class="btn-cart-expand" id="cartExpandBtn" title="Show Cart">
+        <i class="bi bi-cart-fill"></i>
+        <span class="cart-count-badge-mini" id="cartCountBadgeMini">0</span>
+      </button>
+    </div>
 
     <!-- Footer Section Start -->
     <footer class="footer pt-5 pb-4">
@@ -255,6 +603,137 @@
 
     <!-- Bootstrap Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Global Cart Bar Script -->
+    <script>
+    // Global cart bar functionality
+    (function() {
+      // Check localStorage for cart bar state
+      const cartBarState = localStorage.getItem('cartBarState');
+      const isMinimized = localStorage.getItem('cartBarMinimized') === 'true';
+      
+      // Initialize cart bar on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        updateCartBar();
+        
+        // Restore minimized state if it was minimized
+        if (isMinimized && document.getElementById('cartBarMinimized')) {
+          const cartBar = document.getElementById('cartBar');
+          const cartBarMinimized = document.getElementById('cartBarMinimized');
+          if (cartBar && cartBarMinimized) {
+            cartBar.style.display = 'none';
+            cartBarMinimized.style.display = 'block';
+          }
+        }
+        
+        // Close button handler
+        const closeBtn = document.getElementById('cartCloseBtn');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', function() {
+            const cartBar = document.getElementById('cartBar');
+            const cartBarMinimized = document.getElementById('cartBarMinimized');
+            if (cartBar) {
+              cartBar.style.display = 'none';
+              localStorage.setItem('cartBarState', 'closed');
+            }
+            if (cartBarMinimized) {
+              cartBarMinimized.style.display = 'none';
+              localStorage.setItem('cartBarMinimized', 'false');
+            }
+            document.body.style.paddingBottom = '0';
+          });
+        }
+        
+        // Minimize button handler
+        const minimizeBtn = document.getElementById('cartMinimizeBtn');
+        if (minimizeBtn) {
+          minimizeBtn.addEventListener('click', function() {
+            const cartBar = document.getElementById('cartBar');
+            const cartBarMinimized = document.getElementById('cartBarMinimized');
+            if (cartBar && cartBarMinimized) {
+              cartBar.style.display = 'none';
+              cartBarMinimized.style.display = 'block';
+              localStorage.setItem('cartBarMinimized', 'true');
+              document.body.style.paddingBottom = '0';
+            }
+          });
+        }
+        
+        // Expand button handler
+        const expandBtn = document.getElementById('cartExpandBtn');
+        if (expandBtn) {
+          expandBtn.addEventListener('click', function() {
+            const cartBar = document.getElementById('cartBar');
+            const cartBarMinimized = document.getElementById('cartBarMinimized');
+            if (cartBar && cartBarMinimized) {
+              cartBar.style.display = 'block';
+              cartBarMinimized.style.display = 'none';
+              localStorage.setItem('cartBarMinimized', 'false');
+              updateBodyPadding();
+            }
+          });
+        }
+      });
+      
+      // Global updateCartBar function
+      window.updateCartBar = function() {
+        fetch('{{ route("frontend.cart.get") }}', {
+          method: 'GET',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const cartBar = document.getElementById('cartBar');
+            const cartBarMinimized = document.getElementById('cartBarMinimized');
+            const cartCountBadge = document.getElementById('cartCountBadge');
+            const cartCountBadgeMini = document.getElementById('cartCountBadgeMini');
+            const cartItemsText = document.getElementById('cartItemsText');
+            const cartTotalText = document.getElementById('cartTotalText');
+            
+            if (data.cart_count > 0) {
+              // Update badges
+              if (cartCountBadge) cartCountBadge.textContent = data.cart_count;
+              if (cartCountBadgeMini) cartCountBadgeMini.textContent = data.cart_count;
+              if (cartItemsText) cartItemsText.textContent = data.cart_count === 1 ? '1 item' : `${data.cart_count} items`;
+              if (cartTotalText) cartTotalText.textContent = data.cart_total_formatted;
+              
+              // Show cart bar or minimized version based on state
+              const isMinimized = localStorage.getItem('cartBarMinimized') === 'true';
+              if (isMinimized && cartBarMinimized) {
+                cartBarMinimized.style.display = 'block';
+                if (cartBar) cartBar.style.display = 'none';
+              } else if (cartBar) {
+                cartBar.style.display = 'block';
+                if (cartBarMinimized) cartBarMinimized.style.display = 'none';
+                updateBodyPadding();
+              }
+              
+              localStorage.setItem('cartBarState', 'open');
+            } else {
+              if (cartBar) cartBar.style.display = 'none';
+              if (cartBarMinimized) cartBarMinimized.style.display = 'none';
+              document.body.style.paddingBottom = '0';
+              localStorage.setItem('cartBarState', 'closed');
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+      };
+      
+      function updateBodyPadding() {
+        const cartBar = document.getElementById('cartBar');
+        if (cartBar && cartBar.style.display === 'block') {
+          document.body.style.paddingBottom = window.innerWidth <= 768 ? '140px' : '100px';
+        }
+      }
+    })();
+    </script>
+    
     @stack('scripts')
 </body>
 </html>

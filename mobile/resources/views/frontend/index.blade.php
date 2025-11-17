@@ -127,306 +127,123 @@
     </section>
 
     <!-- Trending Phones  -->
+    @if($smartphoneCategory && ($trendingBrands->count() > 0 || $trendingProducts->count() > 0))
     <section class="mb-custom">
       <div class="container">
         <button class="btn-gradient-outline mb-4">{{ $content->hot_selling_badge ?? 'Hot Selling' }}</button>
 
         <div class="flex-between flex-wrap flex-md-nowrap mb-5">
-          <h3 class="fs-40">{{ $content->hot_selling_title ?? 'Trending Phones' }}</h3>
+          <h3 class="fs-40">Smart Phones</h3>
+          @if($trendingBrands->count() > 0)
           <ul
             class="nav nav-pills justify-content-between justify-content-md-end mb-3 gap-3 mt-md-0 mt-3"
             id="pills-tab"
             role="tablist"
           >
+            @foreach($trendingBrands as $index => $brand)
             <li class="nav-item" role="presentation">
-              <button
-                class="nav-link active"
-                id="pills-all-tab"
-                data-bs-toggle="pill"
-                data-bs-target="#pills-all"
-                type="button"
-                role="tab"
-                aria-controls="pills-all"
-                aria-selected="true"
+              <a
+                href="{{ route('frontend.marketplace', ['category' => $smartphoneCategory->id, 'brand' => $brand->id]) }}"
+                class="nav-link {{ $index === 0 ? 'active' : '' }}"
               >
-                All
-              </button>
+                {{ $brand->name }}
+              </a>
             </li>
-            <li class="nav-item" role="presentation">
-              <button
-                class="nav-link"
-                id="pills-apple-tab"
-                data-bs-toggle="pill"
-                data-bs-target="#pills-apple"
-                type="button"
-                role="tab"
-                aria-controls="pills-apple"
-                aria-selected="false"
-              >
-                Apple
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button
-                class="nav-link"
-                id="pills-samsung-tab"
-                data-bs-toggle="pill"
-                data-bs-target="#pills-samsung"
-                type="button"
-                role="tab"
-                aria-controls="pills-samsung"
-                aria-selected="false"
-              >
-                Samsung
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button
-                class="nav-link"
-                id="pills-others-tab"
-                data-bs-toggle="pill"
-                data-bs-target="#pills-others"
-                type="button"
-                role="tab"
-                aria-controls="pills-others"
-                aria-selected="false"
-              >
-                Others
-              </button>
-            </li>
+            @endforeach
           </ul>
+          @endif
         </div>
-        <div class="tab-content" id="pills-tabContent">
-          <div
-            class="tab-pane fade show active"
-            id="pills-all"
-            role="tabpanel"
-            aria-labelledby="pills-all-tab"
-          >
-            <div
-              class="row row-cols-xxl-5 row-cols-xl-4 row-cols-lg-3 row-cols-sm-2 row-cols-1 g-3"
-            >
-              <div class="col">
-                <div class="product-card h-100 position-relative">
-                  <span class="product-badge badge-danger">HOT</span>
-
-                  <div class="card-body">
-                    <!-- Product Image -->
-                    <div class="ratio ratio-1x1 thumb">
-                      <img
-                        src="{{ asset('front-assets/img/phone-1.svg') }}"
-                        alt="img"
-                        class="w-100 h-100 p-2 rounded"
-                      />
-
-                      <!-- Hover Overlay Icons -->
-                      <div class="product-actions">
-                        <div class="action-btn">
-                          <i class="bi bi-heart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-cart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-eye"></i>
-                        </div>
-                      </div>
+        
+        @if($trendingProducts->count() > 0)
+        <div class="row row-cols-xxl-5 row-cols-xl-4 row-cols-lg-3 row-cols-sm-2 row-cols-1 g-3">
+          @php
+            $wishlist = session()->get('wishlist', []);
+            $currencySymbol = $settings->currency_symbol ?? '$';
+          @endphp
+          @foreach($trendingProducts as $product)
+          <div class="col">
+            <div class="product-card h-100 position-relative">
+              @if($product->is_hot_product)
+              <span class="product-badge badge-danger">HOT</span>
+              @elseif($product->is_best_deal)
+              <span class="product-badge badge-secondary">BEST DEALS</span>
+              @endif
+              <div class="card-body">
+                <div class="ratio ratio-1x1 thumb">
+                  <a href="{{ route('frontend.product-detail', $product->slug) }}" class="d-block h-100">
+                    <img src="{{ $product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg') }}" alt="{{ $product->name }}" class="w-100 h-100 p-2 rounded" />
+                  </a>
+                  <div class="product-actions">
+                    @php
+                      $isInWishlist = in_array($product->id, $wishlist ?? []);
+                    @endphp
+                    <div class="action-btn wishlist-btn {{ $isInWishlist ? 'active' : '' }}" data-product-id="{{ $product->id }}" title="{{ $isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist' }}">
+                      <i class="bi {{ $isInWishlist ? 'bi-heart-fill' : 'bi-heart' }}"></i>
                     </div>
-
-                    <!-- Rating -->
-                    <div class="rating mt-3 d-flex align-items-center">
-                      <span class="text-primary-custom">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                      </span>
-                      <span class="rating-count">(738)</span>
+                    <div class="action-btn add-to-cart-btn" data-product-id="{{ $product->id }}" title="Add to Cart">
+                      <i class="bi bi-cart"></i>
                     </div>
-
-                    <!-- Title -->
-                    <p class="product-title mt-2 mb-0">
-                      TOZO T6 True Wireless Earbuds Bluetooth Headphones
-                    </p>
-
-                    <!-- Price -->
-                    <div class="product-price text-promo">$70</div>
+                    <a href="{{ route('frontend.product-detail', $product->slug) }}" class="action-btn" title="View Product">
+                      <i class="bi bi-eye"></i>
+                    </a>
                   </div>
                 </div>
-              </div>
-              <div class="col">
-                <div class="product-card h-100 position-relative">
-                  <div class="card-body">
-                    <!-- Product Image -->
-                    <div class="ratio ratio-1x1 thumb">
-                      <img
-                        src="{{ asset('front-assets/img/phone-2.svg') }}"
-                        alt="img"
-                        class="w-100 h-100 p-2 rounded"
-                      />
-
-                      <!-- Hover Overlay Icons -->
-                      <div class="product-actions">
-                        <div class="action-btn">
-                          <i class="bi bi-heart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-cart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-eye"></i>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Rating -->
-                    <div class="rating mt-3 d-flex align-items-center">
-                      <span class="text-primary-custom">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                      </span>
-                      <span class="rating-count">(738)</span>
-                    </div>
-
-                    <!-- Title -->
-                    <p class="product-title mt-2 mb-0">
-                      TOZO T6 True Wireless Earbuds Bluetooth Headphones
-                    </p>
-
-                    <!-- Price -->
-                    <div class="product-price">$70</div>
-                  </div>
+                @php
+                  $rating = round($product->approved_rating ?? 0, 1);
+                  $reviewCount = $product->approved_reviews_count ?? 0;
+                  $rounded = $reviewCount > 0 ? round($rating * 2) / 2 : 0;
+                  $full = (int) floor($rounded);
+                  $half = ($rounded - $full) === 0.5;
+                  $empty = 5 - $full - ($half ? 1 : 0);
+                @endphp
+                <div class="rating mt-3 d-flex align-items-center gap-2">
+                  <span class="text-primary-custom rating-stars-sm">
+                    @for ($i = 0; $i < $full; $i++)
+                      <i class="bi bi-star-fill"></i>
+                    @endfor
+                    @if ($half)
+                      <i class="bi bi-star-half"></i>
+                    @endif
+                    @for ($i = 0; $i < $empty; $i++)
+                      <i class="bi bi-star"></i>
+                    @endfor
+                  </span>
+                  <span class="rating-count">
+                    @if($reviewCount > 0)
+                      {{ number_format($rating, 1) }} ({{ $reviewCount }})
+                    @else
+                      (0)
+                    @endif
+                  </span>
                 </div>
-              </div>
-              <div class="col">
-                <div class="product-card h-100 position-relative">
-                  <span class="product-badge badge-secondary">BEST DEALS</span>
-
-                  <div class="card-body">
-                    <!-- Product Image -->
-                    <div class="ratio ratio-1x1 thumb">
-                      <img
-                        src="{{ asset('front-assets/img/phone-3.svg') }}"
-                        alt="img"
-                        class="w-100 h-100 p-2 rounded"
-                      />
-
-                      <!-- Hover Overlay Icons -->
-                      <div class="product-actions">
-                        <div class="action-btn">
-                          <i class="bi bi-heart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-cart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-eye"></i>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Rating -->
-                    <div class="rating mt-3 d-flex align-items-center">
-                      <span class="text-primary-custom">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                      </span>
-                      <span class="rating-count">(738)</span>
-                    </div>
-
-                    <!-- Title -->
-                    <p class="product-title mt-2 mb-0">
-                      TOZO T6 True Wireless Earbuds Bluetooth Headphones
-                    </p>
-
-                    <!-- Price -->
-                    <div class="product-price">$70</div>
-                  </div>
-                </div>
-              </div>
-              <div class="col">
-                <div class="product-card h-100 position-relative">
-                  <div class="card-body">
-                    <!-- Product Image -->
-                    <div class="ratio ratio-1x1 thumb">
-                      <img
-                        src="{{ asset('front-assets/img/phone-4.svg') }}"
-                        alt="img"
-                        class="w-100 h-100 p-2 rounded"
-                      />
-
-                      <!-- Hover Overlay Icons -->
-                      <div class="product-actions">
-                        <div class="action-btn">
-                          <i class="bi bi-heart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-cart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-eye"></i>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Rating -->
-                    <div class="rating mt-3 d-flex align-items-center">
-                      <span class="text-primary-custom">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                      </span>
-                      <span class="rating-count">(738)</span>
-                    </div>
-
-                    <!-- Title -->
-                    <p class="product-title mt-2 mb-0">
-                      TOZO T6 True Wireless Earbuds Bluetooth Headphones
-                    </p>
-
-                    <!-- Price -->
-                    <div class="product-price">$70</div>
-                  </div>
+                <a href="{{ route('frontend.product-detail', $product->slug) }}" class="text-decoration-none text-dark">
+                  <p class="product-title mt-2 mb-0">{{ Str::limit($product->name, 50) }}</p>
+                </a>
+                <div class="product-price {{ $product->compare_at_price ? 'text-promo' : '' }}">
+                  {{ $currencySymbol }}{{ number_format($product->price, 2) }}
+                  @if($product->compare_at_price)
+                  <small class="text-muted text-decoration-line-through">{{ $currencySymbol }}{{ number_format($product->compare_at_price, 2) }}</small>
+                  @endif
                 </div>
               </div>
             </div>
           </div>
-          <div
-            class="tab-pane fade"
-            id="pills-apple"
-            role="tabpanel"
-            aria-labelledby="pills-apple-tab"
-          >
-            ...
-          </div>
-          <div
-            class="tab-pane fade"
-            id="pills-samsung"
-            role="tabpanel"
-            aria-labelledby="pills-samsung-tab"
-          >
-            ...
-          </div>
-          <div
-            class="tab-pane fade"
-            id="pills-others"
-            role="tabpanel"
-            aria-labelledby="pills-others-tab"
-          >
-            ...
-          </div>
+          @endforeach
         </div>
+        
+        <div class="text-center mt-4">
+          <a href="{{ route('frontend.marketplace', ['category' => $smartphoneCategory->id]) }}" class="btn btn-gradient">
+            View All
+          </a>
+        </div>
+        @else
+        <div class="text-center py-5">
+          <p class="text-muted">No products available in this category.</p>
+        </div>
+        @endif
       </div>
     </section>
+    @endif
 
     <!-- quality repairs section -->
     <section class="quality-repair-section mb-custom py-5 py-sm-0">
@@ -479,308 +296,256 @@
       </div>
     </section>
 
-    <!-- Accessories   -->
+    <!-- Latest Products   -->
+    @if(isset($latestProductsData) && count($latestProductsData) > 0)
     <section class="mb-custom">
       <div class="container">
-        <button class="btn-gradient-outline mb-4">{{ $content->accessories_badge ?? 'Accessories' }}</button>
+        <button class="btn-gradient-outline mb-4">{{ $content->accessories_badge ?? 'Latest Products' }}</button>
 
         <div class="flex-between flex-wrap flex-md-nowrap mb-5">
-          <h3 class="fs-40">{{ $content->accessories_title ?? 'Must Have Accessories' }}</h3>
+          <h3 class="fs-40">{{ $content->accessories_title ?? 'Latest Products' }}</h3>
+          @if(count($latestProductsData) > 1)
           <ul
             class="nav nav-pills justify-content-between justify-content-md-end mb-3 gap-3 mt-md-0 mt-3"
-            id="pills-tab"
+            id="pills-latest-products-tab"
             role="tablist"
           >
-            <li class="nav-item" role="presentation">
-              <button
-                class="nav-link active"
-                id="pills-chargers-tab"
-                data-bs-toggle="pill"
-                data-bs-target="#pills-chargers"
-                type="button"
-                role="tab"
-                aria-controls="pills-chargers"
-                aria-selected="true"
-              >
-                chargers
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button
-                class="nav-link"
-                id="pills-headphones-tab"
-                data-bs-toggle="pill"
-                data-bs-target="#pills-headphones"
-                type="button"
-                role="tab"
-                aria-controls="pills-headphones"
-                aria-selected="false"
-              >
-                Headphones
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button
-                class="nav-link"
-                id="pills-cables-tab"
-                data-bs-toggle="pill"
-                data-bs-target="#pills-cables"
-                type="button"
-                role="tab"
-                aria-controls="pills-cables"
-                aria-selected="false"
-              >
-                Cables
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button
-                class="nav-link"
-                id="pills-watches-tab"
-                data-bs-toggle="pill"
-                data-bs-target="#pills-watches"
-                type="button"
-                role="tab"
-                aria-controls="pills-watches"
-                aria-selected="false"
-              >
-                Watches
-              </button>
-            </li>
+            @foreach($latestProductsData as $categoryId => $data)
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link {{ $loop->first ? 'active' : '' }}"
+                  id="pills-category-{{ $categoryId }}-tab"
+                  data-bs-toggle="pill"
+                  data-bs-target="#pills-category-{{ $categoryId }}"
+                  type="button"
+                  role="tab"
+                  aria-controls="pills-category-{{ $categoryId }}"
+                  aria-selected="{{ $loop->first ? 'true' : 'false' }}"
+                >
+                  {{ $data['category']->name }}
+                </button>
+              </li>
+            @endforeach
           </ul>
+          @endif
         </div>
-        <div class="tab-content" id="pills-tabContent">
-          <div
-            class="tab-pane fade show active"
-            id="pills-chargers"
-            role="tabpanel"
-            aria-labelledby="pills-chargers-tab"
-          >
+        <div class="tab-content" id="pills-latest-products-tabContent">
+          @php
+            $wishlist = session()->get('wishlist', []);
+            $currencySymbol = $settings->currency_symbol ?? '$';
+          @endphp
+          @foreach($latestProductsData as $categoryId => $data)
             <div
-              class="row row-cols-xxl-5 row-cols-xl-4 row-cols-lg-3 row-cols-sm-2 row-cols-1 g-3"
+              class="tab-pane fade {{ $loop->first ? 'show active' : '' }}"
+              id="pills-category-{{ $categoryId }}"
+              role="tabpanel"
+              aria-labelledby="pills-category-{{ $categoryId }}-tab"
             >
-              <div class="col">
-                <div class="product-card h-100 position-relative">
-                  <span class="product-badge badge-danger">HOT</span>
-
-                  <div class="card-body">
-                    <!-- Product Image -->
-                    <div class="ratio ratio-1x1 thumb">
-                      <img
-                        src="{{ asset('front-assets/img/phone-1.svg') }}"
-                        alt="img"
-                        class="w-100 h-100 p-2 rounded"
-                      />
-
-                      <!-- Hover Overlay Icons -->
-                      <div class="product-actions">
-                        <div class="action-btn">
-                          <i class="bi bi-heart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-cart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-eye"></i>
+              <div class="row row-cols-xxl-5 row-cols-xl-4 row-cols-lg-3 row-cols-sm-2 row-cols-1 g-3">
+                @foreach($data['products'] as $product)
+                <div class="col">
+                  <div class="product-card h-100 position-relative">
+                    @if($product->is_hot_product)
+                    <span class="product-badge badge-danger">HOT</span>
+                    @elseif($product->is_best_deal)
+                    <span class="product-badge badge-secondary">BEST DEALS</span>
+                    @endif
+                    <div class="card-body">
+                      <div class="ratio ratio-1x1 thumb">
+                        <a href="{{ route('frontend.product-detail', $product->slug) }}" class="d-block h-100">
+                          <img src="{{ $product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg') }}" alt="{{ $product->name }}" class="w-100 h-100 p-2 rounded" />
+                        </a>
+                        <div class="product-actions">
+                          @php
+                            $isInWishlist = in_array($product->id, $wishlist ?? []);
+                          @endphp
+                          <div class="action-btn wishlist-btn {{ $isInWishlist ? 'active' : '' }}" data-product-id="{{ $product->id }}" title="{{ $isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist' }}">
+                            <i class="bi {{ $isInWishlist ? 'bi-heart-fill' : 'bi-heart' }}"></i>
+                          </div>
+                          <div class="action-btn add-to-cart-btn" data-product-id="{{ $product->id }}" title="Add to Cart">
+                            <i class="bi bi-cart"></i>
+                          </div>
+                          <a href="{{ route('frontend.product-detail', $product->slug) }}" class="action-btn" title="View Product">
+                            <i class="bi bi-eye"></i>
+                          </a>
                         </div>
                       </div>
+                      @php
+                        $rating = round($product->approved_rating ?? 0, 1);
+                        $reviewCount = $product->approved_reviews_count ?? 0;
+                        $rounded = $reviewCount > 0 ? round($rating * 2) / 2 : 0;
+                        $full = (int) floor($rounded);
+                        $half = ($rounded - $full) === 0.5;
+                        $empty = 5 - $full - ($half ? 1 : 0);
+                      @endphp
+                      <div class="rating mt-3 d-flex align-items-center gap-2">
+                        <span class="text-primary-custom rating-stars-sm">
+                          @for ($i = 0; $i < $full; $i++)
+                            <i class="bi bi-star-fill"></i>
+                          @endfor
+                          @if ($half)
+                            <i class="bi bi-star-half"></i>
+                          @endif
+                          @for ($i = 0; $i < $empty; $i++)
+                            <i class="bi bi-star"></i>
+                          @endfor
+                        </span>
+                        <span class="rating-count">
+                          @if($reviewCount > 0)
+                            {{ number_format($rating, 1) }} ({{ $reviewCount }})
+                          @else
+                            (0)
+                          @endif
+                        </span>
+                      </div>
+                      <a href="{{ route('frontend.product-detail', $product->slug) }}" class="text-decoration-none text-dark">
+                        <p class="product-title mt-2 mb-0">{{ Str::limit($product->name, 50) }}</p>
+                      </a>
+                      <div class="product-price {{ $product->compare_at_price ? 'text-promo' : '' }}">
+                        {{ $currencySymbol }}{{ number_format($product->price, 2) }}
+                        @if($product->compare_at_price)
+                        <small class="text-muted text-decoration-line-through">{{ $currencySymbol }}{{ number_format($product->compare_at_price, 2) }}</small>
+                        @endif
+                      </div>
                     </div>
-
-                    <!-- Rating -->
-                    <div class="rating mt-3 d-flex align-items-center">
-                      <span class="text-primary-custom">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                      </span>
-                      <span class="rating-count">(738)</span>
-                    </div>
-
-                    <!-- Title -->
-                    <p class="product-title mt-2 mb-0">
-                      TOZO T6 True Wireless Earbuds Bluetooth Headphones
-                    </p>
-
-                    <!-- Price -->
-                    <div class="product-price text-promo">$70</div>
                   </div>
                 </div>
+                @endforeach
               </div>
-              <div class="col">
-                <div class="product-card h-100 position-relative">
-                  <div class="card-body">
-                    <!-- Product Image -->
-                    <div class="ratio ratio-1x1 thumb">
-                      <img
-                        src="{{ asset('front-assets/img/phone-2.svg') }}"
-                        alt="img"
-                        class="w-100 h-100 p-2 rounded"
-                      />
-
-                      <!-- Hover Overlay Icons -->
-                      <div class="product-actions">
-                        <div class="action-btn">
-                          <i class="bi bi-heart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-cart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-eye"></i>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Rating -->
-                    <div class="rating mt-3 d-flex align-items-center">
-                      <span class="text-primary-custom">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                      </span>
-                      <span class="rating-count">(738)</span>
-                    </div>
-
-                    <!-- Title -->
-                    <p class="product-title mt-2 mb-0">
-                      TOZO T6 True Wireless Earbuds Bluetooth Headphones
-                    </p>
-
-                    <!-- Price -->
-                    <div class="product-price">$70</div>
-                  </div>
-                </div>
-              </div>
-              <div class="col">
-                <div class="product-card h-100 position-relative">
-                  <span class="product-badge badge-secondary">BEST DEALS</span>
-
-                  <div class="card-body">
-                    <!-- Product Image -->
-                    <div class="ratio ratio-1x1 thumb">
-                      <img
-                        src="{{ asset('front-assets/img/phone-3.svg') }}"
-                        alt="img"
-                        class="w-100 h-100 p-2 rounded"
-                      />
-
-                      <!-- Hover Overlay Icons -->
-                      <div class="product-actions">
-                        <div class="action-btn">
-                          <i class="bi bi-heart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-cart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-eye"></i>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Rating -->
-                    <div class="rating mt-3 d-flex align-items-center">
-                      <span class="text-primary-custom">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                      </span>
-                      <span class="rating-count">(738)</span>
-                    </div>
-
-                    <!-- Title -->
-                    <p class="product-title mt-2 mb-0">
-                      TOZO T6 True Wireless Earbuds Bluetooth Headphones
-                    </p>
-
-                    <!-- Price -->
-                    <div class="product-price">$70</div>
-                  </div>
-                </div>
-              </div>
-              <div class="col">
-                <div class="product-card h-100 position-relative">
-                  <div class="card-body">
-                    <!-- Product Image -->
-                    <div class="ratio ratio-1x1 thumb">
-                      <img
-                        src="{{ asset('front-assets/img/phone-4.svg') }}"
-                        alt="img"
-                        class="w-100 h-100 p-2 rounded"
-                      />
-
-                      <!-- Hover Overlay Icons -->
-                      <div class="product-actions">
-                        <div class="action-btn">
-                          <i class="bi bi-heart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-cart"></i>
-                        </div>
-                        <div class="action-btn">
-                          <i class="bi bi-eye"></i>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Rating -->
-                    <div class="rating mt-3 d-flex align-items-center">
-                      <span class="text-primary-custom">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                      </span>
-                      <span class="rating-count">(738)</span>
-                    </div>
-
-                    <!-- Title -->
-                    <p class="product-title mt-2 mb-0">
-                      TOZO T6 True Wireless Earbuds Bluetooth Headphones
-                    </p>
-
-                    <!-- Price -->
-                    <div class="product-price">$70</div>
-                  </div>
-                </div>
+              
+              <div class="text-center mt-4">
+                <a href="{{ route('frontend.marketplace', ['category' => $data['category']->id]) }}" class="btn btn-gradient">
+                  View All {{ $data['category']->name }}
+                </a>
               </div>
             </div>
-          </div>
-          <div
-            class="tab-pane fade"
-            id="pills-headphones"
-            role="tabpanel"
-            aria-labelledby="pills-headphones-tab"
-          >
-            ...
-          </div>
-          <div
-            class="tab-pane fade"
-            id="pills-cables"
-            role="tabpanel"
-            aria-labelledby="pills-cables-tab"
-          >
-            ...
-          </div>
-          <div
-            class="tab-pane fade"
-            id="pills-watches"
-            role="tabpanel"
-            aria-labelledby="pills-watches-tab"
-          >
-            ...
-          </div>
+          @endforeach
         </div>
       </div>
     </section>
+    @endif
 
     
+
+@push('scripts')
+<script>
+// Add to cart functionality
+function addToCart(productId) {
+  fetch(`{{ url('/cart/add') }}/${productId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showCartNotification('Product added to cart!', 'success');
+      // Update cart bar if it exists
+      if (typeof updateCartBar === 'function') {
+        updateCartBar();
+      }
+    } else {
+      showCartNotification(data.message || 'Unable to add product to cart.', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showCartNotification('Unable to add product to cart. Please try again.', 'error');
+  });
+}
+
+// Notification function
+function showCartNotification(message, type = 'success') {
+  const notification = document.createElement('div');
+  notification.className = `cart-notification ${type}`;
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.classList.add('show');
+  }, 10);
+  
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => {
+      notification.remove();
+    }, 300);
+  }, 3000);
+}
+
+// Wishlist functionality
+function toggleWishlist(wishlistBtn) {
+  if (!wishlistBtn) return;
+  
+  const productId = wishlistBtn.getAttribute('data-product-id');
+  if (!productId) return;
+  
+  const isCurrentlyActive = wishlistBtn.classList.contains('active');
+  const action = isCurrentlyActive ? 'remove' : 'add';
+  const endpoint = `{{ url('/wishlist') }}/${action}/${productId}`;
+  
+  fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      const icon = wishlistBtn.querySelector('i');
+      if (action === 'add') {
+        wishlistBtn.classList.add('active');
+        icon.classList.remove('bi-heart');
+        icon.classList.add('bi-heart-fill');
+        wishlistBtn.setAttribute('title', 'Remove from Wishlist');
+        showCartNotification('Product added to wishlist!', 'success');
+      } else {
+        wishlistBtn.classList.remove('active');
+        icon.classList.remove('bi-heart-fill');
+        icon.classList.add('bi-heart');
+        wishlistBtn.setAttribute('title', 'Add to Wishlist');
+        showCartNotification('Product removed from wishlist!', 'success');
+      }
+    } else {
+      showCartNotification('Unable to update wishlist. Please try again.', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showCartNotification('Unable to update wishlist. Please try again.', 'error');
+  });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Add click handlers to all cart icons (including dynamically loaded ones)
+  document.addEventListener('click', function(e) {
+    const cartBtn = e.target.closest('.add-to-cart-btn');
+    if (cartBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const productId = cartBtn.getAttribute('data-product-id');
+      if (productId) {
+        addToCart(productId);
+      }
+    }
+    
+    // Handle wishlist toggle
+    const wishlistBtn = e.target.closest('.wishlist-btn');
+    if (wishlistBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleWishlist(wishlistBtn);
+    }
+  });
+});
+</script>
+@endpush
 
 @endsection

@@ -25,24 +25,48 @@ class SettingController extends Controller
     {
         $settings = Setting::getSettings();
 
-        $validated = $request->validate([
+        // Prepare validation rules
+        $rules = [
             'website_name' => 'nullable|string|max:255',
             'website_title' => 'nullable|string|max:255',
             'website_description' => 'nullable|string',
             'website_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'favicon' => 'nullable|image|mimes:ico,png,jpg|max:512',
+            'favicon' => 'nullable|image|mimes:ico,png,jpg,jpeg|max:512',
             'promo_title' => 'nullable|string|max:255',
+            'contact_email' => 'nullable|email|max:255',
             'currency' => 'required|in:USD,GBP',
             'currency_symbol' => 'nullable|string|max:10',
-            'facebook_url' => 'nullable|url|max:255',
-            'instagram_url' => 'nullable|url|max:255',
-            'tiktok_url' => 'nullable|url|max:255',
-            'youtube_url' => 'nullable|url|max:255',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'meta_keywords' => 'nullable|string|max:500',
             'og_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+        ];
+
+        // For URL fields, validate only if not empty
+        $urlFields = ['facebook_url', 'instagram_url', 'tiktok_url', 'youtube_url'];
+        foreach ($urlFields as $field) {
+            if ($request->filled($field)) {
+                $rules[$field] = 'url|max:255';
+            } else {
+                $rules[$field] = 'nullable|string|max:255';
+            }
+        }
+
+        $validated = $request->validate($rules);
+
+        // Ensure all text fields are included even if empty
+        $textFields = [
+            'website_name', 'website_title', 'website_description', 'promo_title',
+            'contact_email', 'currency_symbol', 'facebook_url', 'instagram_url',
+            'tiktok_url', 'youtube_url', 'meta_title', 'meta_description', 'meta_keywords'
+        ];
+        
+        foreach ($textFields as $field) {
+            if ($request->has($field)) {
+                $value = $request->input($field);
+                $validated[$field] = !empty(trim($value)) ? trim($value) : null;
+            }
+        }
 
         // Set currency symbol based on currency if not provided
         if (!isset($validated['currency_symbol']) || empty($validated['currency_symbol'])) {
@@ -57,6 +81,7 @@ class SettingController extends Controller
             }
             $validated['website_logo'] = $request->file('website_logo')->store('settings', 'public');
         } else {
+            // Keep existing logo if no new file uploaded
             unset($validated['website_logo']);
         }
 
@@ -68,6 +93,7 @@ class SettingController extends Controller
             }
             $validated['favicon'] = $request->file('favicon')->store('settings', 'public');
         } else {
+            // Keep existing favicon if no new file uploaded
             unset($validated['favicon']);
         }
 
@@ -79,11 +105,24 @@ class SettingController extends Controller
             }
             $validated['og_image'] = $request->file('og_image')->store('settings', 'public');
         } else {
+            // Keep existing OG image if no new file uploaded
             unset($validated['og_image']);
         }
 
-        $settings->update($validated);
+        // Ensure currency is always set
+        if (!isset($validated['currency'])) {
+            $validated['currency'] = $settings->currency ?? 'USD';
+        }
 
-        return redirect()->route('admin.settings.index')->with('success', 'Settings updated successfully.');
+        // Update settings with validated data
+        try {
+            $settings->fill($validated);
+            $settings->save();
+            
+            return redirect()->route('admin.settings.index')->with('success', 'Settings updated successfully.');
+        } catch (\Exception $e) {
+            \Log::error('Settings update failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to update settings: ' . $e->getMessage())->withInput();
+        }
     }
 }

@@ -21,33 +21,69 @@
         <div class="row row-cols-1 row-cols-md-2 g-4 align-items-stretch">
           <!-- Contact Form -->
           <div class="col">
-            <form novalidate class="h-100 d-flex flex-column">
+            <form method="POST" action="{{ route('frontend.contact.submit') }}" class="h-100 d-flex flex-column">
+              @csrf
               <h3 class="mb-3">Please fill the contact form</h3>
+              
+              @if(session('success'))
+              <div class="alert alert-success mb-3">
+                <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+              </div>
+              @endif
+              
+              @if(session('error'))
+              <div class="alert alert-danger mb-3">
+                <i class="bi bi-x-circle me-2"></i>{{ session('error') }}
+              </div>
+              @endif
+              
+              @if($errors->any())
+              <div class="alert alert-danger mb-3">
+                <ul class="mb-0">
+                  @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                  @endforeach
+                </ul>
+              </div>
+              @endif
+              
               <!-- Name -->
               <div class="mb-3">
                 <label class="form-label text-heading mb-1" for="name"
-                  >Name</label
+                  >Name <span class="text-danger">*</span></label
                 >
                 <input
                   id="name"
+                  name="name"
                   type="text"
-                  class="custom-input"
-                  placeholder=""
+                  class="custom-input @error('name') is-invalid @enderror"
+                  placeholder="Enter your name"
+                  value="{{ old('name') }}"
+                  required
                 />
+                @error('name')
+                  <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
               </div>
 
               <!-- Email + Phone -->
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label text-heading mb-1" for="email"
-                    >Email</label
+                    >Email <span class="text-danger">*</span></label
                   >
                   <input
                     id="email"
+                    name="email"
                     type="email"
-                    class="custom-input"
-                    placeholder=""
+                    class="custom-input @error('email') is-invalid @enderror"
+                    placeholder="Enter your email"
+                    value="{{ old('email') }}"
+                    required
                   />
+                  @error('email')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                  @enderror
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="form-label text-heading mb-1" for="phone"
@@ -55,23 +91,34 @@
                   >
                   <input
                     id="phone"
+                    name="phone"
                     type="tel"
-                    class="custom-input"
-                    placeholder=""
+                    class="custom-input @error('phone') is-invalid @enderror"
+                    placeholder="Enter your phone number"
+                    value="{{ old('phone') }}"
                   />
+                  @error('phone')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                  @enderror
                 </div>
               </div>
 
               <!-- Message -->
               <div class="mb-3">
                 <label class="form-label text-heading mb-1" for="message"
-                  >Message</label
+                  >Message <span class="text-danger">*</span></label
                 >
                 <textarea
                   id="message"
-                  class="custom-input"
+                  name="message"
+                  class="custom-input @error('message') is-invalid @enderror"
                   placeholder="Please tell us a bit about what you're looking for"
-                ></textarea>
+                  rows="5"
+                  required
+                >{{ old('message') }}</textarea>
+                @error('message')
+                  <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
               </div>
 
               <!-- Submit -->

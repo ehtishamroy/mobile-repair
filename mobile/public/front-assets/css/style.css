@@ -1219,7 +1219,7 @@
 
 /* ===== Track Order Summary + Activity ===== */
 .track-record-section {
-  display: none;
+  display: block;
   .track-record {
     font-weight: 400;
     border: 1px solid #e4e7e9;

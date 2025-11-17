@@ -27,10 +27,12 @@ use App\Http\Controllers\Frontend\CartController;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/about', [HomeController::class, 'about'])->name('frontend.about');
 Route::get('/contact', [HomeController::class, 'contact'])->name('frontend.contact');
+Route::post('/contact', [HomeController::class, 'submitContact'])->name('frontend.contact.submit');
 Route::get('/join', [HomeController::class, 'join'])->name('frontend.join');
 Route::get('/checkout', [HomeController::class, 'checkout'])->name('frontend.checkout');
 Route::post('/checkout/process', [HomeController::class, 'processCheckout'])->name('frontend.checkout.process');
 Route::post('/checkout/create-paypal-order', [HomeController::class, 'createPayPalOrder'])->name('frontend.checkout.create-paypal-order');
+Route::get('/thank-you/{id}', [HomeController::class, 'thankYou'])->name('frontend.thank-you');
 Route::get('/marketplace', [HomeController::class, 'marketplace'])->name('frontend.marketplace');
 Route::post('/marketplace/filter', [HomeController::class, 'marketplaceFilter'])->name('frontend.marketplace.filter');
 Route::get('/service', [HomeController::class, 'service'])->name('frontend.service');
@@ -69,6 +71,18 @@ Route::middleware('auth')->group(function () {
 
 // Admin Authentication Routes
 Route::prefix('admin')->name('admin.')->group(function () {
+    // Redirect /admin to dashboard or login
+    Route::get('/', function () {
+        if (auth()->check()) {
+            $user = auth()->user();
+            // Check if user has any admin role
+            if ($user->hasAnyRole(['super-admin', 'admin', 'manager', 'staff'])) {
+                return redirect()->route('admin.dashboard');
+            }
+        }
+        return redirect()->route('admin.login');
+    });
+    
     // Login Routes (only accessible when not authenticated)
     Route::middleware('guest')->group(function () {
         Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('login');

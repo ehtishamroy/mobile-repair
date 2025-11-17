@@ -692,7 +692,12 @@
                           <img src="{{ $product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg') }}" alt="{{ $product->name }}" class="w-100 h-100 p-2 rounded" />
                         </a>
                         <div class="product-actions">
-                          <div class="action-btn"><i class="bi bi-heart"></i></div>
+                          @php
+                            $isInWishlist = in_array($product->id, $wishlist ?? []);
+                          @endphp
+                          <div class="action-btn wishlist-btn {{ $isInWishlist ? 'active' : '' }}" data-product-id="{{ $product->id }}" title="{{ $isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist' }}">
+                            <i class="bi {{ $isInWishlist ? 'bi-heart-fill' : 'bi-heart' }}"></i>
+                          </div>
                           <div class="action-btn add-to-cart-btn" data-product-id="{{ $product->id }}" title="Add to Cart">
                             <i class="bi bi-cart"></i>
                           </div>
@@ -1999,6 +2004,52 @@ function showCartNotification(message, type) {
   }, 3000);
 }
 
+// Wishlist functionality
+function toggleWishlist(wishlistBtn) {
+  if (!wishlistBtn) return;
+  
+  const productId = wishlistBtn.getAttribute('data-product-id');
+  if (!productId) return;
+  
+  const isCurrentlyActive = wishlistBtn.classList.contains('active');
+  const action = isCurrentlyActive ? 'remove' : 'add';
+  const endpoint = `{{ url('/wishlist') }}/${action}/${productId}`;
+  
+  fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      const icon = wishlistBtn.querySelector('i');
+      if (action === 'add') {
+        wishlistBtn.classList.add('active');
+        icon.classList.remove('bi-heart');
+        icon.classList.add('bi-heart-fill');
+        wishlistBtn.setAttribute('title', 'Remove from Wishlist');
+        showCartNotification('Product added to wishlist!', 'success');
+      } else {
+        wishlistBtn.classList.remove('active');
+        icon.classList.remove('bi-heart-fill');
+        icon.classList.add('bi-heart');
+        wishlistBtn.setAttribute('title', 'Add to Wishlist');
+        showCartNotification('Product removed from wishlist!', 'success');
+      }
+    } else {
+      showCartNotification('Unable to update wishlist. Please try again.', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showCartNotification('Unable to update wishlist. Please try again.', 'error');
+  });
+}
+
 // Initialize cart bar on page load
 document.addEventListener('DOMContentLoaded', function() {
   updateCartBar();
@@ -2013,6 +2064,14 @@ document.addEventListener('DOMContentLoaded', function() {
       if (productId) {
         addToCart(productId);
       }
+    }
+    
+    // Handle wishlist toggle
+    const wishlistBtn = e.target.closest('.wishlist-btn');
+    if (wishlistBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleWishlist(wishlistBtn);
     }
   });
 });

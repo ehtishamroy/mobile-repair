@@ -13,6 +13,7 @@ class Setting extends Model
         'website_logo',
         'favicon',
         'promo_title',
+        'contact_email',
         'currency',
         'currency_symbol',
         'facebook_url',

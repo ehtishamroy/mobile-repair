@@ -10,6 +10,12 @@
 @endsection
 
 @section('content')
+@php
+    $nameValue = old('name', $category->name ?? '');
+    $slugValue = old('slug', $category->slug ?? '');
+    $descriptionValue = old('description', $category->description ?? '');
+    $isActive = old('is_active', $category->is_active ?? false);
+@endphp
 <form action="{{ route('admin.categories.update', $category->id) }}" method="POST" enctype="multipart/form-data">
     @csrf
     @method('PUT')
@@ -23,7 +29,7 @@
                     <div class="form-group">
                         <label for="name">Category Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control @error('name') is-invalid @enderror" 
-                               id="name" name="name" value="{{ old('name', $category->name) }}" required>
+                               id="name" name="name" value="{{ $nameValue }}" required>
                         @error('name')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
@@ -32,7 +38,7 @@
                     <div class="form-group">
                         <label for="slug">Slug</label>
                         <input type="text" class="form-control @error('slug') is-invalid @enderror" 
-                               id="slug" name="slug" value="{{ old('slug', $category->slug') }}">
+                               id="slug" name="slug" value="{{ $slugValue }}">
                         @error('slug')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
@@ -41,7 +47,7 @@
                     <div class="form-group">
                         <label for="description">Description</label>
                         <textarea class="form-control @error('description') is-invalid @enderror" 
-                                  id="description" name="description" rows="4">{{ old('description', $category->description) }}</textarea>
+                                  id="description" name="description" rows="4">{{ $descriptionValue }}</textarea>
                         @error('description')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
@@ -49,7 +55,7 @@
 
                     <div class="form-group">
                         <div class="custom-control custom-switch">
-                            <input type="checkbox" class="custom-control-input" id="is_active" name="is_active" value="1" {{ old('is_active', $category->is_active) ? 'checked' : '' }}>
+                            <input type="checkbox" class="custom-control-input" id="is_active" name="is_active" value="1" @if($isActive) checked @endif>
                             <label class="custom-control-label" for="is_active">Active</label>
                         </div>
                     </div>
@@ -113,4 +119,3 @@
 </script>
 @endpush
 @endsection
-

@@ -9,6 +9,24 @@
 @endsection
 
 @section('content')
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+@endif
+
 <form action="{{ route('admin.settings.update') }}" method="POST" enctype="multipart/form-data">
     @csrf
     @method('PUT')
@@ -60,6 +78,18 @@
                                value="{{ old('promo_title', $settings->promo_title) }}" 
                                placeholder="Enter promo title">
                         @error('promo_title')
+                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contact_email">Contact Form Email</label>
+                        <input type="email" class="form-control @error('contact_email') is-invalid @enderror" 
+                               id="contact_email" name="contact_email" 
+                               value="{{ old('contact_email', $settings->contact_email) }}" 
+                               placeholder="Enter email address for contact form submissions">
+                        <small class="form-text text-muted">Contact form submissions will be sent to this email address</small>
+                        @error('contact_email')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
                     </div>

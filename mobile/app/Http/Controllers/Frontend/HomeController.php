@@ -18,15 +18,97 @@ use App\Models\Setting;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Coupon;
+use App\Mail\OrderConfirmation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class HomeController extends Controller
 {
     public function index()
     {
         $content = HomepageContent::getContent();
-        return view('frontend.index', compact('content'));
+        
+        // Get Smartphone category (searching for categories with "smart" or "phone" in name)
+        $smartphoneCategory = Category::where('is_active', true)
+            ->where(function($query) {
+                $query->where('name', 'LIKE', '%smart%')
+                      ->orWhere('name', 'LIKE', '%phone%')
+                      ->orWhere('slug', 'LIKE', '%smart%')
+                      ->orWhere('slug', 'LIKE', '%phone%');
+            })
+            ->first();
+        
+        $trendingBrands = collect();
+        $trendingProducts = collect();
+        
+        if ($smartphoneCategory) {
+            // Get top 2 brands that have products in smartphone category
+            $trendingBrands = Brand::where('is_active', true)
+                ->whereHas('products', function($query) use ($smartphoneCategory) {
+                    $query->where('category_id', $smartphoneCategory->id)
+                          ->where('is_active', true);
+                })
+                ->withCount(['products' => function($query) use ($smartphoneCategory) {
+                    $query->where('category_id', $smartphoneCategory->id)
+                          ->where('is_active', true);
+                }])
+                ->orderBy('products_count', 'desc')
+                ->limit(2)
+                ->get();
+            
+            // Get 4 products from smartphone category with reviews
+            $trendingProducts = Product::where('is_active', true)
+                ->where('category_id', $smartphoneCategory->id)
+                ->with(['category', 'brand'])
+                ->withAvg(['approvedReviews as approved_rating' => function ($query) {
+                    $query->where('is_approved', true);
+                }], 'rating')
+                ->withCount(['approvedReviews as approved_reviews_count' => function ($query) {
+                    $query->where('is_approved', true);
+                }])
+                ->orderBy('is_featured', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->limit(4)
+                ->get();
+        }
+        
+        // Get Latest Products - random products from random categories
+        // Get 4 random active categories that have products
+        $randomCategories = Category::where('is_active', true)
+            ->whereHas('products', function($query) {
+                $query->where('is_active', true);
+            })
+            ->inRandomOrder()
+            ->limit(4)
+            ->get();
+        
+        $latestProductsData = [];
+        
+        foreach ($randomCategories as $category) {
+            $products = Product::where('is_active', true)
+                ->where('category_id', $category->id)
+                ->with(['category', 'brand'])
+                ->withAvg(['approvedReviews as approved_rating' => function ($query) {
+                    $query->where('is_approved', true);
+                }], 'rating')
+                ->withCount(['approvedReviews as approved_reviews_count' => function ($query) {
+                    $query->where('is_approved', true);
+                }])
+                ->inRandomOrder()
+                ->limit(4)
+                ->get();
+            
+            if ($products->count() > 0) {
+                $latestProductsData[$category->id] = [
+                    'category' => $category,
+                    'products' => $products
+                ];
+            }
+        }
+        
+        return view('frontend.index', compact('content', 'smartphoneCategory', 'trendingBrands', 'trendingProducts', 'latestProductsData'));
     }
 
     public function about()
@@ -38,6 +120,37 @@ class HomeController extends Controller
     public function contact()
     {
         return view('frontend.contact');
+    }
+
+    public function submitContact(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'nullable|string|max:20',
+            'message' => 'required|string|max:5000',
+        ]);
+
+        $settings = Setting::getSettings();
+        $contactEmail = $settings->contact_email;
+
+        if (!$contactEmail) {
+            return back()->with('error', 'Contact form is not configured. Please contact the administrator.')->withInput();
+        }
+
+        try {
+            Mail::to($contactEmail)->send(new \App\Mail\ContactForm(
+                $validated['name'],
+                $validated['email'],
+                $validated['phone'] ?? '',
+                $validated['message']
+            ));
+
+            return back()->with('success', 'Thank you for contacting us! We will get back to you soon.');
+        } catch (\Exception $e) {
+            \Log::error('Contact form email failed: ' . $e->getMessage());
+            return back()->with('error', 'Sorry, there was an error sending your message. Please try again later.')->withInput();
+        }
     }
 
     public function join()
@@ -241,7 +354,10 @@ class HomeController extends Controller
             ];
         }
         
-        return view('frontend.marketplace', compact('categories', 'brands', 'tags', 'featuredProducts', 'products', 'activeFilters', 'totalResults', 'sortBy'));
+        // Get wishlist from session
+        $wishlist = session()->get('wishlist', []);
+        
+        return view('frontend.marketplace', compact('categories', 'brands', 'tags', 'featuredProducts', 'products', 'activeFilters', 'totalResults', 'sortBy', 'wishlist'));
     }
 
     public function marketplaceFilter(Request $request)
@@ -378,11 +494,17 @@ class HomeController extends Controller
             ];
         }
         
+        // Get wishlist from session
+        $wishlist = session()->get('wishlist', []);
+        
         // Build product HTML
         $productsHtml = '';
         if ($products->count() > 0) {
             foreach ($products as $product) {
                 $productUrl = route('frontend.product-detail', $product->slug);
+                $isInWishlist = in_array($product->id, $wishlist);
+                $wishlistClass = $isInWishlist ? 'wishlist-btn active' : 'wishlist-btn';
+                $wishlistIcon = $isInWishlist ? 'bi-heart-fill' : 'bi-heart';
                 $productsHtml .= '<div class="col">';
                 $productsHtml .= '<div class="product-card h-100 position-relative">';
                 if ($product->is_hot_product) {
@@ -410,7 +532,7 @@ class HomeController extends Controller
                 $productsHtml .= '<div class="ratio ratio-1x1 thumb">';
                 $productsHtml .= '<a href="' . $productUrl . '" class="d-block h-100"><img src="' . ($product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg')) . '" alt="' . htmlspecialchars($product->name) . '" class="w-100 h-100 p-2 rounded" /></a>';
                 $productsHtml .= '<div class="product-actions">';
-                $productsHtml .= '<div class="action-btn"><i class="bi bi-heart"></i></div>';
+                $productsHtml .= '<div class="action-btn ' . $wishlistClass . '" data-product-id="' . $product->id . '" title="' . ($isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist') . '"><i class="bi ' . $wishlistIcon . '"></i></div>';
                 $productsHtml .= '<div class="action-btn add-to-cart-btn" data-product-id="' . $product->id . '" title="Add to Cart"><i class="bi bi-cart"></i></div>';
                 $productsHtml .= '<a href="' . $productUrl . '" class="action-btn" title="View Product"><i class="bi bi-eye"></i></a>';
                 $productsHtml .= '</div>';
@@ -422,7 +544,7 @@ class HomeController extends Controller
                 if ($reviewsCountValue > 0) {
                     $productsHtml .= '<span class="rating-count">' . number_format($ratingValue, 1) . ' (' . $reviewsCountValue . ')</span>';
                 } else {
-                    $productsHtml .= '<span class="rating-count">(0)</span>';
+                $productsHtml .= '<span class="rating-count">(0)</span>';
                 }
                 $productsHtml .= '</div>';
                 $productsHtml .= '<a href="' . $productUrl . '" class="text-decoration-none text-dark"><p class="product-title mt-2 mb-0">' . htmlspecialchars(\Illuminate\Support\Str::limit($product->name, 50)) . '</p></a>';
@@ -475,12 +597,46 @@ class HomeController extends Controller
 
     public function wishlist()
     {
-        return view('frontend.wishlist');
+        $wishlist = session()->get('wishlist', []);
+        $settings = Setting::getSettings();
+        $currencySymbol = $settings->currency_symbol ?? '£';
+        
+        // Get products from wishlist
+        $products = Product::whereIn('id', $wishlist)
+            ->where('is_active', true)
+            ->with(['category', 'brand'])
+            ->get();
+        
+        return view('frontend.wishlist', compact('products', 'settings', 'currencySymbol'));
     }
 
-    public function trackOrder()
+    public function trackOrder(Request $request)
     {
-        return view('frontend.track-order');
+        $order = null;
+        $settings = Setting::getSettings();
+        $currencySymbol = $settings->currency_symbol ?? '£';
+        
+        // Get order number from query parameter or form submission
+        $orderNumber = $request->input('order_id') ?? $request->input('order');
+        $email = $request->input('email');
+        
+        if ($orderNumber) {
+            $orderNumber = trim($orderNumber);
+            
+            // Search for order
+            $order = Order::with(['items.product', 'tracking' => function($q) {
+                $q->orderBy('tracking_date', 'desc')->orderBy('created_at', 'desc');
+            }])
+            ->where('order_number', $orderNumber)
+            ->first();
+            
+            // Verify email if provided
+            if ($order && $email && strtolower(trim($order->customer_email)) !== strtolower(trim($email))) {
+                $order = null;
+            }
+        }
+        
+        return view('frontend.track-order', compact('order', 'settings', 'currencySymbol'));
     }
 
     public function cart()
@@ -537,7 +693,7 @@ class HomeController extends Controller
     {
         return view('frontend.select');
     }
-    
+
     public function processCheckout(Request $request)
     {
         $validated = $request->validate([
@@ -671,13 +827,35 @@ class HomeController extends Controller
             
             DB::commit();
             
-            return redirect()->route('frontend.track-order')
-                ->with('success', 'Order placed successfully! Order Number: ' . $order->order_number);
+            // Reload order with relationships for email
+            $order->load(['items.product']);
+            
+            // Send order confirmation email
+            try {
+                Mail::to($order->customer_email)->send(new OrderConfirmation($order));
+                \Log::info('Order confirmation email sent successfully to: ' . $order->customer_email);
+            } catch (\Exception $e) {
+                // Log the error but don't fail the order
+                \Log::error('Failed to send order confirmation email to ' . $order->customer_email . ': ' . $e->getMessage());
+                \Log::error('Email error details: ' . $e->getTraceAsString());
+            }
+            
+            return redirect()->route('frontend.thank-you', $order->id)
+                ->with('success', 'Order placed successfully!');
                 
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Failed to process order. Please try again.')->withInput();
         }
+    }
+    
+    public function thankYou($id)
+    {
+        $order = Order::with(['items.product'])->findOrFail($id);
+        $settings = Setting::getSettings();
+        $currencySymbol = $settings->currency_symbol ?? '£';
+        
+        return view('frontend.thank-you', compact('order', 'settings', 'currencySymbol'));
     }
     
     public function createPayPalOrder(Request $request)

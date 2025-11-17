@@ -25,8 +25,18 @@ class AppServiceProvider extends ServiceProvider
         // Share settings with all views
         View::composer('*', function ($view) {
             $settings = Setting::getSettings();
-            $categories = Category::where('is_active', true)->orderBy('name')->get();
+            
+            // Get wishlist count from session
+            $wishlist = session()->get('wishlist', []);
+            $wishlistCount = count($wishlist);
+            
             $view->with('settings', $settings);
+            $view->with('wishlistCount', $wishlistCount);
+        });
+
+        // Share categories only with frontend views (not admin)
+        View::composer('frontend.*', function ($view) {
+            $categories = Category::where('is_active', true)->orderBy('name')->get();
             $view->with('categories', $categories);
         });
     }
