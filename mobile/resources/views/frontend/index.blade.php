@@ -1,6 +1,10 @@
 ﻿@extends('frontend.layouts.app')
 
-@section('title', 'Ecommerce')
+@php
+    // Use settings from view composer, fallback to default
+    $pageTitle = $settings->meta_title ?? $settings->website_title ?? $settings->website_name ?? 'Home';
+@endphp
+@section('title', $pageTitle)
 
 @section('content')
 <!-- Hero Section Start -->
@@ -20,7 +24,7 @@
           {!! nl2br(e($content->hero_description ?? 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard.')) !!}
         </p>
 
-        <a href="#" class="btn btn-gradient"> {{ $content->hero_button_text ?? 'Book a repair!' }} </a>
+        <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient"> {{ $content->hero_button_text ?? 'Book a repair!' }} </a>
       </div>
     </section>
     <!-- Hero Section End -->
@@ -96,12 +100,12 @@
             <p class="pb-3 fs-16">
               {{ $content->what_we_offer_description ?? 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s,' }}
             </p>
-            <button class="btn-gradient">{{ $content->what_we_offer_button_text ?? 'Contact Us' }}</button>
+            <a href="{{ route('frontend.contact') }}" class="btn btn-gradient text-decoration-none">{{ $content->what_we_offer_button_text ?? 'Contact Us' }}</a>
           </div>
         </div>
         <div class="row row-cols-lg-3 row-cols-md-2 row-cols-1 g-3">
           @php
-            $services = $content->services ?? [
+            $allServices = $content->services ?? [
               ['title' => 'Smartphone Repair', 'description' => 'Lorem Ipsum is simply dummy Lorem Ipsum is simply dummy text'],
               ['title' => 'Laptop Repair', 'description' => 'Lorem Ipsum is simply dummy Lorem Ipsum is simply dummy text'],
               ['title' => 'Tablet Repair', 'description' => 'Lorem Ipsum is simply dummy Lorem Ipsum is simply dummy text'],
@@ -109,17 +113,27 @@
               ['title' => 'Gaming Pc Repair', 'description' => 'Lorem Ipsum is simply dummy Lorem Ipsum is simply dummy text'],
               ['title' => 'Software Optimization', 'description' => 'Lorem Ipsum is simply dummy Lorem Ipsum is simply dummy text'],
             ];
+            // Convert to array if collection
+            if (is_object($allServices) && method_exists($allServices, 'toArray')) {
+              $allServices = $allServices->toArray();
+            } elseif (is_object($allServices) && method_exists($allServices, 'take')) {
+              $allServices = $allServices->take(6)->toArray();
+            }
+            // Limit to exactly 6 items for 3 columns × 2 rows
+            $services = array_slice((array)$allServices, 0, 6);
             $serviceImages = ['service-img-1.svg', 'service-img-2.svg', 'service-img-3.svg', 'service-img-4.svg', 'service-img-5.svg', 'service-img-6.svg'];
           @endphp
           @foreach($services as $index => $service)
             <div class="col">
-              <div class="repair-service-card">
-                <img src="{{ asset('front-assets/img/' . ($serviceImages[$index] ?? 'service-img-1.svg')) }}" alt="" />
-                <h3 class="fs-24">{{ $service['title'] ?? 'Service' }}</h3>
-                <p class="fs-16">
-                  {{ $service['description'] ?? '' }}
-                </p>
-              </div>
+              <a href="{{ route('frontend.book-repair') }}" class="text-decoration-none d-block h-100">
+                <div class="repair-service-card h-100">
+                  <img src="{{ asset('front-assets/img/' . ($serviceImages[$index] ?? 'service-img-1.svg')) }}" alt="{{ $service['title'] ?? 'Service' }}" />
+                  <h3 class="fs-24">{{ $service['title'] ?? 'Service' }}</h3>
+                  <p class="fs-16">
+                    {{ $service['description'] ?? '' }}
+                  </p>
+                </div>
+              </a>
             </div>
           @endforeach
         </div>
@@ -460,16 +474,36 @@ function addToCart(productId) {
 // Notification function
 function showCartNotification(message, type = 'success') {
   const notification = document.createElement('div');
-  notification.className = `cart-notification ${type}`;
+  notification.className = `cart-notification cart-notification-${type}`;
   notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 5px;
+    color: #fff;
+    font-weight: 500;
+    z-index: 9999;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 400px;
+    ${type === 'success' ? 'background: #28a745;' : 'background: #dc3545;'}
+  `;
   document.body.appendChild(notification);
   
+  // Show notification
   setTimeout(() => {
-    notification.classList.add('show');
+    notification.style.opacity = '1';
+    notification.style.transform = 'translateX(0)';
   }, 10);
   
+  // Hide and remove notification after 3 seconds
   setTimeout(() => {
-    notification.classList.remove('show');
+    notification.style.opacity = '0';
+    notification.style.transform = 'translateX(400px)';
     setTimeout(() => {
       notification.remove();
     }, 300);
@@ -504,16 +538,18 @@ function toggleWishlist(wishlistBtn) {
         icon.classList.remove('bi-heart');
         icon.classList.add('bi-heart-fill');
         wishlistBtn.setAttribute('title', 'Remove from Wishlist');
-        showCartNotification('Product added to wishlist!', 'success');
+        // Use server message or default message
+        showCartNotification(data.message || 'Product added to wishlist!', 'success');
       } else {
         wishlistBtn.classList.remove('active');
         icon.classList.remove('bi-heart-fill');
         icon.classList.add('bi-heart');
         wishlistBtn.setAttribute('title', 'Add to Wishlist');
-        showCartNotification('Product removed from wishlist!', 'success');
+        // Use server message or default message
+        showCartNotification(data.message || 'Product removed from wishlist!', 'success');
       }
     } else {
-      showCartNotification('Unable to update wishlist. Please try again.', 'error');
+      showCartNotification(data.message || 'Unable to update wishlist. Please try again.', 'error');
     }
   })
   .catch(error => {
@@ -526,6 +562,7 @@ function toggleWishlist(wishlistBtn) {
 document.addEventListener('DOMContentLoaded', function() {
   // Add click handlers to all cart icons (including dynamically loaded ones)
   document.addEventListener('click', function(e) {
+    // Handle cart button clicks
     const cartBtn = e.target.closest('.add-to-cart-btn');
     if (cartBtn) {
       e.preventDefault();
@@ -534,14 +571,16 @@ document.addEventListener('DOMContentLoaded', function() {
       if (productId) {
         addToCart(productId);
       }
+      return;
     }
     
-    // Handle wishlist toggle
+    // Handle wishlist toggle - closest() will find parent button even if icon is clicked
     const wishlistBtn = e.target.closest('.wishlist-btn');
     if (wishlistBtn) {
       e.preventDefault();
       e.stopPropagation();
       toggleWishlist(wishlistBtn);
+      return;
     }
   });
 });

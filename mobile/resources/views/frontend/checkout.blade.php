@@ -329,7 +329,14 @@
 <!-- Stripe.js -->
 <script src="https://js.stripe.com/v3/"></script>
 <!-- PayPal SDK -->
-<script src="https://www.paypal.com/sdk/js?client-id={{ env('PAYPAL_CLIENT_ID', 'YOUR_PAYPAL_CLIENT_ID') }}&currency=GBP&intent=capture"></script>
+@if(env('PAYPAL_CLIENT_ID') && env('PAYPAL_CLIENT_ID') !== 'YOUR_PAYPAL_CLIENT_ID')
+<script src="https://www.paypal.com/sdk/js?client-id={{ env('PAYPAL_CLIENT_ID') }}&currency=GBP&intent=capture"></script>
+@else
+<script>
+  console.warn('PayPal SDK not loaded: PAYPAL_CLIENT_ID not configured');
+  window.paypal = undefined;
+</script>
+@endif
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -368,6 +375,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const stripeSection = document.getElementById('stripePaymentSection');
   const paypalSection = document.getElementById('paypalPaymentSection');
   const paymentMethodInput = document.getElementById('payment_method');
+  const placeOrderBtn = document.getElementById('placeOrderBtn');
   
   paymentRadios.forEach(radio => {
     radio.addEventListener('change', function() {
@@ -377,10 +385,24 @@ document.addEventListener('DOMContentLoaded', function() {
         stripeSection.style.display = 'block';
         paypalSection.style.display = 'none';
         document.getElementById('cardholder_name').required = true;
+        placeOrderBtn.style.display = 'block';
+        placeOrderBtn.disabled = false;
+        
+        // Clean up PayPal buttons if they exist
+        if (paypalButtons) {
+          try {
+            paypalButtons.close();
+          } catch (e) {
+            console.log('PayPal buttons already closed');
+          }
+          paypalButtons = null;
+          paypalRendered = false;
+        }
       } else if (this.value === 'paypal') {
         stripeSection.style.display = 'none';
         paypalSection.style.display = 'block';
         document.getElementById('cardholder_name').required = false;
+        placeOrderBtn.style.display = 'none';
         initPayPal();
       }
     });
@@ -407,12 +429,25 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // PayPal initialization
   let paypalButtons;
+  let paypalRendered = false;
+  
   function initPayPal() {
-    if (paypalButtons) return;
-    
     const paypalClientId = '{{ env('PAYPAL_CLIENT_ID', '') }}';
     if (!paypalClientId || paypalClientId === 'YOUR_PAYPAL_CLIENT_ID') {
       document.getElementById('paypal-button-container').innerHTML = '<p class="text-danger">PayPal is not configured. Please set PAYPAL_CLIENT_ID in your .env file.</p>';
+      return;
+    }
+    
+    // Clear container if already rendered
+    if (paypalRendered) {
+      document.getElementById('paypal-button-container').innerHTML = '';
+      paypalRendered = false;
+    }
+    
+    // Check if PayPal SDK is loaded
+    if (typeof paypal === 'undefined') {
+      console.error('PayPal SDK not loaded');
+      document.getElementById('paypal-button-container').innerHTML = '<p class="text-danger">PayPal SDK failed to load. Please refresh the page.</p>';
       return;
     }
     
@@ -429,40 +464,84 @@ document.addEventListener('DOMContentLoaded', function() {
             currency: 'GBP'
           })
         })
-        .then(response => response.json())
-        .then(data => data.id);
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to create PayPal order');
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (!data.id) {
+            throw new Error('Invalid PayPal order response');
+          }
+          return data.id;
+        })
+        .catch(error => {
+          console.error('PayPal createOrder error:', error);
+          alert('Failed to create PayPal order. Please try again.');
+          throw error;
+        });
       },
       onApprove: function(data, actions) {
         return actions.order.capture().then(function(details) {
-          // Submit form with PayPal payment ID
+          // Validate form before submitting
           const form = document.getElementById('checkoutForm');
+          if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+          }
+          
+          // Submit form with PayPal payment ID
           const input = document.createElement('input');
           input.type = 'hidden';
           input.name = 'paypal_order_id';
           input.value = data.orderID;
           form.appendChild(input);
+          
+          // Disable PayPal button to prevent double submission
+          if (paypalButtons) {
+            paypalButtons.close();
+          }
+          
+          // Submit form
           form.submit();
         });
       },
       onError: function(err) {
         console.error('PayPal error:', err);
         alert('An error occurred with PayPal. Please try again.');
+      },
+      onCancel: function(data) {
+        console.log('PayPal payment cancelled');
       }
     });
     
-    paypalButtons.render('#paypal-button-container');
+    paypalButtons.render('#paypal-button-container').then(function() {
+      paypalRendered = true;
+    }).catch(function(error) {
+      console.error('PayPal button render error:', error);
+      document.getElementById('paypal-button-container').innerHTML = '<p class="text-danger">Failed to load PayPal button. Please refresh the page.</p>';
+    });
   }
   
-  // Form submission
+  // Form submission - only for Stripe
   document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
     const paymentMethod = paymentMethodInput.value;
-    const placeOrderBtn = document.getElementById('placeOrderBtn');
-    placeOrderBtn.disabled = true;
-    placeOrderBtn.innerHTML = 'Processing...';
     
+    // If PayPal is selected, don't handle form submission here (PayPal SDK handles it)
+    if (paymentMethod === 'paypal') {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Only process Stripe payments
     if (paymentMethod === 'stripe') {
+      e.preventDefault();
+      
+      const placeOrderBtn = document.getElementById('placeOrderBtn');
+      placeOrderBtn.disabled = true;
+      placeOrderBtn.innerHTML = 'Processing...';
+      
       const {token, error} = await stripe.createToken(cardElement, {
         name: document.getElementById('cardholder_name').value
       });
@@ -479,9 +558,9 @@ document.addEventListener('DOMContentLoaded', function() {
       input.name = 'stripe_token';
       input.value = token.id;
       this.appendChild(input);
+      
+      this.submit();
     }
-    
-    this.submit();
   });
   
   // Payment option styling

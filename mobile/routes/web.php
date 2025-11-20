@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\HomepageContentController;
 use App\Http\Controllers\Admin\AboutPageContentController;
 use App\Http\Controllers\Admin\ServicePageContentController;
 use App\Http\Controllers\Admin\JoinPageContentController;
+use App\Http\Controllers\Admin\CareersPageContentController;
 use App\Http\Controllers\Admin\ShippingOptionController;
 use App\Http\Controllers\Admin\GlobalFeatureController;
 use App\Http\Controllers\Frontend\HomeController;
@@ -29,6 +30,7 @@ Route::get('/about', [HomeController::class, 'about'])->name('frontend.about');
 Route::get('/contact', [HomeController::class, 'contact'])->name('frontend.contact');
 Route::post('/contact', [HomeController::class, 'submitContact'])->name('frontend.contact.submit');
 Route::get('/join', [HomeController::class, 'join'])->name('frontend.join');
+Route::get('/careers', [HomeController::class, 'careers'])->name('frontend.careers');
 Route::get('/checkout', [HomeController::class, 'checkout'])->name('frontend.checkout');
 Route::post('/checkout/process', [HomeController::class, 'processCheckout'])->name('frontend.checkout.process');
 Route::post('/checkout/create-paypal-order', [HomeController::class, 'createPayPalOrder'])->name('frontend.checkout.create-paypal-order');
@@ -46,7 +48,11 @@ Route::post('/product/{slug}/reviews', [HomeController::class, 'storeReview'])->
 Route::post('/wishlist/add/{product}', [HomeController::class, 'addToWishlist'])->name('frontend.wishlist.add');
 Route::post('/wishlist/remove/{product}', [HomeController::class, 'removeFromWishlist'])->name('frontend.wishlist.remove');
 Route::get('/place-order', [HomeController::class, 'placeOrder'])->name('frontend.place-order');
+Route::get('/book-repair', [HomeController::class, 'bookRepair'])->name('frontend.book-repair');
 Route::get('/mobile-repair', [HomeController::class, 'mobileRepair'])->name('frontend.mobile-repair');
+Route::post('/repair/process', [HomeController::class, 'processRepairOrder'])->name('frontend.repair.process');
+Route::post('/repair/payment', [HomeController::class, 'processRepairPayment'])->name('frontend.repair.payment');
+Route::post('/newsletter/subscribe', [HomeController::class, 'subscribeNewsletter'])->name('frontend.newsletter.subscribe');
 
 // Cart Routes
 Route::post('/cart/add/{product}', [CartController::class, 'add'])->name('frontend.cart.add');
@@ -124,6 +130,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/join-page-content', [JoinPageContentController::class, 'index'])->name('join-page-content.index');
             Route::put('/join-page-content', [JoinPageContentController::class, 'update'])->name('join-page-content.update');
             
+            // Careers Page Content Management (Admin/Superadmin only)
+            Route::get('/careers-page-content', [CareersPageContentController::class, 'index'])->name('careers-page-content.index');
+            Route::put('/careers-page-content', [CareersPageContentController::class, 'update'])->name('careers-page-content.update');
+            
             // Shipping Options Management (Admin/Superadmin only)
             Route::get('/shipping-options', [ShippingOptionController::class, 'index'])->name('shipping-options.index');
             Route::post('/shipping-options', [ShippingOptionController::class, 'store'])->name('shipping-options.store');
@@ -169,6 +179,25 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/orders/{order}/tracking', [OrderTrackingController::class, 'store'])->name('orders.tracking.store');
             Route::put('/orders/{order}/tracking/{tracking}', [OrderTrackingController::class, 'update'])->name('orders.tracking.update');
             Route::delete('/orders/{order}/tracking/{tracking}', [OrderTrackingController::class, 'destroy'])->name('orders.tracking.destroy');
+        });
+        
+        // Repair Booking Management - Only users with manage-repairs permission
+        Route::middleware(['permission:manage-repairs'])->group(function () {
+            Route::resource('repair-services', \App\Http\Controllers\Admin\RepairServiceController::class);
+            Route::resource('repair-device-types', \App\Http\Controllers\Admin\RepairDeviceTypeController::class);
+            Route::resource('repair-issues', \App\Http\Controllers\Admin\RepairIssueController::class);
+            Route::resource('repair-pricings', \App\Http\Controllers\Admin\RepairPricingController::class);
+            Route::get('/repair-pricings/get-device-types', [\App\Http\Controllers\Admin\RepairPricingController::class, 'getDeviceTypes'])->name('repair-pricings.get-device-types');
+            Route::get('/repair-pricings/get-issues', [\App\Http\Controllers\Admin\RepairPricingController::class, 'getIssues'])->name('repair-pricings.get-issues');
+            
+            // Repair Orders Management
+            Route::resource('repair-orders', \App\Http\Controllers\Admin\RepairOrderController::class)->only(['index', 'show', 'update']);
+            
+            // Mail-in Process Management (Admin/Superadmin only)
+            Route::middleware(['admin'])->group(function () {
+                Route::get('/mail-in-process', [\App\Http\Controllers\Admin\MailInProcessController::class, 'index'])->name('mail-in-process.index');
+                Route::put('/mail-in-process', [\App\Http\Controllers\Admin\MailInProcessController::class, 'update'])->name('mail-in-process.update');
+            });
         });
     });
 });

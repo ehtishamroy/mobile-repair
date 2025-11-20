@@ -18,7 +18,10 @@ use App\Models\Setting;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Coupon;
+use App\Models\Newsletter;
+use App\Models\CareersPageContent;
 use App\Mail\OrderConfirmation;
+use App\Mail\NewsletterSubscriptionNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -157,6 +160,12 @@ class HomeController extends Controller
     {
         $content = JoinPageContent::getContent();
         return view('frontend.join', compact('content'));
+    }
+
+    public function careers()
+    {
+        $content = CareersPageContent::getContent();
+        return view('frontend.careers', compact('content'));
     }
 
     public function checkout()
@@ -689,9 +698,29 @@ class HomeController extends Controller
         return view('frontend.cart', compact('cartItems', 'subtotal', 'shipping', 'discount', 'tax', 'total', 'settings', 'currencySymbol', 'appliedCoupon'));
     }
 
-    public function select()
+    public function select(Request $request)
     {
-        return view('frontend.select');
+        $serviceId = $request->get('service_id');
+        $deviceTypeId = $request->get('device_type_id');
+        
+        $service = null;
+        $deviceType = null;
+        $issues = [];
+        $mailInProcess = \App\Models\MailInProcess::getContent();
+        
+        if ($serviceId) {
+            $service = \App\Models\RepairService::with(['deviceTypes' => function($q) {
+                $q->where('is_active', true);
+            }, 'issues' => function($q) {
+                $q->where('is_active', true);
+            }])->findOrFail($serviceId);
+            
+            if ($deviceTypeId && $deviceTypeId !== 'other') {
+                $deviceType = \App\Models\RepairDeviceType::find($deviceTypeId);
+            }
+        }
+        
+        return view('frontend.select', compact('service', 'deviceType', 'mailInProcess'));
     }
 
     public function processCheckout(Request $request)
@@ -860,26 +889,50 @@ class HomeController extends Controller
     
     public function createPayPalOrder(Request $request)
     {
-        $validated = $request->validate([
-            'total' => 'required|numeric|min:0',
-            'currency' => 'required|string|size:3',
-        ]);
-        
-        // In a real implementation, you would create a PayPal order using PayPal API
-        // For now, we'll return a mock order ID
-        $orderId = 'PAYPAL-' . strtoupper(\Illuminate\Support\Str::random(16));
-        
-        // Store PayPal order in session temporarily
-        session()->put('paypal_order_' . $orderId, [
-            'total' => $validated['total'],
-            'currency' => $validated['currency'],
-            'created_at' => now(),
-        ]);
-        
-        return response()->json([
-            'id' => $orderId,
-            'status' => 'CREATED'
-        ]);
+        try {
+            $validated = $request->validate([
+                'total' => 'required|numeric|min:0',
+                'currency' => 'required|string|size:3',
+            ]);
+            
+            // Get cart items for order details
+            $cart = session()->get('cart', []);
+            $cartItems = [];
+            foreach ($cart as $item) {
+                $cartItems[] = [
+                    'name' => $item['name'],
+                    'quantity' => $item['quantity'],
+                    'unit_amount' => [
+                        'currency_code' => $validated['currency'],
+                        'value' => number_format($item['price'], 2, '.', '')
+                    ]
+                ];
+            }
+            
+            // In a real implementation, you would create a PayPal order using PayPal API
+            // For now, we'll return a mock order ID that PayPal SDK can use
+            // PayPal SDK expects an order ID string, which can be used later for capture
+            $orderId = 'PAYPAL-' . strtoupper(\Illuminate\Support\Str::random(16));
+            
+            // Store PayPal order in session temporarily for later verification
+            session()->put('paypal_order_' . $orderId, [
+                'total' => $validated['total'],
+                'currency' => $validated['currency'],
+                'items' => $cartItems,
+                'created_at' => now(),
+            ]);
+            
+            return response()->json([
+                'id' => $orderId,
+                'status' => 'CREATED'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('PayPal order creation failed: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to create PayPal order',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function productDetail($slug)
@@ -907,13 +960,27 @@ class HomeController extends Controller
             ->limit(3)
             ->get();
         
-        // Get products from same brand
-        $brandProducts = Product::where('brand_id', $product->brand_id)
-            ->where('id', '!=', $product->id)
-            ->where('is_active', true)
-            ->with(['category', 'brand'])
-            ->limit(3)
-            ->get();
+        // Get products from same brand and same category (if brand exists)
+        $brandProducts = collect();
+        if ($product->brand_id) {
+            $brandProducts = Product::where('brand_id', $product->brand_id)
+                ->where('category_id', $product->category_id)
+                ->where('id', '!=', $product->id)
+                ->where('is_active', true)
+                ->with(['category', 'brand'])
+                ->limit(3)
+                ->get();
+            
+            // If no products from same brand and category, get any products from same brand
+            if ($brandProducts->isEmpty()) {
+                $brandProducts = Product::where('brand_id', $product->brand_id)
+                    ->where('id', '!=', $product->id)
+                    ->where('is_active', true)
+                    ->with(['category', 'brand'])
+                    ->limit(3)
+                    ->get();
+            }
+        }
 
         // Reviews data
         $approvedReviewsQuery = $product->approvedReviews();
@@ -1095,13 +1162,394 @@ class HomeController extends Controller
         ]);
     }
 
-    public function placeOrder()
+    public function placeOrder(Request $request)
     {
-        return view('frontend.place-order');
+        $orderNumber = $request->get('order');
+        $order = null;
+        
+        if ($orderNumber) {
+            $order = \App\Models\RepairOrder::with(['service', 'deviceType'])
+                ->where('order_number', $orderNumber)
+                ->first();
+        }
+        
+        $settings = \App\Models\Setting::first();
+        $currencySymbol = $settings->currency_symbol ?? '£';
+        
+        return view('frontend.place-order', compact('order', 'currencySymbol'));
     }
 
-    public function mobileRepair()
+    public function bookRepair()
     {
-        return view('frontend.mobile-repair');
+        return view('frontend.book-repair');
+    }
+
+    public function mobileRepair(Request $request)
+    {
+        $serviceId = $request->get('service');
+        $service = null;
+        
+        if ($serviceId) {
+            $service = \App\Models\RepairService::with(['deviceTypes' => function($q) {
+                $q->where('is_active', true);
+            }])->findOrFail($serviceId);
+        }
+        
+        return view('frontend.mobile-repair', compact('service'));
+    }
+
+    public function processRepairOrder(Request $request)
+    {
+        // Handle JSON requests for pricing calculation
+        if ($request->wantsJson() || $request->isJson()) {
+            $serviceId = $request->input('service_id');
+            $deviceTypeId = $request->input('device_type_id');
+            $selectedIssues = $request->input('issues', []);
+            $isUnknown = $request->input('issue_unknown', false);
+            
+            if (!$serviceId) {
+                return response()->json(['success' => false, 'message' => 'Service ID is required'], 400);
+            }
+            
+            $service = \App\Models\RepairService::findOrFail($serviceId);
+            $subtotal = 0;
+            $inspectionFee = 0;
+            
+            // If no issues selected or unknown issue, charge inspection fee
+            if (empty($selectedIssues) || $isUnknown) {
+                $inspectionPricing = \App\Models\RepairPricing::where('repair_service_id', $service->id)
+                    ->where('is_inspection_fee', true)
+                    ->where('is_active', true)
+                    ->first();
+                
+                if ($inspectionPricing) {
+                    $inspectionFee = $inspectionPricing->price;
+                }
+            } else {
+                // Calculate price for each selected issue
+                foreach ($selectedIssues as $issueId) {
+                    $pricing = \App\Models\RepairPricing::where('repair_service_id', $service->id)
+                        ->where('repair_issue_id', $issueId)
+                        ->where(function($q) use ($deviceTypeId) {
+                            if (!empty($deviceTypeId) && $deviceTypeId !== 'other') {
+                                $q->where('repair_device_type_id', $deviceTypeId);
+                            } else {
+                                $q->whereNull('repair_device_type_id');
+                            }
+                        })
+                        ->where('is_active', true)
+                        ->first();
+                    
+                    if ($pricing) {
+                        $subtotal += $pricing->price;
+                    }
+                }
+            }
+
+            $total = $subtotal + $inspectionFee;
+            $settings = \App\Models\Setting::first();
+            $currencySymbol = $settings->currency_symbol ?? '£';
+
+            return response()->json([
+                'success' => true,
+                'total' => $total,
+                'subtotal' => $subtotal,
+                'inspection_fee' => $inspectionFee,
+                'currency_symbol' => $currencySymbol,
+            ]);
+        }
+        
+        // Handle form submission
+        $validated = $request->validate([
+            'service_id' => 'required|exists:repair_services,id',
+            'device_type' => 'nullable|string',
+            'device_type_id' => 'nullable|exists:repair_device_types,id',
+            'device_model' => 'required|string|max:255',
+            'customer_name' => 'required|string|max:255',
+            'customer_email' => 'required|email|max:255',
+            'customer_phone' => 'required|string|max:20',
+            'issues' => 'nullable|array',
+            'issues.*' => 'exists:repair_issues,id',
+            'issue_description' => 'nullable|string',
+            'payment_method' => 'required|in:stripe,paypal',
+        ]);
+
+        // Calculate pricing (same logic as above)
+        $service = \App\Models\RepairService::findOrFail($validated['service_id']);
+        $subtotal = 0;
+        $inspectionFee = 0;
+        $selectedIssues = $validated['issues'] ?? [];
+        
+        if (empty($selectedIssues)) {
+            $inspectionPricing = \App\Models\RepairPricing::where('repair_service_id', $service->id)
+                ->where('is_inspection_fee', true)
+                ->where('is_active', true)
+                ->first();
+            
+            if ($inspectionPricing) {
+                $inspectionFee = $inspectionPricing->price;
+            }
+        } else {
+            foreach ($selectedIssues as $issueId) {
+                $pricing = \App\Models\RepairPricing::where('repair_service_id', $service->id)
+                    ->where('repair_issue_id', $issueId)
+                    ->where(function($q) use ($validated) {
+                        if (!empty($validated['device_type_id']) && $validated['device_type_id'] !== 'other') {
+                            $q->where('repair_device_type_id', $validated['device_type_id']);
+                        } else {
+                            $q->whereNull('repair_device_type_id');
+                        }
+                    })
+                    ->where('is_active', true)
+                    ->first();
+                
+                if ($pricing) {
+                    $subtotal += $pricing->price;
+                }
+            }
+        }
+
+        $total = $subtotal + $inspectionFee;
+
+        // Store in session for next steps
+        $repairOrderData = [
+            'service_id' => $validated['service_id'],
+            'device_type' => $validated['device_type'] ?? 'Other',
+            'device_type_id' => $validated['device_type_id'] ?? null,
+            'device_model' => $validated['device_model'],
+            'customer_name' => $validated['customer_name'],
+            'customer_email' => $validated['customer_email'],
+            'customer_phone' => $validated['customer_phone'],
+            'issues' => $selectedIssues,
+            'issue_description' => $validated['issue_description'] ?? null,
+            'payment_method' => $validated['payment_method'],
+            'subtotal' => $subtotal,
+            'inspection_fee' => $inspectionFee,
+            'total' => $total,
+        ];
+        
+        session(['repair_order' => $repairOrderData]);
+        session()->save(); // Ensure session is saved immediately
+
+        return response()->json([
+            'success' => true,
+            'total' => $total,
+            'subtotal' => $subtotal,
+            'inspection_fee' => $inspectionFee,
+        ]);
+    }
+
+    public function processRepairPayment(Request $request)
+    {
+        // Get data from request (not session) to avoid session issues
+        try {
+            $validated = $request->validate([
+                'service_id' => 'required|exists:repair_services,id',
+                'device_type' => 'nullable|string',
+                'device_type_id' => 'nullable|exists:repair_device_types,id',
+                'device_model' => 'required|string|max:255',
+                'customer_name' => 'required|string|max:255',
+                'customer_email' => 'required|email|max:255',
+                'customer_phone' => 'required|string|max:20',
+                'issues' => 'nullable|array',
+                'issues.*' => 'exists:repair_issues,id',
+                'issue_description' => 'nullable|string',
+                'payment_method' => 'required|in:stripe,paypal',
+                'stripe_token' => 'nullable|string',
+                'payment_intent_id' => 'nullable|string',
+                'paypal_order_id' => 'nullable|string',
+                'address' => 'required|string|max:1000',
+                'subtotal' => 'nullable|numeric|min:0',
+                'inspection_fee' => 'nullable|numeric|min:0',
+                'total' => 'required|numeric|min:0',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        }
+
+        try {
+            // Use validated data directly instead of session
+            $service = \App\Models\RepairService::findOrFail($validated['service_id']);
+            $subtotal = $validated['subtotal'] ?? 0;
+            $inspectionFee = $validated['inspection_fee'] ?? 0;
+            $total = $validated['total'] ?? 0;
+            $selectedIssues = $validated['issues'] ?? [];
+            
+            // Recalculate pricing if not provided
+            if ($total == 0) {
+                if (empty($selectedIssues)) {
+                    $inspectionPricing = \App\Models\RepairPricing::where('repair_service_id', $service->id)
+                        ->where('is_inspection_fee', true)
+                        ->where('is_active', true)
+                        ->first();
+                    
+                    if ($inspectionPricing) {
+                        $inspectionFee = $inspectionPricing->price;
+                    }
+                } else {
+                    foreach ($selectedIssues as $issueId) {
+                        $pricing = \App\Models\RepairPricing::where('repair_service_id', $service->id)
+                            ->where('repair_issue_id', $issueId)
+                            ->where(function($q) use ($validated) {
+                                if (!empty($validated['device_type_id']) && $validated['device_type_id'] !== 'other') {
+                                    $q->where('repair_device_type_id', $validated['device_type_id']);
+                                } else {
+                                    $q->whereNull('repair_device_type_id');
+                                }
+                            })
+                            ->where('is_active', true)
+                            ->first();
+                        
+                        if ($pricing) {
+                            $subtotal += $pricing->price;
+                        }
+                    }
+                }
+                $total = $subtotal + $inspectionFee;
+            }
+
+            // Process Stripe payment if token is provided
+            $paymentIntentId = $validated['payment_intent_id'] ?? null;
+            $paypalOrderId = $validated['paypal_order_id'] ?? null;
+            
+            if ($validated['payment_method'] === 'stripe' && !empty($validated['stripe_token'])) {
+                // Here you would process the Stripe payment
+                // For now, we'll just store the token
+                $paymentIntentId = $validated['stripe_token'];
+            }
+
+            // Create repair order
+            $order = \App\Models\RepairOrder::create([
+                'repair_service_id' => $validated['service_id'],
+                'customer_name' => $validated['customer_name'],
+                'customer_email' => $validated['customer_email'],
+                'customer_phone' => $validated['customer_phone'],
+                'repair_device_type_id' => $validated['device_type_id'] ?? null,
+                'device_model' => $validated['device_model'],
+                'selected_issues' => $selectedIssues,
+                'issue_description' => $validated['issue_description'] ?? null,
+                'payment_method' => $validated['payment_method'],
+                'payment_intent_id' => $paymentIntentId,
+                'paypal_order_id' => $paypalOrderId,
+                'status' => 'paid',
+                'subtotal' => $subtotal,
+                'inspection_fee' => $inspectionFee,
+                'total' => $total,
+                'address' => $validated['address'],
+            ]);
+
+            // Refresh order from database and load relationships for email
+            $order->refresh();
+            $order->load(['service', 'deviceType']);
+
+            // Send confirmation email
+            try {
+                \Log::info('Attempting to send repair order confirmation email to: ' . $order->customer_email);
+                \Log::info('Order details: ' . json_encode([
+                    'order_number' => $order->order_number,
+                    'customer_email' => $order->customer_email,
+                    'service_id' => $order->repair_service_id,
+                    'service_loaded' => $order->service ? 'yes' : 'no',
+                ]));
+                
+                $mailResult = \Mail::to($order->customer_email)->send(new \App\Mail\RepairOrderConfirmation($order));
+                
+                \Log::info('Repair order confirmation email sent successfully to: ' . $order->customer_email);
+                \Log::info('Mail send result: ' . ($mailResult ? 'Success' : 'Failed'));
+            } catch (\Swift_TransportException $e) {
+                \Log::error('Swift Transport Exception - Failed to send repair order confirmation email: ' . $e->getMessage());
+                \Log::error('Email error trace: ' . $e->getTraceAsString());
+            } catch (\Exception $e) {
+                \Log::error('Failed to send repair order confirmation email: ' . $e->getMessage());
+                \Log::error('Email error class: ' . get_class($e));
+                \Log::error('Email error trace: ' . $e->getTraceAsString());
+            }
+
+            // Clear session if it exists
+            session()->forget('repair_order');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Your repair order has been placed successfully!',
+                'order_number' => $order->order_number,
+                'redirect' => route('frontend.place-order', ['order' => $order->order_number])
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Repair order creation failed: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to process your order: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function subscribeNewsletter(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|max:255',
+            'name' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            // Check if email already exists
+            $existingSubscriber = Newsletter::where('email', $validated['email'])->first();
+
+            if ($existingSubscriber) {
+                if ($existingSubscriber->is_active) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'This email is already subscribed to our newsletter.'
+                    ], 400);
+                } else {
+                    // Reactivate the subscription
+                    $existingSubscriber->update([
+                        'is_active' => true,
+                        'name' => $validated['name'] ?? $existingSubscriber->name,
+                        'subscribed_at' => now(),
+                    ]);
+                    $subscriber = $existingSubscriber;
+                }
+            } else {
+                // Create new subscription
+                $subscriber = Newsletter::create([
+                    'email' => $validated['email'],
+                    'name' => $validated['name'] ?? null,
+                    'is_active' => true,
+                    'subscribed_at' => now(),
+                ]);
+            }
+
+            // Send notification email to admin
+            $settings = Setting::getSettings();
+            $adminEmail = $settings->contact_email;
+
+            if ($adminEmail) {
+                try {
+                    Mail::to($adminEmail)->send(new NewsletterSubscriptionNotification(
+                        $subscriber->name ?? 'Not provided',
+                        $subscriber->email
+                    ));
+                } catch (\Exception $e) {
+                    \Log::error('Newsletter subscription notification email failed: ' . $e->getMessage());
+                    // Don't fail the subscription if email fails
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Thank you for subscribing to our newsletter!'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Newsletter subscription failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Sorry, there was an error processing your subscription. Please try again later.'
+            ], 500);
+        }
     }
 }

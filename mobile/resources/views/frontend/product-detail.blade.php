@@ -697,7 +697,7 @@
         @if($brandProducts->count() > 0)
         <div class="col">
           <h2 class="font-sans fw-600 fs-16 text-heading my-3">
-            {{ strtoupper($product->brand->name ?? 'BRAND') }} PRODUCTS
+            MORE FROM {{ strtoupper($product->brand->name ?? 'BRAND') }}
           </h2>
           <div class="row row-cols-1">
             @foreach($brandProducts as $brandProduct)

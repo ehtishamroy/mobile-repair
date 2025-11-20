@@ -171,21 +171,56 @@
                     
                     @if(Auth::user()->hasPermission('manage-repairs'))
                     <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-tools"></i>
-                            <p>Repairs</p>
+                        <a href="{{ route('admin.repair-orders.index') }}" class="nav-link {{ request()->routeIs('admin.repair-orders.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-wrench"></i>
+                            <p>Repair Orders</p>
                         </a>
+                    </li>
+                    <li class="nav-item {{ request()->routeIs('admin.repair-services.*') || request()->routeIs('admin.repair-device-types.*') || request()->routeIs('admin.repair-issues.*') || request()->routeIs('admin.repair-pricings.*') || request()->routeIs('admin.mail-in-process.*') ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link {{ request()->routeIs('admin.repair-services.*') || request()->routeIs('admin.repair-device-types.*') || request()->routeIs('admin.repair-issues.*') || request()->routeIs('admin.repair-pricings.*') || request()->routeIs('admin.mail-in-process.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-tools"></i>
+                            <p>
+                                Repair Booking
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{{ route('admin.repair-services.index') }}" class="nav-link {{ request()->routeIs('admin.repair-services.*') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Services</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.repair-device-types.index') }}" class="nav-link {{ request()->routeIs('admin.repair-device-types.*') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Device Types</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.repair-issues.index') }}" class="nav-link {{ request()->routeIs('admin.repair-issues.*') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Issues</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.repair-pricings.index') }}" class="nav-link {{ request()->routeIs('admin.repair-pricings.*') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Pricing</p>
+                                </a>
+                            </li>
+                            @if(Auth::user()->isAdmin())
+                            <li class="nav-item">
+                                <a href="{{ route('admin.mail-in-process.index') }}" class="nav-link {{ request()->routeIs('admin.mail-in-process.*') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Mail-in Process</p>
+                                </a>
+                            </li>
+                            @endif
+                        </ul>
                     </li>
                     @endif
                     
-                    @if(Auth::user()->hasPermission('view-reports'))
-                    <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-chart-bar"></i>
-                            <p>Reports</p>
-                        </a>
-                    </li>
-                    @endif
                     
                     @if(Auth::user()->isAdmin())
                     <li class="nav-item">
@@ -210,6 +245,12 @@
                         <a href="{{ route('admin.join-page-content.index') }}" class="nav-link {{ request()->routeIs('admin.join-page-content.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-users"></i>
                             <p>Join Page Content</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.careers-page-content.index') }}" class="nav-link {{ request()->routeIs('admin.careers-page-content.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-briefcase"></i>
+                            <p>Careers Page Content</p>
                         </a>
                     </li>
                     <li class="nav-item">

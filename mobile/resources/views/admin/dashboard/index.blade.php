@@ -110,7 +110,22 @@
             <div class="icon">
                 <i class="ion ion-bag"></i>
             </div>
-            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+            <a href="{{ route('admin.orders.index') }}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    @endif
+
+    @if(isset($stats['pending_orders']))
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3>{{ $stats['pending_orders'] }}</h3>
+                <p>Pending Orders</p>
+            </div>
+            <div class="icon">
+                <i class="ion ion-clock"></i>
+            </div>
+            <a href="{{ route('admin.orders.index') }}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
         </div>
     </div>
     @endif
@@ -125,7 +140,82 @@
             <div class="icon">
                 <i class="ion ion-wrench"></i>
             </div>
-            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+            <a href="{{ route('admin.repair-orders.index') }}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    @endif
+
+    @if(isset($stats['pending_repairs']))
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3>{{ $stats['pending_repairs'] }}</h3>
+                <p>Pending Repairs</p>
+            </div>
+            <div class="icon">
+                <i class="ion ion-clock"></i>
+            </div>
+            <a href="{{ route('admin.repair-orders.index') }}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    @endif
+
+    @if(isset($stats['total_products']))
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>{{ $stats['total_products'] }}</h3>
+                <p>Active Products</p>
+            </div>
+            <div class="icon">
+                <i class="ion ion-ios-cart"></i>
+            </div>
+            <a href="{{ route('admin.products.index') }}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    @endif
+
+    @if(isset($stats['total_categories']))
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>{{ $stats['total_categories'] }}</h3>
+                <p>Active Categories</p>
+            </div>
+            <div class="icon">
+                <i class="ion ion-ios-list"></i>
+            </div>
+            <a href="{{ route('admin.categories.index') }}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    @endif
+
+    @if(isset($stats['total_revenue']))
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>£{{ number_format($stats['total_revenue'], 2) }}</h3>
+                <p>Total Revenue</p>
+            </div>
+            <div class="icon">
+                <i class="ion ion-cash"></i>
+            </div>
+            <a href="{{ route('admin.orders.index') }}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    @endif
+
+    @if(isset($stats['repair_revenue']))
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>£{{ number_format($stats['repair_revenue'], 2) }}</h3>
+                <p>Repair Revenue</p>
+            </div>
+            <div class="icon">
+                <i class="ion ion-cash"></i>
+            </div>
+            <a href="{{ route('admin.repair-orders.index') }}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
         </div>
     </div>
     @endif

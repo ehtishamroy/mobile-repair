@@ -4,6 +4,106 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    @php
+        // Get site title from settings
+        $siteTitle = $settings->meta_title ?? $settings->website_title ?? $settings->website_name ?? 'Harrow Mobiles';
+        
+        // Default meta description from settings
+        $defaultMetaDescription = $settings->meta_description ?? $settings->website_description ?? '';
+        
+        // Default meta keywords from settings
+        $defaultMetaKeywords = $settings->meta_keywords ?? '';
+        
+        // Default OG image from settings
+        $defaultOgImage = null;
+        if (!empty($settings->og_image)) {
+            $defaultOgImage = asset('storage/' . $settings->og_image);
+        } elseif (!empty($settings->website_logo)) {
+            $defaultOgImage = asset('storage/' . $settings->website_logo);
+        }
+    @endphp
+    
+    @php
+        // Build title - check if page has title section
+        $pageTitle = '';
+        $hasPageTitle = false;
+    @endphp
+    
+    @if(View::hasSection('title'))
+        @php
+            $pageTitle = trim(View::yieldContent('title'));
+            $hasPageTitle = true;
+        @endphp
+    @endif
+    
+    @php
+        // Build full title - if page title is "Ecommerce" or empty, use site title only
+        if ($hasPageTitle && $pageTitle !== 'Ecommerce' && !empty($pageTitle)) {
+            $fullTitle = $pageTitle . ' - ' . $siteTitle;
+        } else {
+            $fullTitle = $siteTitle;
+        }
+        
+        // Get meta description - use page section if exists, otherwise use default
+        $metaDescription = $defaultMetaDescription;
+        if (View::hasSection('meta_description')) {
+            $metaDescription = trim(View::yieldContent('meta_description'));
+            if (empty($metaDescription)) {
+                $metaDescription = $defaultMetaDescription;
+            }
+        }
+        
+        // Get meta keywords - use page section if exists, otherwise use default
+        $metaKeywords = $defaultMetaKeywords;
+        if (View::hasSection('meta_keywords')) {
+            $metaKeywords = trim(View::yieldContent('meta_keywords'));
+            if (empty($metaKeywords)) {
+                $metaKeywords = $defaultMetaKeywords;
+            }
+        }
+        
+        // Get OG image - use page section if exists, otherwise use default
+        $ogImage = $defaultOgImage;
+        if (View::hasSection('og_image')) {
+            $ogImage = trim(View::yieldContent('og_image'));
+            if (empty($ogImage)) {
+                $ogImage = $defaultOgImage;
+            }
+        }
+    @endphp
+    
+    <!-- Primary Meta Tags -->
+    <title>{{ $fullTitle }}</title>
+    @if(!empty($metaDescription))
+    <meta name="description" content="{{ $metaDescription }}">
+    @endif
+    @if(!empty($metaKeywords))
+    <meta name="keywords" content="{{ $metaKeywords }}">
+    @endif
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="{{ $fullTitle }}">
+    @if(!empty($metaDescription))
+    <meta property="og:description" content="{{ $metaDescription }}">
+    @endif
+    @if(!empty($ogImage))
+    <meta property="og:image" content="{{ $ogImage }}">
+    @endif
+    <meta property="og:site_name" content="{{ $settings->website_name ?? 'Harrow Mobiles' }}">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ url()->current() }}">
+    <meta property="twitter:title" content="{{ $fullTitle }}">
+    @if(!empty($metaDescription))
+    <meta property="twitter:description" content="{{ $metaDescription }}">
+    @endif
+    @if(!empty($ogImage))
+    <meta property="twitter:image" content="{{ $ogImage }}">
+    @endif
     <!-- Favicon -->
     @if($settings->favicon ?? false)
     @php
@@ -332,7 +432,6 @@
     }
     </style>
     @stack('styles')
-    <title>@yield('title', 'Harrow Mobiles')</title>
 </head>
 <body>
     <!-- Header Section Start -->
@@ -551,7 +650,7 @@
             <nav class="nav flex-column">
               <a class="nav-link" href="{{ route('home') }}">Home</a>
               <a class="nav-link" href="{{ route('frontend.about') }}">About Us</a>
-              <a class="nav-link" href="#">Careers</a>
+              <a class="nav-link" href="{{ route('frontend.careers') }}">Careers</a>
             </nav>
           </div>
 
@@ -559,12 +658,12 @@
           <div class="col-6 col-md-4 col-lg-3">
             <h5 class="title mb-3">Our Services</h5>
             <nav class="nav flex-column">
-              <a class="nav-link" href="#">Phone Repairs</a>
-              <a class="nav-link" href="#">Laptop Repairs</a>
-              <a class="nav-link" href="#">Tablet Repairs</a>
-              <a class="nav-link" href="#">Console Repairs</a>
-              <a class="nav-link" href="#">Camera Fix</a>
-              <a class="nav-link" href="#">Software Optimization</a>
+              <a class="nav-link" href="{{ route('frontend.book-repair') }}">Phone Repairs</a>
+              <a class="nav-link" href="{{ route('frontend.book-repair') }}">Laptop Repairs</a>
+              <a class="nav-link" href="{{ route('frontend.book-repair') }}">Tablet Repairs</a>
+              <a class="nav-link" href="{{ route('frontend.book-repair') }}">Console Repairs</a>
+              <a class="nav-link" href="{{ route('frontend.book-repair') }}">Camera Fix</a>
+              <a class="nav-link" href="{{ route('frontend.book-repair') }}">Software Optimization</a>
             </nav>
           </div>
 
@@ -576,19 +675,21 @@
               promotions.
             </p>
 
-            <div class="row g-2 my-3">
+            <form id="newsletter-form" class="row g-2 my-3">
+              @csrf
               <div class="col-6">
-                <input type="text" class="custom-input" placeholder="Name">
+                <input type="text" name="name" id="newsletter-name" class="custom-input" placeholder="Name">
               </div>
               <div class="col-6">
-                <input type="email" class="custom-input" placeholder="Email">
+                <input type="email" name="email" id="newsletter-email" class="custom-input" placeholder="Email" required>
               </div>
               <div class="col-12">
-                <button class="btn-gradient rounded w-100">
+                <div id="newsletter-message" class="mb-2" style="display: none;"></div>
+                <button type="submit" class="btn-gradient rounded w-100" id="newsletter-submit-btn">
                   Subscribe to Newsletter
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
 
@@ -732,6 +833,64 @@
         }
       }
     })();
+    </script>
+
+    <!-- Newsletter Subscription Script -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const newsletterForm = document.getElementById('newsletter-form');
+        const newsletterMessage = document.getElementById('newsletter-message');
+        const newsletterSubmitBtn = document.getElementById('newsletter-submit-btn');
+
+        if (newsletterForm) {
+          newsletterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(newsletterForm);
+            const submitBtnText = newsletterSubmitBtn.textContent;
+            
+            // Disable submit button
+            newsletterSubmitBtn.disabled = true;
+            newsletterSubmitBtn.textContent = 'Subscribing...';
+
+            // Hide previous messages
+            newsletterMessage.style.display = 'none';
+            newsletterMessage.className = 'mb-2';
+
+            fetch('{{ route("frontend.newsletter.subscribe") }}', {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+              }
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                newsletterMessage.textContent = data.message;
+                newsletterMessage.className = 'mb-2 text-success';
+                newsletterMessage.style.display = 'block';
+                newsletterForm.reset();
+              } else {
+                newsletterMessage.textContent = data.message;
+                newsletterMessage.className = 'mb-2 text-danger';
+                newsletterMessage.style.display = 'block';
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              newsletterMessage.textContent = 'Sorry, there was an error. Please try again later.';
+              newsletterMessage.className = 'mb-2 text-danger';
+              newsletterMessage.style.display = 'block';
+            })
+            .finally(() => {
+              newsletterSubmitBtn.disabled = false;
+              newsletterSubmitBtn.textContent = submitBtnText;
+            });
+          });
+        }
+      });
     </script>
     
     @stack('scripts')

@@ -46,14 +46,16 @@
             $serviceImages = ['service-img-1.svg', 'service-img-2.svg', 'service-img-3.svg', 'service-img-4.svg', 'service-img-5.svg', 'service-img-6.svg'];
           @endphp
           @foreach($services as $index => $service)
-            <div class="col">
-              <div class="repair-service-card">
-                <img src="{{ asset('front-assets/img/' . ($serviceImages[$index] ?? 'service-img-1.svg')) }}" alt="" />
-                <h3 class="fs-24">{{ $service['title'] ?? 'Service' }}</h3>
-                <p>
-                  {{ $service['description'] ?? '' }}
-                </p>
-              </div>
+            <div class="col d-flex">
+              <a href="{{ route('frontend.book-repair') }}" class="text-decoration-none w-100">
+                <div class="repair-service-card h-100">
+                  <img src="{{ asset('front-assets/img/' . ($serviceImages[$index] ?? 'service-img-1.svg')) }}" alt="{{ $service['title'] ?? 'Service' }}" />
+                  <h3 class="fs-24">{{ $service['title'] ?? 'Service' }}</h3>
+                  <p>
+                    {{ $service['description'] ?? '' }}
+                  </p>
+                </div>
+              </a>
             </div>
           @endforeach
         </div>

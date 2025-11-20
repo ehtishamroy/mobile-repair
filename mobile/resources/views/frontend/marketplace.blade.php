@@ -45,7 +45,7 @@
         </div>
 
         <div class="d-flex align-items-center gap-4 text-muted">
-          <a href="#" class="top-link d-flex align-items-center gap-2">
+          <a href="{{ route('frontend.track-order') }}" class="top-link d-flex align-items-center gap-2">
             <svg
               width="24"
               height="24"
@@ -77,7 +77,7 @@
             </svg>
             Track Order
           </a>
-          <a href="#" class="top-link d-flex align-items-center gap-2">
+          <a href="{{ route('frontend.contact') }}" class="top-link d-flex align-items-center gap-2">
             <svg
               width="24"
               height="24"
@@ -95,7 +95,7 @@
             </svg>
             Customer Support
           </a>
-          <a href="#" class="top-link d-flex align-items-center gap-2">
+          <a href="{{ route('frontend.contact') }}" class="top-link d-flex align-items-center gap-2">
             <svg
               width="24"
               height="24"
