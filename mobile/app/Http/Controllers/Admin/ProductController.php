@@ -211,11 +211,11 @@ class ProductController extends Controller
             $this->handleFeatures($product, $request);
 
             DB::commit();
-            
+
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'message' => 'Product created successfully.']);
             }
-            
+
             return redirect()->route('admin.products.index')->with('success', 'Product created successfully.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
@@ -310,11 +310,11 @@ class ProductController extends Controller
             $this->handleFeatures($product, $request, true);
 
             DB::commit();
-            
+
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'message' => 'Product updated successfully.']);
             }
-            
+
             return redirect()->route('admin.products.index')->with('success', 'Product updated successfully.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
@@ -359,6 +359,46 @@ class ProductController extends Controller
         }
     }
 
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'product_ids' => 'required|array',
+            'product_ids.*' => 'exists:products,id',
+        ]);
+
+        $count = 0;
+        $productIds = $request->input('product_ids');
+
+        DB::beginTransaction();
+        try {
+            foreach ($productIds as $id) {
+                $product = Product::find($id);
+                if ($product) {
+                    // Delete featured image
+                    if ($product->featured_image && Storage::disk('public')->exists($product->featured_image)) {
+                        Storage::disk('public')->delete($product->featured_image);
+                    }
+
+                    // Delete gallery images
+                    foreach ($product->galleryImages as $galleryImage) {
+                        if (Storage::disk('public')->exists($galleryImage->image)) {
+                            Storage::disk('public')->delete($galleryImage->image);
+                        }
+                    }
+
+                    $product->delete();
+                    $count++;
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('admin.products.index')->with('success', $count . ' product(s) deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Error deleting products: ' . $e->getMessage()]);
+        }
+    }
+
     public function deleteGalleryImage(string $id)
     {
         $image = ProductGalleryImage::findOrFail($id);
@@ -382,7 +422,7 @@ class ProductController extends Controller
         // Handle new/updated variants
         if ($request->has('variants')) {
             $variants = $request->input('variants', []);
-            
+
             foreach ($variants as $variantData) {
                 if (isset($variantData['id'])) {
                     // Update existing variant
@@ -419,7 +459,7 @@ class ProductController extends Controller
         // Handle variant values (combinations with pricing)
         if ($request->has('variant_values')) {
             $variantValues = $request->input('variant_values', []);
-            
+
             if ($isUpdate) {
                 $product->variantValues()->delete();
             }
@@ -429,7 +469,7 @@ class ProductController extends Controller
                 if (empty($valueData['combination'])) {
                     continue;
                 }
-                
+
                 // Parse combination if it's a JSON string
                 $combination = null;
                 if (is_string($valueData['combination'])) {
@@ -450,24 +490,24 @@ class ProductController extends Controller
                 } else {
                     continue; // Skip invalid combination
                 }
-                
+
                 // Parse values - convert empty strings to null for price fields
                 $price = null;
                 if (isset($valueData['price']) && $valueData['price'] !== '' && $valueData['price'] !== null) {
                     $price = (float) $valueData['price'];
                 }
-                
+
                 $compareAtPrice = null;
                 if (isset($valueData['compare_at_price']) && $valueData['compare_at_price'] !== '' && $valueData['compare_at_price'] !== null) {
                     $compareAtPrice = (float) $valueData['compare_at_price'];
                 }
-                
-                $quantity = isset($valueData['quantity']) && $valueData['quantity'] !== '' 
-                    ? (int) $valueData['quantity'] 
+
+                $quantity = isset($valueData['quantity']) && $valueData['quantity'] !== ''
+                    ? (int) $valueData['quantity']
                     : 0;
-                
+
                 $sku = !empty($valueData['sku']) ? $valueData['sku'] : null;
-                
+
                 ProductVariantValue::create([
                     'product_id' => $product->id,
                     'variant_combination' => $combination,
@@ -492,8 +532,8 @@ class ProductController extends Controller
                 'product_variant_id' => $variant->id,
                 'value' => $optionData['value'],
                 'color_code' => $optionData['color_code'] ?? null,
-                'image' => isset($optionData['image']) && is_file($optionData['image']) 
-                    ? $optionData['image']->store('variants', 'public') 
+                'image' => isset($optionData['image']) && is_file($optionData['image'])
+                    ? $optionData['image']->store('variants', 'public')
                     : null,
                 'order' => $optionData['order'] ?? 0,
             ]);
@@ -509,7 +549,7 @@ class ProductController extends Controller
 
         if ($request->has('features')) {
             $features = $request->input('features', []);
-            
+
             foreach ($features as $index => $featureData) {
                 // Handle icon image upload
                 $iconPath = null;
@@ -519,7 +559,7 @@ class ProductController extends Controller
                     // Keep existing icon if it's a string path
                     $iconPath = $featureData['icon'];
                 }
-                
+
                 if (isset($featureData['id'])) {
                     // Update existing feature
                     $feature = ProductFeature::find($featureData['id']);
@@ -529,7 +569,7 @@ class ProductController extends Controller
                             'description' => $featureData['description'] ?? null,
                             'order' => $featureData['order'] ?? 0,
                         ];
-                        
+
                         if ($iconPath !== null) {
                             // Delete old icon if new one is uploaded
                             if ($feature->icon && Storage::disk('public')->exists($feature->icon)) {
@@ -537,7 +577,7 @@ class ProductController extends Controller
                             }
                             $updateData['icon'] = $iconPath;
                         }
-                        
+
                         $feature->update($updateData);
                     }
                 } else {

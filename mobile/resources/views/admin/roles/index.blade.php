@@ -4,6 +4,7 @@
 @section('page-title', 'Roles')
 
 @section('breadcrumb')
+    <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
     <li class="breadcrumb-item active">Roles</li>
 @endsection
 

@@ -88,7 +88,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         }
         return redirect()->route('admin.login');
     });
-    
+
     // Login Routes (only accessible when not authenticated)
     Route::middleware('guest')->group(function () {
         Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('login');
@@ -103,76 +103,76 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Protected Admin Panel Routes (require authentication, role-based access)
     Route::middleware(['auth.panel'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-        
+
         // Profile Management - All authenticated users can manage their own profile
         Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
         Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
-        
+
         // Settings Management - Only admins can manage settings
         Route::middleware(['admin'])->group(function () {
             Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
             Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
-            
+
             // Homepage Content Management (Admin/Superadmin only)
             Route::get('/homepage-content', [HomepageContentController::class, 'index'])->name('homepage-content.index');
             Route::put('/homepage-content', [HomepageContentController::class, 'update'])->name('homepage-content.update');
-            
+
             // About Page Content Management (Admin/Superadmin only)
             Route::get('/about-page-content', [AboutPageContentController::class, 'index'])->name('about-page-content.index');
             Route::put('/about-page-content', [AboutPageContentController::class, 'update'])->name('about-page-content.update');
-            
+
             // Service Page Content Management (Admin/Superadmin only)
             Route::get('/service-page-content', [ServicePageContentController::class, 'index'])->name('service-page-content.index');
             Route::put('/service-page-content', [ServicePageContentController::class, 'update'])->name('service-page-content.update');
-            
+
             // Join Page Content Management (Admin/Superadmin only)
             Route::get('/join-page-content', [JoinPageContentController::class, 'index'])->name('join-page-content.index');
             Route::put('/join-page-content', [JoinPageContentController::class, 'update'])->name('join-page-content.update');
-            
+
             // Careers Page Content Management (Admin/Superadmin only)
             Route::get('/careers-page-content', [CareersPageContentController::class, 'index'])->name('careers-page-content.index');
             Route::put('/careers-page-content', [CareersPageContentController::class, 'update'])->name('careers-page-content.update');
-            
+
             // Shipping Options Management (Admin/Superadmin only)
             Route::get('/shipping-options', [ShippingOptionController::class, 'index'])->name('shipping-options.index');
             Route::post('/shipping-options', [ShippingOptionController::class, 'store'])->name('shipping-options.store');
             Route::put('/shipping-options/{shippingOption}', [ShippingOptionController::class, 'update'])->name('shipping-options.update');
             Route::delete('/shipping-options/{shippingOption}', [ShippingOptionController::class, 'destroy'])->name('shipping-options.destroy');
-            
+
             // Global Features Management (Admin/Superadmin only)
             Route::get('/global-features', [GlobalFeatureController::class, 'index'])->name('global-features.index');
             Route::post('/global-features', [GlobalFeatureController::class, 'store'])->name('global-features.store');
             Route::put('/global-features/{globalFeature}', [GlobalFeatureController::class, 'update'])->name('global-features.update');
             Route::delete('/global-features/{globalFeature}', [GlobalFeatureController::class, 'destroy'])->name('global-features.destroy');
         });
-        
+
         // Roles Management - Only users with manage-roles permission
         Route::middleware(['permission:manage-roles'])->group(function () {
             Route::resource('roles', RoleController::class);
         });
-        
+
         // Users Management - Only users with manage-users permission
         Route::middleware(['permission:manage-users'])->group(function () {
             Route::resource('users', UserController::class);
         });
-        
+
         // Product Management - Only users with manage-products permission
         Route::middleware(['permission:manage-products'])->group(function () {
             Route::resource('categories', CategoryController::class);
             Route::resource('brands', BrandController::class);
             Route::resource('tags', TagController::class);
+            Route::delete('/products/bulk-delete', [ProductController::class, 'bulkDelete'])->name('products.bulk-delete');
             Route::resource('products', ProductController::class);
             Route::post('/products/{product}/duplicate', [ProductController::class, 'duplicate'])->name('products.duplicate');
             Route::post('/products/gallery/{id}/delete', [ProductController::class, 'deleteGalleryImage'])->name('products.gallery.delete');
-            Route::delete('/products/bulk-delete', [ProductController::class, 'bulkDelete'])->name('products.bulk-delete');
         });
-        
+
         // Coupon Management - Only users with manage-products permission
         Route::middleware(['permission:manage-products'])->group(function () {
             Route::resource('coupons', CouponController::class);
         });
-        
+
         // Order Management - Only users with manage-orders permission
         Route::middleware(['permission:manage-orders'])->group(function () {
             Route::resource('orders', OrderController::class)->only(['index', 'show', 'update']);
@@ -180,24 +180,30 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('/orders/{order}/tracking/{tracking}', [OrderTrackingController::class, 'update'])->name('orders.tracking.update');
             Route::delete('/orders/{order}/tracking/{tracking}', [OrderTrackingController::class, 'destroy'])->name('orders.tracking.destroy');
         });
-        
+
         // Repair Booking Management - Only users with manage-repairs permission
         Route::middleware(['permission:manage-repairs'])->group(function () {
             Route::resource('repair-services', \App\Http\Controllers\Admin\RepairServiceController::class);
             Route::resource('repair-device-types', \App\Http\Controllers\Admin\RepairDeviceTypeController::class);
+            Route::resource('repair-brands', \App\Http\Controllers\Admin\RepairBrandController::class);
             Route::resource('repair-issues', \App\Http\Controllers\Admin\RepairIssueController::class);
             Route::resource('repair-pricings', \App\Http\Controllers\Admin\RepairPricingController::class);
             Route::get('/repair-pricings/get-device-types', [\App\Http\Controllers\Admin\RepairPricingController::class, 'getDeviceTypes'])->name('repair-pricings.get-device-types');
             Route::get('/repair-pricings/get-issues', [\App\Http\Controllers\Admin\RepairPricingController::class, 'getIssues'])->name('repair-pricings.get-issues');
-            
+
             // Repair Orders Management
             Route::resource('repair-orders', \App\Http\Controllers\Admin\RepairOrderController::class)->only(['index', 'show', 'update']);
-            
+
             // Mail-in Process Management (Admin/Superadmin only)
             Route::middleware(['admin'])->group(function () {
                 Route::get('/mail-in-process', [\App\Http\Controllers\Admin\MailInProcessController::class, 'index'])->name('mail-in-process.index');
                 Route::put('/mail-in-process', [\App\Http\Controllers\Admin\MailInProcessController::class, 'update'])->name('mail-in-process.update');
             });
+        });
+
+        // Reports - Accessible to users with manage-orders, manage-repairs, or admin
+        Route::middleware(['admin'])->group(function () {
+            Route::get('/reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
         });
     });
 });

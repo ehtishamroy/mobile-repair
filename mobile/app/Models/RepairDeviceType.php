@@ -8,8 +8,9 @@ class RepairDeviceType extends Model
 {
     protected $fillable = [
         'repair_service_id',
+        'repair_brand_id',
         'name',
-        'brand',
+        'brand', // Keep for backward compatibility
         'order',
         'is_active',
     ];
@@ -21,7 +22,18 @@ class RepairDeviceType extends Model
 
     public function service()
     {
-        return $this->belongsTo(RepairService::class);
+        return $this->belongsTo(RepairService::class, 'repair_service_id');
+    }
+
+    public function repairBrand()
+    {
+        return $this->belongsTo(RepairBrand::class, 'repair_brand_id');
+    }
+
+    // Alias for backward compatibility
+    public function getBrandRelationAttribute()
+    {
+        return $this->repairBrand;
     }
 
     public function pricings()

@@ -39,8 +39,31 @@
                         <strong>Customer Name:</strong> {{ $repairOrder->customer_name }}<br>
                         <strong>Email:</strong> {{ $repairOrder->customer_email }}<br>
                         <strong>Phone:</strong> {{ $repairOrder->customer_phone ?? 'N/A' }}<br>
+                        <strong>Delivery Method:</strong> 
+                        @if($repairOrder->delivery_method === 'visit')
+                            <span class="badge badge-info">Visit Us</span>
+                        @elseif($repairOrder->delivery_method === 'online')
+                            <span class="badge badge-primary">Online Delivery</span>
+                        @else
+                            <span class="badge badge-secondary">N/A</span>
+                        @endif
+                        <br>
                         <strong>Payment Method:</strong> 
-                        <span class="badge badge-secondary">{{ ucfirst($repairOrder->payment_method) }}</span>
+                        @if(empty($repairOrder->payment_method))
+                            @if($repairOrder->delivery_method === 'visit')
+                                <span class="badge badge-warning">Pay on Visit</span>
+                            @else
+                                <span class="badge badge-secondary">Not Selected</span>
+                            @endif
+                        @else
+                            @if($repairOrder->payment_method === 'stripe')
+                                <span class="badge badge-success">Stripe</span>
+                            @elseif($repairOrder->payment_method === 'paypal')
+                                <span class="badge badge-primary">PayPal</span>
+                            @else
+                                <span class="badge badge-secondary">{{ ucfirst($repairOrder->payment_method) }}</span>
+                            @endif
+                        @endif
                     </div>
                 </div>
             </div>
@@ -98,14 +121,29 @@
         </div>
         @endif
 
-        <!-- Shipping Address -->
-        @if($repairOrder->address)
+        <!-- Shipping Address / Visit Information -->
+        @if($repairOrder->delivery_method === 'online' && $repairOrder->address)
         <div class="card card-primary">
             <div class="card-header">
                 <h3 class="card-title">Shipping Address</h3>
             </div>
             <div class="card-body">
                 <p style="white-space: pre-line;">{{ $repairOrder->address }}</p>
+            </div>
+        </div>
+        @elseif($repairOrder->delivery_method === 'visit')
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">Visit Information</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-info">
+                    <i class="fas fa-store"></i> Customer will visit the store to drop off their device.
+                </p>
+                @if($repairOrder->address)
+                    <p><strong>Optional Address:</strong></p>
+                    <p style="white-space: pre-line;">{{ $repairOrder->address }}</p>
+                @endif
             </div>
         </div>
         @endif
@@ -174,7 +212,32 @@
                 <h3 class="card-title">Payment Information</h3>
             </div>
             <div class="card-body">
-                <p><strong>Payment Method:</strong> {{ ucfirst($repairOrder->payment_method) }}</p>
+                <p><strong>Delivery Method:</strong> 
+                    @if($repairOrder->delivery_method === 'visit')
+                        <span class="badge badge-info">Visit Us</span>
+                    @elseif($repairOrder->delivery_method === 'online')
+                        <span class="badge badge-primary">Online Delivery</span>
+                    @else
+                        <span class="badge badge-secondary">N/A</span>
+                    @endif
+                </p>
+                <p><strong>Payment Method:</strong> 
+                    @if(empty($repairOrder->payment_method))
+                        @if($repairOrder->delivery_method === 'visit')
+                            <span class="badge badge-warning">Pay on Visit</span>
+                        @else
+                            <span class="badge badge-secondary">Not Selected</span>
+                        @endif
+                    @else
+                        @if($repairOrder->payment_method === 'stripe')
+                            <span class="badge badge-success">Stripe</span>
+                        @elseif($repairOrder->payment_method === 'paypal')
+                            <span class="badge badge-primary">PayPal</span>
+                        @else
+                            <span class="badge badge-secondary">{{ ucfirst($repairOrder->payment_method) }}</span>
+                        @endif
+                    @endif
+                </p>
                 @if($repairOrder->payment_intent_id)
                     <p><strong>Payment Intent ID:</strong> <small class="text-muted">{{ $repairOrder->payment_intent_id }}</small></p>
                 @endif

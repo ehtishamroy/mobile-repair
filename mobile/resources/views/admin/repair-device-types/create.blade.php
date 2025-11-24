@@ -45,12 +45,20 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="brand">Brand</label>
-                        <input type="text" class="form-control @error('brand') is-invalid @enderror" 
-                               id="brand" name="brand" value="{{ old('brand') }}">
-                        @error('brand')
+                        <label for="repair_brand_id">Brand</label>
+                        <select class="form-control @error('repair_brand_id') is-invalid @enderror" 
+                                id="repair_brand_id" name="repair_brand_id">
+                            <option value="">Select Brand (Optional)</option>
+                            @foreach($brands as $brand)
+                                <option value="{{ $brand->id }}" {{ old('repair_brand_id') == $brand->id ? 'selected' : '' }}>
+                                    {{ $brand->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('repair_brand_id')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
+                        <small class="form-text text-muted">Select a brand from the list or leave empty</small>
                     </div>
 
                     <div class="form-group">

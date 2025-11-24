@@ -11,7 +11,7 @@ class RepairServiceController extends Controller
 {
     public function index()
     {
-        $services = RepairService::orderBy('order')->latest()->paginate(15);
+        $services = RepairService::orderBy('order')->latest()->get();
         return view('admin.repair-services.index', compact('services'));
     }
 
@@ -25,14 +25,12 @@ class RepairServiceController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255|unique:repair_services,slug',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+
             'order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
         ]);
 
-        if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('repair-services', 'public');
-        }
+
 
         $validated['is_active'] = $request->has('is_active');
 
@@ -54,19 +52,12 @@ class RepairServiceController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255|unique:repair_services,slug,' . $id,
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+
             'order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
         ]);
 
-        if ($request->hasFile('image')) {
-            if ($service->image && Storage::disk('public')->exists($service->image)) {
-                Storage::disk('public')->delete($service->image);
-            }
-            $validated['image'] = $request->file('image')->store('repair-services', 'public');
-        } else {
-            unset($validated['image']);
-        }
+
 
         $validated['is_active'] = $request->has('is_active');
 
@@ -78,11 +69,9 @@ class RepairServiceController extends Controller
     public function destroy(string $id)
     {
         $service = RepairService::findOrFail($id);
-        
-        if ($service->image && Storage::disk('public')->exists($service->image)) {
-            Storage::disk('public')->delete($service->image);
-        }
-        
+
+
+
         $service->delete();
 
         return redirect()->route('admin.repair-services.index')->with('success', 'Repair service deleted successfully.');

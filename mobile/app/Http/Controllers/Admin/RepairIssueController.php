@@ -11,7 +11,7 @@ class RepairIssueController extends Controller
 {
     public function index()
     {
-        $issues = RepairIssue::with('service')->orderBy('order')->latest()->paginate(15);
+        $issues = RepairIssue::with('service')->orderBy('order')->latest()->get();
         return view('admin.repair-issues.index', compact('issues'));
     }
 

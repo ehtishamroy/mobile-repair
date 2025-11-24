@@ -24,16 +24,16 @@ class RepairPricing extends Model
 
     public function service()
     {
-        return $this->belongsTo(RepairService::class);
+        return $this->belongsTo(RepairService::class, 'repair_service_id');
     }
 
     public function deviceType()
     {
-        return $this->belongsTo(RepairDeviceType::class);
+        return $this->belongsTo(RepairDeviceType::class, 'repair_device_type_id');
     }
 
     public function issue()
     {
-        return $this->belongsTo(RepairIssue::class);
+        return $this->belongsTo(RepairIssue::class, 'repair_issue_id');
     }
 }

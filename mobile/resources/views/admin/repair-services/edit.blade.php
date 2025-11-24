@@ -10,114 +10,86 @@
 @endsection
 
 @section('content')
-@php
-    $nameValue = old('name', $service->name ?? '');
-    $slugValue = old('slug', $service->slug ?? '');
-    $orderValue = old('order', $service->order ?? 0);
-    $isActive = old('is_active', $service->is_active ?? false);
-@endphp
-<form action="{{ route('admin.repair-services.update', $service->id) }}" method="POST" enctype="multipart/form-data">
-    @csrf
-    @method('PUT')
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card card-primary">
-                <div class="card-header">
-                    <h3 class="card-title">Service Information</h3>
-                </div>
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="name">Service Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control @error('name') is-invalid @enderror" 
-                               id="name" name="name" value="{{ $nameValue }}" required>
-                        @error('name')
-                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                        @enderror
+    @php
+        $nameValue = old('name', $service->name ?? '');
+        $slugValue = old('slug', $service->slug ?? '');
+        $orderValue = old('order', $service->order ?? 0);
+        $isActive = old('is_active', $service->is_active ?? false);
+    @endphp
+    <form action="{{ route('admin.repair-services.update', $service->id) }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        @method('PUT')
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">Service Information</h3>
                     </div>
-
-                    <div class="form-group">
-                        <label for="slug">Slug</label>
-                        <input type="text" class="form-control @error('slug') is-invalid @enderror" 
-                               id="slug" name="slug" value="{{ $slugValue }}">
-                        @error('slug')
-                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                        @enderror
-                    </div>
-
-                    <div class="form-group">
-                        <label for="order">Display Order</label>
-                        <input type="number" class="form-control @error('order') is-invalid @enderror" 
-                               id="order" name="order" value="{{ $orderValue }}" min="0">
-                        @error('order')
-                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                        @enderror
-                        <small class="form-text text-muted">Lower numbers appear first</small>
-                    </div>
-
-                    <div class="form-group">
-                        <div class="custom-control custom-switch">
-                            <input type="checkbox" class="custom-control-input" id="is_active" name="is_active" value="1" @if($isActive) checked @endif>
-                            <label class="custom-control-label" for="is_active">Active</label>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="name">Service Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('name') is-invalid @enderror" id="name"
+                                name="name" value="{{ $nameValue }}" required>
+                            @error('name')
+                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                            @enderror
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="col-md-4">
-            <div class="card card-primary">
-                <div class="card-header">
-                    <h3 class="card-title">Service Image</h3>
-                </div>
-                <div class="card-body">
-                    @if($service->image)
-                    <div class="mb-3">
-                        <img src="{{ asset('storage/' . $service->image) }}" alt="{{ $service->name }}" class="img-fluid" style="max-height: 200px;">
-                        <p class="text-muted small mt-1">Current image</p>
-                    </div>
-                    @endif
-                    <div class="form-group">
-                        <label for="image">Change Image</label>
-                        <div class="input-group">
-                            <div class="custom-file">
-                                <input type="file" class="custom-file-input @error('image') is-invalid @enderror" 
-                                       id="image" name="image" accept="image/*">
-                                <label class="custom-file-label" for="image">Choose file</label>
+                        <div class="form-group">
+                            <label for="slug">Slug</label>
+                            <input type="text" class="form-control @error('slug') is-invalid @enderror" id="slug"
+                                name="slug" value="{{ $slugValue }}">
+                            @error('slug')
+                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label for="order">Display Order</label>
+                            <input type="number" class="form-control @error('order') is-invalid @enderror" id="order"
+                                name="order" value="{{ $orderValue }}" min="0">
+                            @error('order')
+                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                            @enderror
+                            <small class="form-text text-muted">Lower numbers appear first</small>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="is_active" name="is_active"
+                                    value="1" @if($isActive) checked @endif>
+                                <label class="custom-control-label" for="is_active">Active</label>
                             </div>
                         </div>
-                        @error('image')
-                            <span class="text-danger"><strong>{{ $message }}</strong></span>
-                        @enderror
-                        <small class="form-text text-muted">Recommended size: 300x300px. Max size: 2MB</small>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div class="row">
-        <div class="col-12">
-            <div class="card-footer">
-                <button type="submit" class="btn btn-primary">Update Service</button>
-                <a href="{{ route('admin.repair-services.index') }}" class="btn btn-default">Cancel</a>
+
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary">Update Service</button>
+                    <a href="{{ route('admin.repair-services.index') }}" class="btn btn-default">Cancel</a>
+                </div>
             </div>
         </div>
-    </div>
-</form>
+    </form>
 
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const fileInput = document.getElementById('image');
-        if (fileInput) {
-            fileInput.addEventListener('change', function(e) {
-                const fileName = e.target.files[0]?.name || 'Choose file';
-                const label = e.target.nextElementSibling;
-                label.textContent = fileName;
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const fileInput = document.getElementById('image');
+                if (fileInput) {
+                    fileInput.addEventListener('change', function (e) {
+                        const fileName = e.target.files[0]?.name || 'Choose file';
+                        const label = e.target.nextElementSibling;
+                        label.textContent = fileName;
+                    });
+                }
             });
-        }
-    });
-</script>
-@endpush
+        </script>
+    @endpush
 @endsection
-

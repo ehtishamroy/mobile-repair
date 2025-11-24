@@ -20,7 +20,7 @@ class RepairIssue extends Model
 
     public function service()
     {
-        return $this->belongsTo(RepairService::class);
+        return $this->belongsTo(RepairService::class, 'repair_service_id');
     }
 
     public function pricings()

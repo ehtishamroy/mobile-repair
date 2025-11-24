@@ -1191,7 +1191,7 @@ class HomeController extends Controller
         
         if ($serviceId) {
             $service = \App\Models\RepairService::with(['deviceTypes' => function($q) {
-                $q->where('is_active', true);
+                $q->where('is_active', true)->with('repairBrand');
             }])->findOrFail($serviceId);
         }
         
@@ -1354,15 +1354,36 @@ class HomeController extends Controller
                 'issues' => 'nullable|array',
                 'issues.*' => 'exists:repair_issues,id',
                 'issue_description' => 'nullable|string',
-                'payment_method' => 'required|in:stripe,paypal',
+                'delivery_method' => 'required|in:visit,online',
+                'payment_method' => 'nullable|in:stripe,paypal',
                 'stripe_token' => 'nullable|string',
                 'payment_intent_id' => 'nullable|string',
                 'paypal_order_id' => 'nullable|string',
-                'address' => 'required|string|max:1000',
+                'address' => 'nullable|string|max:1000',
                 'subtotal' => 'nullable|numeric|min:0',
                 'inspection_fee' => 'nullable|numeric|min:0',
                 'total' => 'required|numeric|min:0',
             ]);
+            
+            // Additional validation: payment_method and address required for online delivery
+            if ($validated['delivery_method'] === 'online') {
+                if (empty($validated['payment_method'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Payment method is required for online delivery.',
+                        'errors' => ['payment_method' => ['Payment method is required for online delivery.']]
+                    ], 422);
+                }
+                if (empty($validated['address'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Shipping address is required for online delivery.',
+                        'errors' => ['address' => ['Shipping address is required for online delivery.']]
+                    ], 422);
+                }
+            }
+            
+            // For visit us, payment_method can be empty (user will pay on visit)
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -1416,10 +1437,19 @@ class HomeController extends Controller
             $paymentIntentId = $validated['payment_intent_id'] ?? null;
             $paypalOrderId = $validated['paypal_order_id'] ?? null;
             
-            if ($validated['payment_method'] === 'stripe' && !empty($validated['stripe_token'])) {
+            if (!empty($validated['payment_method']) && $validated['payment_method'] === 'stripe' && !empty($validated['stripe_token'])) {
                 // Here you would process the Stripe payment
                 // For now, we'll just store the token
                 $paymentIntentId = $validated['stripe_token'];
+            }
+
+            // Determine order status based on delivery method
+            $orderStatus = 'pending'; // Default for visit us
+            if ($validated['delivery_method'] === 'online' && !empty($validated['payment_method'])) {
+                // If online delivery and payment method selected, mark as paid if payment processed
+                if (!empty($paymentIntentId) || !empty($paypalOrderId)) {
+                    $orderStatus = 'paid';
+                }
             }
 
             // Create repair order
@@ -1432,14 +1462,15 @@ class HomeController extends Controller
                 'device_model' => $validated['device_model'],
                 'selected_issues' => $selectedIssues,
                 'issue_description' => $validated['issue_description'] ?? null,
-                'payment_method' => $validated['payment_method'],
+                'delivery_method' => $validated['delivery_method'],
+                'payment_method' => $validated['payment_method'] ?? null,
                 'payment_intent_id' => $paymentIntentId,
                 'paypal_order_id' => $paypalOrderId,
-                'status' => 'paid',
+                'status' => $orderStatus,
                 'subtotal' => $subtotal,
                 'inspection_fee' => $inspectionFee,
                 'total' => $total,
-                'address' => $validated['address'],
+                'address' => $validated['address'] ?? null,
             ]);
 
             // Refresh order from database and load relationships for email

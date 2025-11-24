@@ -15,7 +15,7 @@ class RepairPricingController extends Controller
     {
         $pricings = RepairPricing::with(['service', 'deviceType', 'issue'])
             ->latest()
-            ->paginate(15);
+            ->get();
         return view('admin.repair-pricings.index', compact('pricings'));
     }
 

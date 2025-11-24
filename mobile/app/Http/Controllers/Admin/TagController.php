@@ -10,7 +10,7 @@ class TagController extends Controller
 {
     public function index()
     {
-        $tags = Tag::latest()->paginate(15);
+        $tags = Tag::latest()->get();
         return view('admin.tags.index', compact('tags'));
     }
 

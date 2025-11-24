@@ -13,7 +13,7 @@ class CouponController extends Controller
 {
     public function index()
     {
-        $coupons = Coupon::withCount('usages')->latest()->paginate(15);
+        $coupons = Coupon::withCount('usages')->latest()->get();
         return view('admin.coupons.index', compact('coupons'));
     }
 

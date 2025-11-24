@@ -17,6 +17,7 @@ class RepairOrder extends Model
         'device_model',
         'selected_issues',
         'issue_description',
+        'delivery_method',
         'payment_method',
         'payment_intent_id',
         'paypal_order_id',

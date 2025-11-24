@@ -5,28 +5,31 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\RepairDeviceType;
 use App\Models\RepairService;
+use App\Models\RepairBrand;
 use Illuminate\Http\Request;
 
 class RepairDeviceTypeController extends Controller
 {
     public function index()
     {
-        $deviceTypes = RepairDeviceType::with('service')->orderBy('order')->latest()->paginate(15);
+        $deviceTypes = RepairDeviceType::with(['service', 'repairBrand'])->orderBy('order')->latest()->get();
         return view('admin.repair-device-types.index', compact('deviceTypes'));
     }
 
     public function create()
     {
         $services = RepairService::where('is_active', true)->orderBy('order')->get();
-        return view('admin.repair-device-types.create', compact('services'));
+        $brands = RepairBrand::where('is_active', true)->orderBy('order')->get();
+        return view('admin.repair-device-types.create', compact('services', 'brands'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'repair_service_id' => 'required|exists:repair_services,id',
+            'repair_brand_id' => 'nullable|exists:repair_brands,id',
             'name' => 'required|string|max:255',
-            'brand' => 'nullable|string|max:255',
+            'brand' => 'nullable|string|max:255', // Keep for backward compatibility
             'order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
         ]);
@@ -42,7 +45,8 @@ class RepairDeviceTypeController extends Controller
     {
         $deviceType = RepairDeviceType::findOrFail($id);
         $services = RepairService::where('is_active', true)->orderBy('order')->get();
-        return view('admin.repair-device-types.edit', compact('deviceType', 'services'));
+        $brands = RepairBrand::where('is_active', true)->orderBy('order')->get();
+        return view('admin.repair-device-types.edit', compact('deviceType', 'services', 'brands'));
     }
 
     public function update(Request $request, string $id)
@@ -51,8 +55,9 @@ class RepairDeviceTypeController extends Controller
 
         $validated = $request->validate([
             'repair_service_id' => 'required|exists:repair_services,id',
+            'repair_brand_id' => 'nullable|exists:repair_brands,id',
             'name' => 'required|string|max:255',
-            'brand' => 'nullable|string|max:255',
+            'brand' => 'nullable|string|max:255', // Keep for backward compatibility
             'order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
         ]);

@@ -24,18 +24,22 @@
         </div>
         <div class="step">
             <div class="circle">2</div>
-            <div class="label">Payment Method</div>
+            <div class="label">Delivery Method</div>
         </div>
         <div class="step">
             <div class="circle">3</div>
-            <div class="label">Process Info</div>
+            <div class="label">Payment Method</div>
         </div>
         <div class="step">
             <div class="circle">4</div>
-            <div class="label">Confirm Details</div>
+            <div class="label">Process Info</div>
         </div>
         <div class="step">
             <div class="circle">5</div>
+            <div class="label">Confirm Details</div>
+        </div>
+        <div class="step">
+            <div class="circle">6</div>
             <div class="label">Payment</div>
         </div>
     </div>
@@ -44,8 +48,17 @@
     <form id="repairForm" action="{{ route('frontend.repair.process') }}" method="POST">
         @csrf
         <input type="hidden" name="service_id" value="{{ $service->id }}">
-        <input type="hidden" name="device_type_id" id="device_type_id" value="{{ $deviceType->id ?? '' }}">
+        @php
+            $deviceTypeIdValue = request()->get('device_type_id');
+            if ($deviceTypeIdValue === 'other') {
+                $deviceTypeIdValue = 'other';
+            } else {
+                $deviceTypeIdValue = $deviceType->id ?? '';
+            }
+        @endphp
+        <input type="hidden" name="device_type_id" id="device_type_id" value="{{ $deviceTypeIdValue }}">
         <input type="hidden" name="device_type" id="device_type" value="{{ $deviceType ? $deviceType->name : 'Other' }}">
+        <input type="hidden" name="delivery_method" id="delivery_method" value="">
         
         <div id="form-steps">
             <!-- Step 1: Information -->
@@ -76,14 +89,17 @@
                             @if($deviceType && $deviceType->id)
                             <input type="text" class="custom-input" id="device_model" name="device_model" value="{{ $deviceType->name }}" readonly>
                             @else
+                            @php
+                                $isOtherSelected = request()->get('device_type_id') === 'other';
+                            @endphp
                             <select class="custom-select" id="device_model_select" name="device_model" required>
                                 <option value="">Please select</option>
                                 @foreach($service->deviceTypes as $dt)
                                 <option value="{{ $dt->name }}" {{ $deviceType && $deviceType->id == $dt->id ? 'selected' : '' }}>{{ $dt->name }}</option>
                                 @endforeach
-                                <option value="other">Other (Please specify)</option>
+                                <option value="other" {{ $isOtherSelected ? 'selected' : '' }}>Other (Please specify)</option>
                             </select>
-                            <input type="text" class="custom-input mt-2" id="device_model_custom" name="device_model" placeholder="Enter device model" style="display: none;">
+                            <input type="text" class="custom-input mt-2" id="device_model_custom" name="device_model" placeholder="Enter device model" style="display: {{ $isOtherSelected ? 'block' : 'none' }};" {{ $isOtherSelected ? 'required' : '' }}>
                             @endif
                         </div>
                     </div>
@@ -120,28 +136,66 @@
                 </div>
             </div>
 
-            <!-- Step 2: Payment Method Selection -->
+            <!-- Step 2: Delivery Method Selection -->
             <div class="step-content">
-                <h1 class="text-sm-center my-4 mb-5">How do you want to pay?</h1>
+                <h1 class="text-sm-center my-4 mb-5">How would you like to proceed?</h1>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <div class="py-3 flex-center flex-column gap-2 border payment-option-item" data-payment="stripe" style="cursor: pointer; border-radius: 8px;">
-                            <img src="{{ asset('front-assets/img/CreditCard.svg') }}" alt="Stripe" style="height: 40px;">
-                            <label class="form-label fw-500 w-100 text-center">Stripe</label>
-                            <input type="radio" name="payment_method" value="stripe" class="custom-radio" checked>
+                        <div class="py-4 flex-center flex-column gap-2 border delivery-option-item" data-delivery="visit" style="cursor: pointer; border-radius: 8px; min-height: 200px; transition: all 0.3s;">
+                            <i class="fas fa-store" style="font-size: 3rem; color: #684471;"></i>
+                            <label class="form-label fw-600 w-100 text-center" style="font-size: 1.2rem;">Visit Us</label>
+                            <p class="text-center text-muted small">Pay when you visit our store</p>
+                            <input type="radio" name="delivery_method" value="visit" id="delivery_visit" class="custom-radio">
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <div class="py-3 flex-center flex-column gap-2 border payment-option-item" data-payment="paypal" style="cursor: pointer; border-radius: 8px;">
-                            <img src="{{ asset('front-assets/img/paypal.svg') }}" alt="PayPal" style="height: 40px;">
-                            <label class="form-label fw-500 w-100 text-center">PayPal</label>
-                            <input type="radio" name="payment_method" value="paypal" class="custom-radio">
+                        <div class="py-4 flex-center flex-column gap-2 border delivery-option-item" data-delivery="online" style="cursor: pointer; border-radius: 8px; min-height: 200px; transition: all 0.3s;">
+                            <i class="fas fa-shipping-fast" style="font-size: 3rem; color: #684471;"></i>
+                            <label class="form-label fw-600 w-100 text-center" style="font-size: 1.2rem;">Online Delivery</label>
+                            <p class="text-center text-muted small">Pay online for delivery</p>
+                            <input type="radio" name="delivery_method" value="online" id="delivery_online" class="custom-radio">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Step 3: Mail-in Process Information -->
+            <!-- Step 3: Payment Method Selection -->
+            <div class="step-content" id="paymentMethodStep">
+                <h1 class="text-sm-center my-4 mb-5">How do you want to pay?</h1>
+                <p class="text-center text-muted mb-4" id="paymentMethodNote">Please select a payment method to continue.</p>
+                <div class="row" id="paymentOptionsRow">
+                    <div class="col-md-4 mb-3">
+                        <div class="py-3 flex-center flex-column gap-2 border payment-option-item" data-payment="stripe" style="cursor: pointer; border-radius: 8px;">
+                            <img src="{{ asset('front-assets/img/CreditCard.svg') }}" alt="Stripe" style="height: 40px;">
+                            <label class="form-label fw-500 w-100 text-center">Stripe</label>
+                            <input type="radio" name="payment_method" value="stripe" class="custom-radio" id="payment_stripe">
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="py-3 flex-center flex-column gap-2 border payment-option-item" data-payment="paypal" style="cursor: pointer; border-radius: 8px;">
+                            <img src="{{ asset('front-assets/img/paypal.svg') }}" alt="PayPal" style="height: 40px;">
+                            <label class="form-label fw-500 w-100 text-center">PayPal</label>
+                            <input type="radio" name="payment_method" value="paypal" class="custom-radio" id="payment_paypal">
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3" id="payOnVisitOption" style="display: none;">
+                        <div class="py-3 flex-center flex-column gap-2 border payment-option-item" data-payment="visit" style="cursor: pointer; border-radius: 8px;">
+                            <i class="fas fa-store" style="font-size: 2.5rem; color: #684471;"></i>
+                            <label class="form-label fw-500 w-100 text-center">Pay on Visit</label>
+                            <input type="radio" name="payment_method" value="visit" class="custom-radio" id="payment_visit">
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3" id="optionalPaymentNote" style="display: none;">
+                    <div class="col-12">
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle"></i> Payment is optional. You can pay online now or pay later when you visit us.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Mail-in Process Information -->
             <div class="step-content">
                 <div class="d-flex flex-column gap-4">
                     <h1 class="text-center">{{ $mailInProcess->title }}</h1>
@@ -153,7 +207,7 @@
                 </div>
             </div>
 
-            <!-- Step 4: Confirm Details -->
+            <!-- Step 5: Confirm Details -->
             <div class="step-content">
                 <h1 class="text-center mb-5 pb-3">Please Confirm Your Details:</h1>
                 <div class="row">
@@ -189,6 +243,14 @@
                                 <label>Comments:</label>
                                 <p id="confirm_comments"></p>
                             </div>
+                            <div class="col-12 section-details">
+                                <label>Delivery Method:</label>
+                                <p id="confirm_delivery"></p>
+                            </div>
+                            <div class="col-12 section-details">
+                                <label>Payment Method:</label>
+                                <p id="confirm_payment_method"></p>
+                            </div>
                         </div>
                     </div>
                     <div class="col-12">
@@ -212,7 +274,7 @@
                 </div>
             </div>
 
-            <!-- Step 5: Payment -->
+            <!-- Step 6: Payment -->
             <div class="step-content">
                 <h1 class="text-center mb-4">Complete Your Payment</h1>
                 <div class="mb-4">
@@ -296,50 +358,122 @@ document.addEventListener("DOMContentLoaded", function () {
         if (currentStep === 0) {
             nextBtn.textContent = "Continue";
         } else if (currentStep === 1) {
+            // Delivery method step
             nextBtn.textContent = "Continue";
         } else if (currentStep === 2) {
-            nextBtn.textContent = "Continue";
+            // Payment method step
+            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+            if (deliveryMethod && deliveryMethod.value === 'visit') {
+                nextBtn.textContent = "Continue (Payment Optional)";
+            } else {
+                nextBtn.textContent = "Continue";
+            }
         } else if (currentStep === 3) {
-            nextBtn.textContent = "Proceed to Payment";
+            nextBtn.textContent = "Continue";
         } else if (currentStep === 4) {
-            nextBtn.textContent = "Pay Now";
+            nextBtn.textContent = "Proceed to Payment";
+        } else if (currentStep === 5) {
+            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+            if (deliveryMethod && deliveryMethod.value === 'visit') {
+                const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+                if (paymentMethod) {
+                    nextBtn.textContent = "Pay Now";
+                } else {
+                    nextBtn.textContent = "Submit Order (Pay Later)";
+                }
+            } else {
+                nextBtn.textContent = "Pay Now";
+            }
         }
         
-        // Update confirmation step when entering step 3
-        if (currentStep === 3) {
+        // Update confirmation step when entering step 4
+        if (currentStep === 4) {
             updateConfirmStep();
         }
 
-        // Initialize payment sections on step 4
-        if (currentStep === 4) {
+        // Initialize payment sections on step 5
+        if (currentStep === 5) {
+            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
             const paymentMethodRadio = document.querySelector('input[name="payment_method"]:checked');
-            if (!paymentMethodRadio) return;
-            
-            const paymentMethod = paymentMethodRadio.value;
+            const addressField = document.getElementById('address');
             const stripeSection = document.getElementById('stripePaymentSection');
             const paypalSection = document.getElementById('paypalPaymentSection');
             
-            if (paymentMethod === 'stripe') {
-                stripeSection.style.display = 'block';
-                paypalSection.style.display = 'none';
-                nextBtn.style.display = 'block';
-                nextBtn.textContent = 'Pay Now';
-                if (cardElement && !cardElement._mounted) {
-                    cardElement.mount('#card-element');
-                    cardElement.on('change', function(event) {
-                        const displayError = document.getElementById('card-errors');
-                        if (event.error) {
-                            displayError.textContent = event.error.message;
-                        } else {
-                            displayError.textContent = '';
-                        }
-                    });
+            if (deliveryMethod && deliveryMethod.value === 'visit') {
+                // Visit us - payment is optional
+                if (addressField) {
+                    addressField.required = false;
+                    addressField.placeholder = 'Address (Optional)';
                 }
-            } else {
-                stripeSection.style.display = 'none';
-                paypalSection.style.display = 'block';
-                nextBtn.style.display = 'none'; // Hide Pay Now button for PayPal
-                initPayPal();
+                
+                if (!paymentMethodRadio || paymentMethodRadio.value === 'visit') {
+                    // No payment or "Pay on Visit" selected
+                    if (stripeSection) stripeSection.style.display = 'none';
+                    if (paypalSection) paypalSection.style.display = 'none';
+                    nextBtn.style.display = 'block';
+                    nextBtn.textContent = 'Submit Order (Pay Later)';
+                } else {
+                    // User selected Stripe or PayPal
+                    const paymentMethod = paymentMethodRadio.value;
+                    if (paymentMethod === 'stripe') {
+                        if (stripeSection) stripeSection.style.display = 'block';
+                        if (paypalSection) paypalSection.style.display = 'none';
+                        nextBtn.style.display = 'block';
+                        nextBtn.textContent = 'Pay Now';
+                        if (cardElement && !cardElement._mounted) {
+                            cardElement.mount('#card-element');
+                            cardElement.on('change', function(event) {
+                                const displayError = document.getElementById('card-errors');
+                                if (event.error) {
+                                    displayError.textContent = event.error.message;
+                                } else {
+                                    displayError.textContent = '';
+                                }
+                            });
+                        }
+                    } else if (paymentMethod === 'paypal') {
+                        if (stripeSection) stripeSection.style.display = 'none';
+                        if (paypalSection) paypalSection.style.display = 'block';
+                        nextBtn.style.display = 'none'; // Hide Pay Now button for PayPal
+                        initPayPal();
+                    }
+                }
+            } else if (deliveryMethod && deliveryMethod.value === 'online') {
+                // Online delivery - payment is required
+                if (addressField) {
+                    addressField.required = true;
+                    addressField.placeholder = 'Enter your full shipping address';
+                }
+                
+                if (!paymentMethodRadio) {
+                    nextBtn.style.display = 'none';
+                    return;
+                }
+                
+                const paymentMethod = paymentMethodRadio.value;
+                
+                if (paymentMethod === 'stripe') {
+                    if (stripeSection) stripeSection.style.display = 'block';
+                    if (paypalSection) paypalSection.style.display = 'none';
+                    nextBtn.style.display = 'block';
+                    nextBtn.textContent = 'Pay Now';
+                    if (cardElement && !cardElement._mounted) {
+                        cardElement.mount('#card-element');
+                        cardElement.on('change', function(event) {
+                            const displayError = document.getElementById('card-errors');
+                            if (event.error) {
+                                displayError.textContent = event.error.message;
+                            } else {
+                                displayError.textContent = '';
+                            }
+                        });
+                    }
+                } else if (paymentMethod === 'paypal') {
+                    if (stripeSection) stripeSection.style.display = 'none';
+                    if (paypalSection) paypalSection.style.display = 'block';
+                    nextBtn.style.display = 'none'; // Hide Pay Now button for PayPal
+                    initPayPal();
+                }
             }
         } else {
             // Show next button for non-payment steps
@@ -421,20 +555,130 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Device model select handler
-    const deviceModelSelect = document.getElementById('device_model_select');
-    const deviceModelCustom = document.getElementById('device_model_custom');
-    if (deviceModelSelect) {
-        deviceModelSelect.addEventListener('change', function() {
-            if (this.value === 'other') {
-                deviceModelCustom.style.display = 'block';
-                deviceModelCustom.required = true;
-            } else {
-                deviceModelCustom.style.display = 'none';
-                deviceModelCustom.required = false;
-            }
+        // Delivery method handler
+        const deliveryMethodRadios = document.querySelectorAll('input[name="delivery_method"]');
+        const deliveryMethodHidden = document.getElementById('delivery_method');
+        const paymentMethodStep = document.getElementById('paymentMethodStep');
+        const optionalPaymentNote = document.getElementById('optionalPaymentNote');
+        const paymentMethodNote = document.getElementById('paymentMethodNote');
+        const addressField = document.getElementById('address');
+        
+        deliveryMethodRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (deliveryMethodHidden) {
+                    deliveryMethodHidden.value = this.value;
+                }
+                
+                // Update delivery option styling
+                document.querySelectorAll('.delivery-option-item').forEach(item => {
+                    item.style.borderColor = '#dee2e6';
+                    item.style.backgroundColor = '';
+                });
+                const selectedItem = document.querySelector(`.delivery-option-item[data-delivery="${this.value}"]`);
+                if (selectedItem) {
+                    selectedItem.style.borderColor = '#684471';
+                    selectedItem.style.borderWidth = '2px';
+                    selectedItem.style.backgroundColor = '#f8f9fa';
+                }
+                
+                // Update payment method step visibility and requirements
+                const payOnVisitOption = document.getElementById('payOnVisitOption');
+                const paymentOptionsRow = document.getElementById('paymentOptionsRow');
+                
+                if (this.value === 'visit') {
+                    // Visit us - payment is optional
+                    if (optionalPaymentNote) optionalPaymentNote.style.display = 'block';
+                    if (paymentMethodNote) paymentMethodNote.textContent = 'Payment is optional. You can pay online now or pay later when you visit us.';
+                    if (addressField) addressField.required = false;
+                    // Show "Pay on Visit" option
+                    if (payOnVisitOption) payOnVisitOption.style.display = 'block';
+                    // Adjust column widths
+                    if (paymentOptionsRow) {
+                        paymentOptionsRow.querySelectorAll('.col-md-4').forEach(col => {
+                            col.className = 'col-md-4 mb-3';
+                        });
+                    }
+                    // Uncheck any selected payment method
+                    document.querySelectorAll('input[name="payment_method"]').forEach(pm => pm.checked = false);
+                } else if (this.value === 'online') {
+                    // Online delivery - payment is required
+                    if (optionalPaymentNote) optionalPaymentNote.style.display = 'none';
+                    if (paymentMethodNote) paymentMethodNote.textContent = 'Please select a payment method to continue.';
+                    if (addressField) addressField.required = true;
+                    // Hide "Pay on Visit" option
+                    if (payOnVisitOption) payOnVisitOption.style.display = 'none';
+                    // Adjust column widths
+                    if (paymentOptionsRow) {
+                        paymentOptionsRow.querySelectorAll('.col-md-4').forEach(col => {
+                            col.className = 'col-md-6 mb-3';
+                        });
+                    }
+                    // Uncheck "Pay on Visit" if selected
+                    const visitPayment = document.getElementById('payment_visit');
+                    if (visitPayment && visitPayment.checked) {
+                        visitPayment.checked = false;
+                    }
+                    // Auto-select Stripe if none selected
+                    const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+                    if (!paymentMethod) {
+                        document.getElementById('payment_stripe').checked = true;
+                    }
+                }
+            });
         });
-    }
+        
+        // Initialize delivery option styling
+        document.querySelectorAll('.delivery-option-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const radio = this.querySelector('input[type="radio"]');
+                if (radio) {
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+
+        // Device model select handler
+        const deviceModelSelect = document.getElementById('device_model_select');
+        const deviceModelCustom = document.getElementById('device_model_custom');
+        const deviceTypeIdHidden = document.getElementById('device_type_id');
+        
+        if (deviceModelSelect) {
+            // Check if "other" is already selected on page load
+            if (deviceModelSelect.value === 'other') {
+                if (deviceModelCustom) {
+                    deviceModelCustom.style.display = 'block';
+                    deviceModelCustom.required = true;
+                }
+                if (deviceTypeIdHidden) {
+                    deviceTypeIdHidden.value = 'other';
+                }
+            }
+            
+            deviceModelSelect.addEventListener('change', function() {
+                if (this.value === 'other') {
+                    if (deviceModelCustom) {
+                        deviceModelCustom.style.display = 'block';
+                        deviceModelCustom.required = true;
+                        deviceModelCustom.focus();
+                    }
+                    if (deviceTypeIdHidden) {
+                        deviceTypeIdHidden.value = 'other';
+                    }
+                } else {
+                    if (deviceModelCustom) {
+                        deviceModelCustom.style.display = 'none';
+                        deviceModelCustom.required = false;
+                        deviceModelCustom.value = ''; // Clear the value when hidden
+                    }
+                    if (deviceTypeIdHidden && this.value !== '') {
+                        // Reset to empty if a specific device type is selected
+                        // The actual device_type_id will be handled by the form submission
+                        deviceTypeIdHidden.value = '';
+                    }
+                }
+            });
+        }
 
     // Issue checkbox handler
     const issueUnknown = document.getElementById('issue_unknown');
@@ -525,6 +769,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const deviceModelSelectEl = document.getElementById('device_model_select');
         const deviceModelCustomEl = document.getElementById('device_model_custom');
         const issueDescriptionEl = document.getElementById('issue_description');
+        const deliveryMethodEl = document.querySelector('input[name="delivery_method"]:checked');
+        const paymentMethodEl = document.querySelector('input[name="payment_method"]:checked');
         
         formData.name = nameEl ? nameEl.value.trim() : '';
         formData.email = emailEl ? emailEl.value.trim() : '';
@@ -543,6 +789,27 @@ document.addEventListener("DOMContentLoaded", function () {
             formData.device = deviceModelCustomEl.value.trim();
         } else {
             formData.device = 'Not specified';
+        }
+        
+        // Get delivery method
+        formData.deliveryMethod = deliveryMethodEl ? deliveryMethodEl.value : 'Not selected';
+        formData.deliveryMethodText = deliveryMethodEl && deliveryMethodEl.value === 'visit' ? 'Visit Us' : (deliveryMethodEl && deliveryMethodEl.value === 'online' ? 'Online Delivery' : 'Not selected');
+        
+        // Get payment method
+        if (paymentMethodEl) {
+            if (paymentMethodEl.value === 'visit') {
+                formData.paymentMethod = 'visit';
+                formData.paymentMethodText = 'Pay on Visit';
+            } else {
+                formData.paymentMethod = paymentMethodEl.value;
+                formData.paymentMethodText = paymentMethodEl.value === 'stripe' ? 'Stripe' : 'PayPal';
+            }
+        } else if (deliveryMethodEl && deliveryMethodEl.value === 'visit') {
+            formData.paymentMethod = 'visit';
+            formData.paymentMethodText = 'Pay on Visit';
+        } else {
+            formData.paymentMethod = 'Not selected';
+            formData.paymentMethodText = 'Not selected';
         }
         
         // Get selected issues
@@ -568,6 +835,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const confirmDeviceEl = document.getElementById('confirm_device');
         const confirmIssuesEl = document.getElementById('confirm_issues');
         const confirmCommentsEl = document.getElementById('confirm_comments');
+        const confirmDeliveryEl = document.getElementById('confirm_delivery');
+        const confirmPaymentMethodEl = document.getElementById('confirm_payment_method');
         
         if (confirmNameEl) confirmNameEl.textContent = formData.name || 'Not provided';
         if (confirmEmailEl) confirmEmailEl.textContent = formData.email || 'Not provided';
@@ -575,6 +844,8 @@ document.addEventListener("DOMContentLoaded", function () {
         if (confirmDeviceEl) confirmDeviceEl.textContent = formData.device || 'Not specified';
         if (confirmIssuesEl) confirmIssuesEl.textContent = formData.issues.length > 0 ? formData.issues.join(', ') : 'None';
         if (confirmCommentsEl) confirmCommentsEl.textContent = formData.comments || 'None';
+        if (confirmDeliveryEl) confirmDeliveryEl.textContent = formData.deliveryMethodText || 'Not selected';
+        if (confirmPaymentMethodEl) confirmPaymentMethodEl.textContent = formData.paymentMethodText || 'Not selected';
 
         // Update pricing display
         const confirmSubtotalRow = document.getElementById('confirm_subtotal_row');
@@ -633,18 +904,36 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
         if (step === 1) {
-            // Payment method selection - no validation needed, just ensure one is selected
-            const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
-            if (!paymentMethod) {
-                alert('Please select a payment method.');
+            // Delivery method selection - must select one
+            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+            if (!deliveryMethod) {
+                alert('Please select a delivery method.');
                 return false;
             }
+            if (deliveryMethodHidden) {
+                deliveryMethodHidden.value = deliveryMethod.value;
+            }
         }
-        if (step === 4) {
-            const address = document.getElementById('address').value.trim();
-            if (!address) {
-                alert('Please enter your shipping address.');
-                return false;
+        if (step === 2) {
+            // Payment method selection - required only for online delivery
+            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+            if (deliveryMethod && deliveryMethod.value === 'online') {
+                const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+                if (!paymentMethod) {
+                    alert('Please select a payment method for online delivery.');
+                    return false;
+                }
+            }
+            // For visit us, payment is optional, so we can proceed without selection
+        }
+        if (step === 5) {
+            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+            if (deliveryMethod && deliveryMethod.value === 'online') {
+                const address = document.getElementById('address').value.trim();
+                if (!address) {
+                    alert('Please enter your shipping address.');
+                    return false;
+                }
             }
         }
         return true;
@@ -675,12 +964,23 @@ document.addEventListener("DOMContentLoaded", function () {
         // Get selected issues
         const selectedIssues = Array.from(document.querySelectorAll('.issue-checkbox:checked')).map(cb => cb.value);
         
-        // Get address
+        // Get delivery method
+        const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+        const deliveryMethodValue = deliveryMethod ? deliveryMethod.value : '';
+        
+        // Get payment method
+        const paymentMethodEl = document.querySelector('input[name="payment_method"]:checked');
+        const paymentMethodValue = paymentMethodEl ? paymentMethodEl.value : '';
+        
+        // Get address (required only for online delivery)
         const addressEl = document.getElementById('address');
-        if (!addressEl || !addressEl.value.trim()) {
+        if (deliveryMethodValue === 'online' && (!addressEl || !addressEl.value.trim())) {
             alert('Please enter your shipping address.');
             return;
         }
+        
+        // If payment method is "visit", set it to empty string for backend
+        const finalPaymentMethod = paymentMethodValue === 'visit' ? '' : paymentMethodValue;
         
         // Prepare complete order data to send in one request
         const orderData = new FormData();
@@ -696,8 +996,9 @@ document.addEventListener("DOMContentLoaded", function () {
         orderData.append('customer_phone', formDataObj.get('customer_phone'));
         selectedIssues.forEach(issueId => orderData.append('issues[]', issueId));
         orderData.append('issue_description', formDataObj.get('issue_description') || '');
-        orderData.append('payment_method', paymentMethod);
-        orderData.append('address', addressEl.value.trim());
+        orderData.append('delivery_method', deliveryMethodValue);
+        orderData.append('payment_method', finalPaymentMethod);
+        orderData.append('address', addressEl ? addressEl.value.trim() : '');
         orderData.append('subtotal', formData.subtotal || 0);
         orderData.append('inspection_fee', formData.inspection_fee || 0);
         orderData.append('total', formData.total || 0);
@@ -758,59 +1059,107 @@ document.addEventListener("DOMContentLoaded", function () {
             updateConfirmStep();
         }
 
-        if (currentStep === 4) {
-            // Payment step - only handle Stripe here, PayPal is handled by its button
+        if (currentStep === 5) {
+            // Payment step
+            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
             const paymentMethodRadio = document.querySelector('input[name="payment_method"]:checked');
-            if (!paymentMethodRadio) {
-                alert('Please select a payment method.');
-                return;
-            }
             
-            const paymentMethod = paymentMethodRadio.value;
-            const addressEl = document.getElementById('address');
-            const address = addressEl ? addressEl.value.trim() : '';
-            
-            if (!address) {
-                alert('Please enter your shipping address.');
-                return;
-            }
-            
-            // Only process Stripe here - PayPal handles its own submission
-            if (paymentMethod === 'stripe') {
-                if (!stripe || !cardElement) {
-                    alert('Stripe is not configured. Please contact support.');
+            if (deliveryMethod && deliveryMethod.value === 'visit') {
+                // Visit us - payment is optional
+                if (!paymentMethodRadio || paymentMethodRadio.value === 'visit') {
+                    // No payment selected or "Pay on Visit" selected - submit without payment
+                    submitForm('', null, null);
+                    return;
+                } else {
+                    // User chose to pay online (Stripe or PayPal)
+                    const paymentMethod = paymentMethodRadio.value;
+                    const addressEl = document.getElementById('address');
+                    const address = addressEl ? addressEl.value.trim() : '';
+                    
+                    // Address is optional for visit us, but if they want to pay online, process payment
+                    if (paymentMethod === 'stripe') {
+                        if (!stripe || !cardElement) {
+                            alert('Stripe is not configured. Please contact support.');
+                            return;
+                        }
+                        
+                        try {
+                            const {token, error} = await stripe.createToken(cardElement);
+                            if (error) {
+                                const cardErrorsEl = document.getElementById('card-errors');
+                                if (cardErrorsEl) cardErrorsEl.textContent = error.message;
+                                return;
+                            }
+                            
+                            if (!token || !token.id) {
+                                alert('Failed to create payment token. Please try again.');
+                                return;
+                            }
+                            
+                            submitForm('stripe', token.id, null);
+                        } catch (error) {
+                            console.error('Stripe error:', error);
+                            alert('An error occurred with Stripe. Please try again.');
+                        }
+                        return;
+                    } else if (paymentMethod === 'paypal') {
+                        // PayPal will handle its own submission via button
+                        return;
+                    }
+                }
+            } else if (deliveryMethod && deliveryMethod.value === 'online') {
+                // Online delivery - payment required
+                if (!paymentMethodRadio) {
+                    alert('Please select a payment method.');
                     return;
                 }
                 
-                try {
-                    const {token, error} = await stripe.createToken(cardElement);
-                    if (error) {
-                        const cardErrorsEl = document.getElementById('card-errors');
-                        if (cardErrorsEl) cardErrorsEl.textContent = error.message;
-                        return;
-                    }
-                    
-                    if (!token || !token.id) {
-                        alert('Failed to create payment token. Please try again.');
-                        return;
-                    }
-                    
-                    submitForm('stripe', token.id, null);
-                } catch (error) {
-                    console.error('Stripe error:', error);
-                    alert('An error occurred with Stripe. Please try again.');
+                const paymentMethod = paymentMethodRadio.value;
+                const addressEl = document.getElementById('address');
+                const address = addressEl ? addressEl.value.trim() : '';
+                
+                if (!address) {
+                    alert('Please enter your shipping address.');
+                    return;
                 }
+                
+                // Only process Stripe here - PayPal handles its own submission
+                if (paymentMethod === 'stripe') {
+                    if (!stripe || !cardElement) {
+                        alert('Stripe is not configured. Please contact support.');
+                        return;
+                    }
+                    
+                    try {
+                        const {token, error} = await stripe.createToken(cardElement);
+                        if (error) {
+                            const cardErrorsEl = document.getElementById('card-errors');
+                            if (cardErrorsEl) cardErrorsEl.textContent = error.message;
+                            return;
+                        }
+                        
+                        if (!token || !token.id) {
+                            alert('Failed to create payment token. Please try again.');
+                            return;
+                        }
+                        
+                        submitForm('stripe', token.id, null);
+                    } catch (error) {
+                        console.error('Stripe error:', error);
+                        alert('An error occurred with Stripe. Please try again.');
+                    }
+                }
+                // PayPal payment is handled by the PayPal button's onApprove callback
+                return;
             }
-            // PayPal payment is handled by the PayPal button's onApprove callback
-            return;
         }
 
         if (currentStep < steps.length - 1) {
             currentStep++;
             updateStepper();
             
-            // Update confirmation step when entering step 3
-            if (currentStep === 3) {
+            // Update confirmation step when entering step 4
+            if (currentStep === 4) {
                 updateConfirmStep();
             }
         }
@@ -823,26 +1172,82 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    // Payment option click handler
+    document.querySelectorAll('.payment-option-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            // Don't trigger if clicking directly on the radio input
+            if (e.target.type === 'radio') {
+                return;
+            }
+            const radio = this.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+                radio.dispatchEvent(new Event('change'));
+                
+                // Update visual styling
+                document.querySelectorAll('.payment-option-item').forEach(opt => {
+                    opt.style.borderColor = '#dee2e6';
+                    opt.style.backgroundColor = '';
+                    opt.style.borderWidth = '1px';
+                });
+                this.style.borderColor = '#684471';
+                this.style.borderWidth = '2px';
+                this.style.backgroundColor = '#f8f9fa';
+            }
+        });
+    });
+
     // Payment method change handler
     document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const stripeSection = document.getElementById('stripePaymentSection');
             const paypalSection = document.getElementById('paypalPaymentSection');
+            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+            
+            // Update visual styling
+            document.querySelectorAll('.payment-option-item').forEach(item => {
+                item.style.borderColor = '#dee2e6';
+                item.style.backgroundColor = '';
+                item.style.borderWidth = '1px';
+            });
+            const selectedItem = document.querySelector(`.payment-option-item[data-payment="${this.value}"]`);
+            if (selectedItem) {
+                selectedItem.style.borderColor = '#684471';
+                selectedItem.style.borderWidth = '2px';
+                selectedItem.style.backgroundColor = '#f8f9fa';
+            }
             
             if (this.value === 'stripe') {
-                stripeSection.style.display = 'block';
-                paypalSection.style.display = 'none';
-                if (currentStep === 4) {
-                    nextBtn.style.display = 'block';
-                    nextBtn.textContent = 'Pay Now';
+                if (stripeSection) stripeSection.style.display = 'block';
+                if (paypalSection) paypalSection.style.display = 'none';
+                if (currentStep === 5) {
+                    if (deliveryMethod && deliveryMethod.value === 'online') {
+                        nextBtn.style.display = 'block';
+                        nextBtn.textContent = 'Pay Now';
+                    } else if (deliveryMethod && deliveryMethod.value === 'visit') {
+                        nextBtn.style.display = 'block';
+                        nextBtn.textContent = 'Pay Now';
+                    }
                 }
-            } else {
-                stripeSection.style.display = 'none';
-                paypalSection.style.display = 'block';
-                if (currentStep === 4) {
-                    nextBtn.style.display = 'none'; // Hide Pay Now button for PayPal
+            } else if (this.value === 'paypal') {
+                if (stripeSection) stripeSection.style.display = 'none';
+                if (paypalSection) paypalSection.style.display = 'block';
+                if (currentStep === 5) {
+                    if (deliveryMethod && deliveryMethod.value === 'online') {
+                        nextBtn.style.display = 'none'; // Hide Pay Now button for PayPal
+                    } else if (deliveryMethod && deliveryMethod.value === 'visit') {
+                        nextBtn.style.display = 'none'; // Hide Pay Now button for PayPal
+                    }
                 }
                 initPayPal();
+            } else if (this.value === 'visit') {
+                // Pay on Visit option
+                if (stripeSection) stripeSection.style.display = 'none';
+                if (paypalSection) paypalSection.style.display = 'none';
+                if (currentStep === 5) {
+                    nextBtn.style.display = 'block';
+                    nextBtn.textContent = 'Submit Order (Pay Later)';
+                }
             }
         });
     });
@@ -857,6 +1262,16 @@ document.addEventListener("DOMContentLoaded", function () {
 }
 .step-content.active {
     display: block;
+}
+.delivery-option-item:hover {
+    border-color: #684471 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(104, 68, 113, 0.2);
+}
+.payment-option-item:hover {
+    border-color: #684471 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(104, 68, 113, 0.2);
 }
 </style>
 @endsection

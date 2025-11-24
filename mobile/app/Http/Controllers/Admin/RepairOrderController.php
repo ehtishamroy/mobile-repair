@@ -12,7 +12,7 @@ class RepairOrderController extends Controller
     {
         $repairOrders = RepairOrder::with(['service', 'deviceType'])
             ->latest()
-            ->paginate(15);
+            ->get();
         
         return view('admin.repair-orders.index', compact('repairOrders'));
     }
