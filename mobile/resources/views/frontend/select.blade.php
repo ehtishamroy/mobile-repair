@@ -164,14 +164,14 @@
                 <h1 class="text-sm-center my-4 mb-5">How do you want to pay?</h1>
                 <p class="text-center text-muted mb-4" id="paymentMethodNote">Please select a payment method to continue.</p>
                 <div class="row" id="paymentOptionsRow">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-6 mb-3">
                         <div class="py-3 flex-center flex-column gap-2 border payment-option-item" data-payment="stripe" style="cursor: pointer; border-radius: 8px;">
                             <img src="{{ asset('front-assets/img/CreditCard.svg') }}" alt="Stripe" style="height: 40px;">
                             <label class="form-label fw-500 w-100 text-center">Stripe</label>
                             <input type="radio" name="payment_method" value="stripe" class="custom-radio" id="payment_stripe">
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-6 mb-3">
                         <div class="py-3 flex-center flex-column gap-2 border payment-option-item" data-payment="paypal" style="cursor: pointer; border-radius: 8px;">
                             <img src="{{ asset('front-assets/img/paypal.svg') }}" alt="PayPal" style="height: 40px;">
                             <label class="form-label fw-500 w-100 text-center">PayPal</label>
@@ -590,14 +590,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (optionalPaymentNote) optionalPaymentNote.style.display = 'block';
                     if (paymentMethodNote) paymentMethodNote.textContent = 'Payment is optional. You can pay online now or pay later when you visit us.';
                     if (addressField) addressField.required = false;
-                    // Show "Pay on Visit" option
-                    if (payOnVisitOption) payOnVisitOption.style.display = 'block';
-                    // Adjust column widths
-                    if (paymentOptionsRow) {
-                        paymentOptionsRow.querySelectorAll('.col-md-4').forEach(col => {
-                            col.className = 'col-md-4 mb-3';
-                        });
-                    }
                     // Uncheck any selected payment method
                     document.querySelectorAll('input[name="payment_method"]').forEach(pm => pm.checked = false);
                 } else if (this.value === 'online') {
@@ -605,19 +597,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (optionalPaymentNote) optionalPaymentNote.style.display = 'none';
                     if (paymentMethodNote) paymentMethodNote.textContent = 'Please select a payment method to continue.';
                     if (addressField) addressField.required = true;
-                    // Hide "Pay on Visit" option
-                    if (payOnVisitOption) payOnVisitOption.style.display = 'none';
-                    // Adjust column widths
-                    if (paymentOptionsRow) {
-                        paymentOptionsRow.querySelectorAll('.col-md-4').forEach(col => {
-                            col.className = 'col-md-6 mb-3';
-                        });
-                    }
-                    // Uncheck "Pay on Visit" if selected
-                    const visitPayment = document.getElementById('payment_visit');
-                    if (visitPayment && visitPayment.checked) {
-                        visitPayment.checked = false;
-                    }
                     // Auto-select Stripe if none selected
                     const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
                     if (!paymentMethod) {
@@ -1272,6 +1251,10 @@ document.addEventListener("DOMContentLoaded", function () {
     border-color: #684471 !important;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(104, 68, 113, 0.2);
+}
+/* Hide Pay on Visit option */
+#payOnVisitOption {
+    display: none !important;
 }
 </style>
 @endsection
