@@ -283,7 +283,7 @@
           </ul>
 
           <div class="coupon-box mb-3">
-            <p class="text-heading">Coupon Code</p>
+            <h5 class="text-heading fw-500 fs-18 mb-3">Coupon Code</h5>
             @if($appliedCoupon)
             <div class="alert alert-success mb-3">
               <div class="d-flex justify-content-between align-items-center">
