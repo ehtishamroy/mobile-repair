@@ -512,7 +512,7 @@
             <nav class="main-nav">
               <a href="{{ route('frontend.about') }}" class="nav-link">About Us</a>
               <span class="nav-separator">&gt;</span>
-              <a href="{{ route('frontend.service') }}" class="nav-link">Our Services</a>
+              <a href="{{ route('frontend.book-repair') }}" class="nav-link">Our Services</a>
               <span class="nav-separator">&gt;</span>
               <a href="{{ route('frontend.book-repair') }}" class="nav-link">Book Repair</a>
               <span class="nav-separator">&gt;</span>
@@ -552,7 +552,7 @@
       <div class="offcanvas-body">
         <nav class="main-nav d-flex flex-column gap-3 h-100">
           <a href="{{ route('frontend.about') }}" class="nav-link">About Us</a>
-          <a href="{{ route('frontend.service') }}" class="nav-link">Our Services</a>
+          <a href="{{ route('frontend.book-repair') }}" class="nav-link">Our Services</a>
           <a href="{{ route('frontend.book-repair') }}" class="nav-link">Book Repair</a>
           <a href="{{ route('frontend.marketplace') }}" class="nav-link">Marketplace</a>
           <a href="{{ route('frontend.track-order') }}" class="nav-link">Track Order</a>

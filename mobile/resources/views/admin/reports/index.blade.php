@@ -303,11 +303,11 @@
                             <tr>
                                 <td>
                                     @if($payment->payment_method === 'stripe')
-                                        <span class="badge badge-success">Stripe</span>
+                                        <span class="badge badge-success">Card</span>
                                     @elseif($payment->payment_method === 'paypal')
                                         <span class="badge badge-primary">PayPal</span>
                                     @elseif($payment->payment_method === 'pay_on_visit')
-                                        <span class="badge badge-warning">Pay on Visit</span>
+                                        <span class="badge badge-success">Card</span>
                                     @else
                                         <span class="badge badge-secondary">{{ ucfirst($payment->payment_method) }}</span>
                                     @endif
@@ -423,13 +423,13 @@
                                 <td>
                                     @if(empty($order->payment_method))
                                         @if($order->delivery_method === 'visit')
-                                            <span class="badge badge-warning">Pay on Visit</span>
+                                            <span class="badge badge-success">Card</span>
                                         @else
                                             <span class="badge badge-secondary">Not Selected</span>
                                         @endif
                                     @else
                                         @if($order->payment_method === 'stripe')
-                                            <span class="badge badge-success">Stripe</span>
+                                            <span class="badge badge-success">Card</span>
                                         @elseif($order->payment_method === 'paypal')
                                             <span class="badge badge-primary">PayPal</span>
                                         @else

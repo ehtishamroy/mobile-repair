@@ -51,13 +51,13 @@
                         <strong>Payment Method:</strong> 
                         @if(empty($repairOrder->payment_method))
                             @if($repairOrder->delivery_method === 'visit')
-                                <span class="badge badge-warning">Pay on Visit</span>
+                                <span class="badge badge-success">Card</span>
                             @else
                                 <span class="badge badge-secondary">Not Selected</span>
                             @endif
                         @else
                             @if($repairOrder->payment_method === 'stripe')
-                                <span class="badge badge-success">Stripe</span>
+                                <span class="badge badge-success">Card</span>
                             @elseif($repairOrder->payment_method === 'paypal')
                                 <span class="badge badge-primary">PayPal</span>
                             @else
@@ -224,13 +224,13 @@
                 <p><strong>Payment Method:</strong> 
                     @if(empty($repairOrder->payment_method))
                         @if($repairOrder->delivery_method === 'visit')
-                            <span class="badge badge-warning">Pay on Visit</span>
+                            <span class="badge badge-success">Card</span>
                         @else
                             <span class="badge badge-secondary">Not Selected</span>
                         @endif
                     @else
                         @if($repairOrder->payment_method === 'stripe')
-                            <span class="badge badge-success">Stripe</span>
+                            <span class="badge badge-success">Card</span>
                         @elseif($repairOrder->payment_method === 'paypal')
                             <span class="badge badge-primary">PayPal</span>
                         @else

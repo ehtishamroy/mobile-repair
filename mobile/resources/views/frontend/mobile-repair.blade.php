@@ -66,7 +66,6 @@
                         id="device_{{ $deviceType->id }}"
                         value="{{ $deviceType->id }}"
                         autocomplete="off"
-                        {{ $loop->first ? 'checked' : '' }}
                     />
                     <label class="device-card flex-center gap-3" for="device_{{ $deviceType->id }}">
                         @if($brandModel && $brandModel->logo)
@@ -204,24 +203,26 @@
                     othersItem.style.display = '';
                 }
                 
-                // Auto-select logic
-                if (visibleCount > 0) {
-                    // If there are visible devices, select the first one
-                    const checkedRadio = deviceList.querySelector('input[type="radio"]:checked');
-                    if (!checkedRadio || checkedRadio.closest('.device-item').style.display === 'none') {
-                        if (firstVisible) {
-                            const firstRadio = firstVisible.querySelector('input[type="radio"]');
-                            if (firstRadio) {
-                                firstRadio.checked = true;
+                // Auto-select logic (only when searching, not on initial load)
+                if (searchTerm !== '') {
+                    if (visibleCount > 0) {
+                        // If there are visible devices, select the first one
+                        const checkedRadio = deviceList.querySelector('input[type="radio"]:checked');
+                        if (!checkedRadio || checkedRadio.closest('.device-item').style.display === 'none') {
+                            if (firstVisible) {
+                                const firstRadio = firstVisible.querySelector('input[type="radio"]');
+                                if (firstRadio) {
+                                    firstRadio.checked = true;
+                                }
                             }
                         }
-                    }
-                } else if (searchTerm !== '') {
-                    // If no devices found but search term exists, auto-select "Others"
-                    if (othersItem) {
-                        const othersRadio = othersItem.querySelector('input[type="radio"]');
-                        if (othersRadio) {
-                            othersRadio.checked = true;
+                    } else {
+                        // If no devices found but search term exists, auto-select "Others"
+                        if (othersItem) {
+                            const othersRadio = othersItem.querySelector('input[type="radio"]');
+                            if (othersRadio) {
+                                othersRadio.checked = true;
+                            }
                         }
                     }
                 }
