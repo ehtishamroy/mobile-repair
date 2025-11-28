@@ -28,18 +28,14 @@
         </div>
         <div class="step">
             <div class="circle">3</div>
-            <div class="label">Payment Method</div>
-        </div>
-        <div class="step">
-            <div class="circle">4</div>
             <div class="label">Process Info</div>
         </div>
         <div class="step">
-            <div class="circle">5</div>
+            <div class="circle">4</div>
             <div class="label">Confirm Details</div>
         </div>
         <div class="step">
-            <div class="circle">6</div>
+            <div class="circle">5</div>
             <div class="label">Payment</div>
         </div>
     </div>
@@ -59,6 +55,7 @@
         <input type="hidden" name="device_type_id" id="device_type_id" value="{{ $deviceTypeIdValue }}">
         <input type="hidden" name="device_type" id="device_type" value="{{ $deviceType ? $deviceType->name : 'Other' }}">
         <input type="hidden" name="delivery_method" id="delivery_method" value="">
+        <input type="hidden" name="payment_method" value="stripe">
         
         <div id="form-steps">
             <!-- Step 1: Information -->
@@ -159,43 +156,7 @@
                 </div>
             </div>
 
-            <!-- Step 3: Payment Method Selection -->
-            <div class="step-content" id="paymentMethodStep">
-                <h1 class="text-sm-center my-4 mb-5">How do you want to pay?</h1>
-                <p class="text-center text-muted mb-4" id="paymentMethodNote">Please select a payment method to continue.</p>
-                <div class="row" id="paymentOptionsRow">
-                    <div class="col-md-6 mb-3">
-                        <div class="py-3 flex-center flex-column gap-2 border payment-option-item" data-payment="stripe" style="cursor: pointer; border-radius: 8px;">
-                            <img src="{{ asset('front-assets/img/CreditCard.svg') }}" alt="Stripe" style="height: 40px;">
-                            <label class="form-label fw-500 w-100 text-center">Stripe</label>
-                            <input type="radio" name="payment_method" value="stripe" class="custom-radio" id="payment_stripe">
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="py-3 flex-center flex-column gap-2 border payment-option-item" data-payment="paypal" style="cursor: pointer; border-radius: 8px;">
-                            <img src="{{ asset('front-assets/img/paypal.svg') }}" alt="PayPal" style="height: 40px;">
-                            <label class="form-label fw-500 w-100 text-center">PayPal</label>
-                            <input type="radio" name="payment_method" value="paypal" class="custom-radio" id="payment_paypal">
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3" id="payOnVisitOption" style="display: none;">
-                        <div class="py-3 flex-center flex-column gap-2 border payment-option-item" data-payment="visit" style="cursor: pointer; border-radius: 8px;">
-                            <i class="fas fa-store" style="font-size: 2.5rem; color: #684471;"></i>
-                            <label class="form-label fw-500 w-100 text-center">Pay on Visit</label>
-                            <input type="radio" name="payment_method" value="visit" class="custom-radio" id="payment_visit">
-                        </div>
-                    </div>
-                </div>
-                <div class="row mt-3" id="optionalPaymentNote" style="display: none;">
-                    <div class="col-12">
-                        <div class="alert alert-info text-center">
-                            <i class="fas fa-info-circle"></i> Payment is optional. You can pay online now or pay later when you visit us.
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 4: Mail-in Process Information -->
+            <!-- Step 3: Mail-in Process Information -->
             <div class="step-content">
                 <div class="d-flex flex-column gap-4">
                     <h1 class="text-center">{{ $mailInProcess->title }}</h1>
@@ -274,10 +235,12 @@
                 </div>
             </div>
 
-            <!-- Step 6: Payment -->
+            <!-- Step 5: Payment -->
             <div class="step-content">
                 <h1 class="text-center mb-4">Complete Your Payment</h1>
-                <div class="mb-4">
+                
+                <!-- Shipping Address (only for online delivery) -->
+                <div class="mb-4" id="shippingAddressSection">
                     <label class="form-label">Shipping Address <span class="text-danger">*</span></label>
                     <textarea class="custom-input" name="address" id="address" rows="4" placeholder="Enter your full shipping address" required></textarea>
                 </div>
@@ -285,13 +248,13 @@
                 <!-- Stripe Payment Section -->
                 <div id="stripePaymentSection" class="p-3">
                     <div class="mb-3">
-                        <label class="form-label">Card Details</label>
+                        <label class="form-label">Card Details <span class="text-danger">*</span></label>
                         <div id="card-element" class="custom-input p-3"></div>
                         <div id="card-errors" role="alert" class="text-danger mt-2"></div>
                     </div>
                 </div>
                 
-                <!-- PayPal Button -->
+                <!-- PayPal Button (hidden, not used) -->
                 <div id="paypalPaymentSection" class="p-3" style="display: none;">
                     <div id="paypal-button-container"></div>
                 </div>
@@ -361,119 +324,66 @@ document.addEventListener("DOMContentLoaded", function () {
             // Delivery method step
             nextBtn.textContent = "Continue";
         } else if (currentStep === 2) {
-            // Payment method step
-            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
-            if (deliveryMethod && deliveryMethod.value === 'visit') {
-                nextBtn.textContent = "Continue (Payment Optional)";
-            } else {
-                nextBtn.textContent = "Continue";
-            }
-        } else if (currentStep === 3) {
+            // Process info step
             nextBtn.textContent = "Continue";
-        } else if (currentStep === 4) {
+        } else if (currentStep === 3) {
+            // Confirm details step
             nextBtn.textContent = "Proceed to Payment";
-        } else if (currentStep === 5) {
-            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
-            if (deliveryMethod && deliveryMethod.value === 'visit') {
-                const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
-                if (paymentMethod) {
-                    nextBtn.textContent = "Pay Now";
-                } else {
-                    nextBtn.textContent = "Submit Order (Pay Later)";
-                }
-            } else {
-                nextBtn.textContent = "Pay Now";
-            }
+        } else if (currentStep === 4) {
+            // Payment step - always show Pay Now
+            nextBtn.textContent = "Pay Now";
         }
         
-        // Update confirmation step when entering step 4
-        if (currentStep === 4) {
+        // Update confirmation step when entering step 3
+        if (currentStep === 3) {
             updateConfirmStep();
         }
 
-        // Initialize payment sections on step 5
-        if (currentStep === 5) {
+        // Initialize payment sections on step 4 (always use Stripe)
+        if (currentStep === 4) {
             const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
-            const paymentMethodRadio = document.querySelector('input[name="payment_method"]:checked');
             const addressField = document.getElementById('address');
+            const addressSection = document.getElementById('shippingAddressSection');
             const stripeSection = document.getElementById('stripePaymentSection');
             const paypalSection = document.getElementById('paypalPaymentSection');
             
+            // Always hide PayPal section
+            if (paypalSection) paypalSection.style.display = 'none';
+            
+            // Always show Stripe section
+            if (stripeSection) stripeSection.style.display = 'block';
+            
             if (deliveryMethod && deliveryMethod.value === 'visit') {
-                // Visit us - payment is optional
+                // Visit us - hide shipping address, show Stripe payment
+                if (addressSection) addressSection.style.display = 'none';
                 if (addressField) {
                     addressField.required = false;
-                    addressField.placeholder = 'Address (Optional)';
+                    addressField.value = '';
                 }
-                
-                if (!paymentMethodRadio || paymentMethodRadio.value === 'visit') {
-                    // No payment or "Pay on Visit" selected
-                    if (stripeSection) stripeSection.style.display = 'none';
-                    if (paypalSection) paypalSection.style.display = 'none';
-                    nextBtn.style.display = 'block';
-                    nextBtn.textContent = 'Submit Order (Pay Later)';
-                } else {
-                    // User selected Stripe or PayPal
-                    const paymentMethod = paymentMethodRadio.value;
-                    if (paymentMethod === 'stripe') {
-                        if (stripeSection) stripeSection.style.display = 'block';
-                        if (paypalSection) paypalSection.style.display = 'none';
-                        nextBtn.style.display = 'block';
-                        nextBtn.textContent = 'Pay Now';
-                        if (cardElement && !cardElement._mounted) {
-                            cardElement.mount('#card-element');
-                            cardElement.on('change', function(event) {
-                                const displayError = document.getElementById('card-errors');
-                                if (event.error) {
-                                    displayError.textContent = event.error.message;
-                                } else {
-                                    displayError.textContent = '';
-                                }
-                            });
-                        }
-                    } else if (paymentMethod === 'paypal') {
-                        if (stripeSection) stripeSection.style.display = 'none';
-                        if (paypalSection) paypalSection.style.display = 'block';
-                        nextBtn.style.display = 'none'; // Hide Pay Now button for PayPal
-                        initPayPal();
-                    }
-                }
+                nextBtn.style.display = 'block';
+                nextBtn.textContent = 'Pay Now';
             } else if (deliveryMethod && deliveryMethod.value === 'online') {
-                // Online delivery - payment is required
+                // Online delivery - show shipping address and Stripe payment
+                if (addressSection) addressSection.style.display = 'block';
                 if (addressField) {
                     addressField.required = true;
                     addressField.placeholder = 'Enter your full shipping address';
                 }
-                
-                if (!paymentMethodRadio) {
-                    nextBtn.style.display = 'none';
-                    return;
-                }
-                
-                const paymentMethod = paymentMethodRadio.value;
-                
-                if (paymentMethod === 'stripe') {
-                    if (stripeSection) stripeSection.style.display = 'block';
-                    if (paypalSection) paypalSection.style.display = 'none';
-                    nextBtn.style.display = 'block';
-                    nextBtn.textContent = 'Pay Now';
-                    if (cardElement && !cardElement._mounted) {
-                        cardElement.mount('#card-element');
-                        cardElement.on('change', function(event) {
-                            const displayError = document.getElementById('card-errors');
-                            if (event.error) {
-                                displayError.textContent = event.error.message;
-                            } else {
-                                displayError.textContent = '';
-                            }
-                        });
+                nextBtn.style.display = 'block';
+                nextBtn.textContent = 'Pay Now';
+            }
+            
+            // Mount Stripe card element if not already mounted
+            if (cardElement && !cardElement._mounted) {
+                cardElement.mount('#card-element');
+                cardElement.on('change', function(event) {
+                    const displayError = document.getElementById('card-errors');
+                    if (event.error) {
+                        displayError.textContent = event.error.message;
+                    } else {
+                        displayError.textContent = '';
                     }
-                } else if (paymentMethod === 'paypal') {
-                    if (stripeSection) stripeSection.style.display = 'none';
-                    if (paypalSection) paypalSection.style.display = 'block';
-                    nextBtn.style.display = 'none'; // Hide Pay Now button for PayPal
-                    initPayPal();
-                }
+                });
             }
         } else {
             // Show next button for non-payment steps
@@ -558,10 +468,8 @@ document.addEventListener("DOMContentLoaded", function () {
         // Delivery method handler
         const deliveryMethodRadios = document.querySelectorAll('input[name="delivery_method"]');
         const deliveryMethodHidden = document.getElementById('delivery_method');
-        const paymentMethodStep = document.getElementById('paymentMethodStep');
-        const optionalPaymentNote = document.getElementById('optionalPaymentNote');
-        const paymentMethodNote = document.getElementById('paymentMethodNote');
         const addressField = document.getElementById('address');
+        const addressSection = document.getElementById('shippingAddressSection');
         
         deliveryMethodRadios.forEach(radio => {
             radio.addEventListener('change', function() {
@@ -581,26 +489,20 @@ document.addEventListener("DOMContentLoaded", function () {
                     selectedItem.style.backgroundColor = '#f8f9fa';
                 }
                 
-                // Update payment method step visibility and requirements
-                const payOnVisitOption = document.getElementById('payOnVisitOption');
-                const paymentOptionsRow = document.getElementById('paymentOptionsRow');
-                
+                // Update address field visibility and requirements
                 if (this.value === 'visit') {
-                    // Visit us - payment is optional
-                    if (optionalPaymentNote) optionalPaymentNote.style.display = 'block';
-                    if (paymentMethodNote) paymentMethodNote.textContent = 'Payment is optional. You can pay online now or pay later when you visit us.';
-                    if (addressField) addressField.required = false;
-                    // Uncheck any selected payment method
-                    document.querySelectorAll('input[name="payment_method"]').forEach(pm => pm.checked = false);
+                    // Visit us - hide shipping address section
+                    if (addressSection) addressSection.style.display = 'none';
+                    if (addressField) {
+                        addressField.required = false;
+                        addressField.value = '';
+                    }
                 } else if (this.value === 'online') {
-                    // Online delivery - payment is required
-                    if (optionalPaymentNote) optionalPaymentNote.style.display = 'none';
-                    if (paymentMethodNote) paymentMethodNote.textContent = 'Please select a payment method to continue.';
-                    if (addressField) addressField.required = true;
-                    // Auto-select Stripe if none selected
-                    const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
-                    if (!paymentMethod) {
-                        document.getElementById('payment_stripe').checked = true;
+                    // Online delivery - show shipping address section
+                    if (addressSection) addressSection.style.display = 'block';
+                    if (addressField) {
+                        addressField.required = true;
+                        addressField.placeholder = 'Enter your full shipping address';
                     }
                 }
             });
@@ -774,22 +676,9 @@ document.addEventListener("DOMContentLoaded", function () {
         formData.deliveryMethod = deliveryMethodEl ? deliveryMethodEl.value : 'Not selected';
         formData.deliveryMethodText = deliveryMethodEl && deliveryMethodEl.value === 'visit' ? 'Visit Us' : (deliveryMethodEl && deliveryMethodEl.value === 'online' ? 'Online Delivery' : 'Not selected');
         
-        // Get payment method
-        if (paymentMethodEl) {
-            if (paymentMethodEl.value === 'visit') {
-                formData.paymentMethod = 'visit';
-                formData.paymentMethodText = 'Pay on Visit';
-            } else {
-                formData.paymentMethod = paymentMethodEl.value;
-                formData.paymentMethodText = paymentMethodEl.value === 'stripe' ? 'Stripe' : 'PayPal';
-            }
-        } else if (deliveryMethodEl && deliveryMethodEl.value === 'visit') {
-            formData.paymentMethod = 'visit';
-            formData.paymentMethodText = 'Pay on Visit';
-        } else {
-            formData.paymentMethod = 'Not selected';
-            formData.paymentMethodText = 'Not selected';
-        }
+        // Get payment method - always Stripe (Card)
+        formData.paymentMethod = 'stripe';
+        formData.paymentMethodText = 'Card';
         
         // Get selected issues
         const checkedIssues = document.querySelectorAll('.issue-checkbox:checked');
@@ -1034,66 +923,16 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         // Update confirmation step when moving to step 3
-        if (currentStep === 2) {
+        if (currentStep === 1) {
             updateConfirmStep();
         }
 
-        if (currentStep === 5) {
-            // Payment step
+        if (currentStep === 4) {
+            // Payment step - always use Stripe for both delivery methods
             const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
-            const paymentMethodRadio = document.querySelector('input[name="payment_method"]:checked');
             
-            if (deliveryMethod && deliveryMethod.value === 'visit') {
-                // Visit us - payment is optional
-                if (!paymentMethodRadio || paymentMethodRadio.value === 'visit') {
-                    // No payment selected or "Pay on Visit" selected - submit without payment
-                    submitForm('', null, null);
-                    return;
-                } else {
-                    // User chose to pay online (Stripe or PayPal)
-                    const paymentMethod = paymentMethodRadio.value;
-                    const addressEl = document.getElementById('address');
-                    const address = addressEl ? addressEl.value.trim() : '';
-                    
-                    // Address is optional for visit us, but if they want to pay online, process payment
-                    if (paymentMethod === 'stripe') {
-                        if (!stripe || !cardElement) {
-                            alert('Stripe is not configured. Please contact support.');
-                            return;
-                        }
-                        
-                        try {
-                            const {token, error} = await stripe.createToken(cardElement);
-                            if (error) {
-                                const cardErrorsEl = document.getElementById('card-errors');
-                                if (cardErrorsEl) cardErrorsEl.textContent = error.message;
-                                return;
-                            }
-                            
-                            if (!token || !token.id) {
-                                alert('Failed to create payment token. Please try again.');
-                                return;
-                            }
-                            
-                            submitForm('stripe', token.id, null);
-                        } catch (error) {
-                            console.error('Stripe error:', error);
-                            alert('An error occurred with Stripe. Please try again.');
-                        }
-                        return;
-                    } else if (paymentMethod === 'paypal') {
-                        // PayPal will handle its own submission via button
-                        return;
-                    }
-                }
-            } else if (deliveryMethod && deliveryMethod.value === 'online') {
-                // Online delivery - payment required
-                if (!paymentMethodRadio) {
-                    alert('Please select a payment method.');
-                    return;
-                }
-                
-                const paymentMethod = paymentMethodRadio.value;
+            // For online delivery, validate shipping address
+            if (deliveryMethod && deliveryMethod.value === 'online') {
                 const addressEl = document.getElementById('address');
                 const address = addressEl ? addressEl.value.trim() : '';
                 
@@ -1101,36 +940,33 @@ document.addEventListener("DOMContentLoaded", function () {
                     alert('Please enter your shipping address.');
                     return;
                 }
-                
-                // Only process Stripe here - PayPal handles its own submission
-                if (paymentMethod === 'stripe') {
-                    if (!stripe || !cardElement) {
-                        alert('Stripe is not configured. Please contact support.');
-                        return;
-                    }
-                    
-                    try {
-                        const {token, error} = await stripe.createToken(cardElement);
-                        if (error) {
-                            const cardErrorsEl = document.getElementById('card-errors');
-                            if (cardErrorsEl) cardErrorsEl.textContent = error.message;
-                            return;
-                        }
-                        
-                        if (!token || !token.id) {
-                            alert('Failed to create payment token. Please try again.');
-                            return;
-                        }
-                        
-                        submitForm('stripe', token.id, null);
-                    } catch (error) {
-                        console.error('Stripe error:', error);
-                        alert('An error occurred with Stripe. Please try again.');
-                    }
-                }
-                // PayPal payment is handled by the PayPal button's onApprove callback
+            }
+            
+            // Always process Stripe payment
+            if (!stripe || !cardElement) {
+                alert('Stripe is not configured. Please contact support.');
                 return;
             }
+            
+            try {
+                const {token, error} = await stripe.createToken(cardElement);
+                if (error) {
+                    const cardErrorsEl = document.getElementById('card-errors');
+                    if (cardErrorsEl) cardErrorsEl.textContent = error.message;
+                    return;
+                }
+                
+                if (!token || !token.id) {
+                    alert('Failed to create payment token. Please try again.');
+                    return;
+                }
+                
+                submitForm('stripe', token.id, null);
+            } catch (error) {
+                console.error('Stripe error:', error);
+                alert('An error occurred with Stripe. Please try again.');
+            }
+            return;
         }
 
         if (currentStep < steps.length - 1) {
@@ -1176,60 +1012,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Payment method change handler
-    document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            const stripeSection = document.getElementById('stripePaymentSection');
-            const paypalSection = document.getElementById('paypalPaymentSection');
-            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
-            
-            // Update visual styling
-            document.querySelectorAll('.payment-option-item').forEach(item => {
-                item.style.borderColor = '#dee2e6';
-                item.style.backgroundColor = '';
-                item.style.borderWidth = '1px';
-            });
-            const selectedItem = document.querySelector(`.payment-option-item[data-payment="${this.value}"]`);
-            if (selectedItem) {
-                selectedItem.style.borderColor = '#684471';
-                selectedItem.style.borderWidth = '2px';
-                selectedItem.style.backgroundColor = '#f8f9fa';
-            }
-            
-            if (this.value === 'stripe') {
-                if (stripeSection) stripeSection.style.display = 'block';
-                if (paypalSection) paypalSection.style.display = 'none';
-                if (currentStep === 5) {
-                    if (deliveryMethod && deliveryMethod.value === 'online') {
-                        nextBtn.style.display = 'block';
-                        nextBtn.textContent = 'Pay Now';
-                    } else if (deliveryMethod && deliveryMethod.value === 'visit') {
-                        nextBtn.style.display = 'block';
-                        nextBtn.textContent = 'Pay Now';
-                    }
-                }
-            } else if (this.value === 'paypal') {
-                if (stripeSection) stripeSection.style.display = 'none';
-                if (paypalSection) paypalSection.style.display = 'block';
-                if (currentStep === 5) {
-                    if (deliveryMethod && deliveryMethod.value === 'online') {
-                        nextBtn.style.display = 'none'; // Hide Pay Now button for PayPal
-                    } else if (deliveryMethod && deliveryMethod.value === 'visit') {
-                        nextBtn.style.display = 'none'; // Hide Pay Now button for PayPal
-                    }
-                }
-                initPayPal();
-            } else if (this.value === 'visit') {
-                // Pay on Visit option
-                if (stripeSection) stripeSection.style.display = 'none';
-                if (paypalSection) paypalSection.style.display = 'none';
-                if (currentStep === 5) {
-                    nextBtn.style.display = 'block';
-                    nextBtn.textContent = 'Submit Order (Pay Later)';
-                }
-            }
-        });
-    });
+    // Payment method is always Stripe - no handler needed
 
     updateStepper();
 });
