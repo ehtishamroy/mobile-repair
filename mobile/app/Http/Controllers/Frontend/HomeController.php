@@ -32,77 +32,87 @@ class HomeController extends Controller
     public function index()
     {
         $content = HomepageContent::getContent();
-        
+
         // Get Smartphone category (searching for categories with "smart" or "phone" in name)
         $smartphoneCategory = Category::where('is_active', true)
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->where('name', 'LIKE', '%smart%')
-                      ->orWhere('name', 'LIKE', '%phone%')
-                      ->orWhere('slug', 'LIKE', '%smart%')
-                      ->orWhere('slug', 'LIKE', '%phone%');
+                    ->orWhere('name', 'LIKE', '%phone%')
+                    ->orWhere('slug', 'LIKE', '%smart%')
+                    ->orWhere('slug', 'LIKE', '%phone%');
             })
             ->first();
-        
+
         $trendingBrands = collect();
         $trendingProducts = collect();
-        
+
         if ($smartphoneCategory) {
             // Get top 2 brands that have products in smartphone category
             $trendingBrands = Brand::where('is_active', true)
-                ->whereHas('products', function($query) use ($smartphoneCategory) {
+                ->whereHas('products', function ($query) use ($smartphoneCategory) {
                     $query->where('category_id', $smartphoneCategory->id)
-                          ->where('is_active', true);
+                        ->where('is_active', true);
                 })
-                ->withCount(['products' => function($query) use ($smartphoneCategory) {
-                    $query->where('category_id', $smartphoneCategory->id)
-                          ->where('is_active', true);
-                }])
+                ->withCount([
+                    'products' => function ($query) use ($smartphoneCategory) {
+                        $query->where('category_id', $smartphoneCategory->id)
+                            ->where('is_active', true);
+                    }
+                ])
                 ->orderBy('products_count', 'desc')
                 ->limit(2)
                 ->get();
-            
+
             // Get 4 products from smartphone category with reviews
             $trendingProducts = Product::where('is_active', true)
                 ->where('category_id', $smartphoneCategory->id)
                 ->with(['category', 'brand'])
-                ->withAvg(['approvedReviews as approved_rating' => function ($query) {
-                    $query->where('is_approved', true);
-                }], 'rating')
-                ->withCount(['approvedReviews as approved_reviews_count' => function ($query) {
-                    $query->where('is_approved', true);
-                }])
+                ->withAvg([
+                    'approvedReviews as approved_rating' => function ($query) {
+                        $query->where('is_approved', true);
+                    }
+                ], 'rating')
+                ->withCount([
+                    'approvedReviews as approved_reviews_count' => function ($query) {
+                        $query->where('is_approved', true);
+                    }
+                ])
                 ->orderBy('is_featured', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->limit(4)
                 ->get();
         }
-        
+
         // Get Latest Products - random products from random categories
         // Get 4 random active categories that have products
         $randomCategories = Category::where('is_active', true)
-            ->whereHas('products', function($query) {
+            ->whereHas('products', function ($query) {
                 $query->where('is_active', true);
             })
             ->inRandomOrder()
             ->limit(4)
             ->get();
-        
+
         $latestProductsData = [];
-        
+
         foreach ($randomCategories as $category) {
             $products = Product::where('is_active', true)
                 ->where('category_id', $category->id)
                 ->with(['category', 'brand'])
-                ->withAvg(['approvedReviews as approved_rating' => function ($query) {
-                    $query->where('is_approved', true);
-                }], 'rating')
-                ->withCount(['approvedReviews as approved_reviews_count' => function ($query) {
-                    $query->where('is_approved', true);
-                }])
+                ->withAvg([
+                    'approvedReviews as approved_rating' => function ($query) {
+                        $query->where('is_approved', true);
+                    }
+                ], 'rating')
+                ->withCount([
+                    'approvedReviews as approved_reviews_count' => function ($query) {
+                        $query->where('is_approved', true);
+                    }
+                ])
                 ->inRandomOrder()
                 ->limit(4)
                 ->get();
-            
+
             if ($products->count() > 0) {
                 $latestProductsData[$category->id] = [
                     'category' => $category,
@@ -110,7 +120,7 @@ class HomeController extends Controller
                 ];
             }
         }
-        
+
         return view('frontend.index', compact('content', 'smartphoneCategory', 'trendingBrands', 'trendingProducts', 'latestProductsData'));
     }
 
@@ -171,21 +181,21 @@ class HomeController extends Controller
     public function checkout()
     {
         $cart = session()->get('cart', []);
-        
+
         if (empty($cart)) {
             return redirect()->route('frontend.cart')->with('error', 'Your cart is empty.');
         }
-        
+
         $settings = Setting::getSettings();
         $currencySymbol = $settings->currency_symbol ?? '£';
-        
+
         $cartItems = [];
         $subtotal = 0;
-        
+
         foreach ($cart as $key => $item) {
             $itemSubtotal = $item['price'] * $item['quantity'];
             $subtotal += $itemSubtotal;
-            
+
             $cartItems[] = [
                 'id' => $item['id'],
                 'cart_key' => $key,
@@ -199,11 +209,11 @@ class HomeController extends Controller
                 'variants' => $item['variants'] ?? []
             ];
         }
-        
+
         // Get applied coupon from session
         $appliedCoupon = session()->get('applied_coupon', null);
         $discount = 0;
-        
+
         if ($appliedCoupon) {
             $coupon = \App\Models\Coupon::where('code', $appliedCoupon)->first();
             if ($coupon && $coupon->isValid()) {
@@ -213,12 +223,12 @@ class HomeController extends Controller
                 $appliedCoupon = null;
             }
         }
-        
+
         // Calculate totals
         $shipping = 0; // Free shipping for now
         $tax = 0; // VAT will be calculated if needed
         $total = $subtotal + $shipping + $tax - $discount;
-        
+
         return view('frontend.checkout', compact('cartItems', 'subtotal', 'shipping', 'discount', 'tax', 'total', 'settings', 'currencySymbol', 'appliedCoupon'));
     }
 
@@ -228,56 +238,60 @@ class HomeController extends Controller
         $categories = Category::where('is_active', true)->orderBy('name')->get();
         $brands = Brand::where('is_active', true)->orderBy('name')->get();
         $tags = Tag::orderBy('name')->get();
-        
+
         // Get featured products for rotation
         $featuredProducts = Product::where('is_featured', true)
             ->where('is_active', true)
             ->with(['category', 'brand'])
             ->get();
-        
+
         // Get all products for the main grid (with filters)
         $query = Product::where('is_active', true)
             ->with(['category', 'brand', 'tags'])
-            ->withAvg(['approvedReviews as approved_rating' => function ($query) {
-                $query->where('is_approved', true);
-            }], 'rating')
-            ->withCount(['approvedReviews as approved_reviews_count' => function ($query) {
-                $query->where('is_approved', true);
-            }]);
-        
+            ->withAvg([
+                'approvedReviews as approved_rating' => function ($query) {
+                    $query->where('is_approved', true);
+                }
+            ], 'rating')
+            ->withCount([
+                'approvedReviews as approved_reviews_count' => function ($query) {
+                    $query->where('is_approved', true);
+                }
+            ]);
+
         // Apply search filter if provided
         if ($request->has('search') && $request->search) {
             $searchTerm = $request->search;
-            $query->where(function($q) use ($searchTerm) {
+            $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', '%' . $searchTerm . '%')
-                  ->orWhere('description', 'like', '%' . $searchTerm . '%')
-                  ->orWhere('sku', 'like', '%' . $searchTerm . '%');
+                    ->orWhere('description', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('sku', 'like', '%' . $searchTerm . '%');
             });
         }
-        
+
         // Apply filters if provided
         if ($request->has('category') && $request->category) {
             $query->where('category_id', $request->category);
         }
-        
+
         if ($request->has('brand') && $request->brand) {
             $query->where('brand_id', $request->brand);
         }
-        
+
         if ($request->has('tag') && $request->tag) {
-            $query->whereHas('tags', function($q) use ($request) {
+            $query->whereHas('tags', function ($q) use ($request) {
                 $q->where('tags.id', $request->tag);
             });
         }
-        
+
         if ($request->has('min_price') && $request->min_price) {
             $query->where('price', '>=', $request->min_price);
         }
-        
+
         if ($request->has('max_price') && $request->max_price) {
             $query->where('price', '<=', $request->max_price);
         }
-        
+
         // Apply sorting
         $sortBy = $request->get('sort', 'popular');
         switch ($sortBy) {
@@ -303,15 +317,15 @@ class HomeController extends Controller
             default:
                 // Most popular: featured first, then by created_at desc
                 $query->orderBy('is_featured', 'desc')
-                      ->orderBy('created_at', 'desc');
+                    ->orderBy('created_at', 'desc');
                 break;
         }
-        
+
         $products = $query->paginate(12)->appends($request->except('page'));
-        
+
         // Get total count for display
         $totalResults = $products->total();
-        
+
         // Build active filters array
         $activeFilters = [];
         if ($request->has('category') && $request->category) {
@@ -324,7 +338,7 @@ class HomeController extends Controller
                 ];
             }
         }
-        
+
         if ($request->has('brand') && $request->brand) {
             $brand = Brand::find($request->brand);
             if ($brand) {
@@ -335,7 +349,7 @@ class HomeController extends Controller
                 ];
             }
         }
-        
+
         if ($request->has('tag') && $request->tag) {
             $tag = Tag::find($request->tag);
             if ($tag) {
@@ -346,7 +360,7 @@ class HomeController extends Controller
                 ];
             }
         }
-        
+
         if ($request->has('min_price') && $request->min_price) {
             $activeFilters[] = [
                 'type' => 'min_price',
@@ -354,7 +368,7 @@ class HomeController extends Controller
                 'value' => $request->min_price
             ];
         }
-        
+
         if ($request->has('max_price') && $request->max_price) {
             $activeFilters[] = [
                 'type' => 'max_price',
@@ -362,10 +376,10 @@ class HomeController extends Controller
                 'value' => $request->max_price
             ];
         }
-        
+
         // Get wishlist from session
         $wishlist = session()->get('wishlist', []);
-        
+
         return view('frontend.marketplace', compact('categories', 'brands', 'tags', 'featuredProducts', 'products', 'activeFilters', 'totalResults', 'sortBy', 'wishlist'));
     }
 
@@ -374,50 +388,54 @@ class HomeController extends Controller
         // Get settings for currency symbol
         $settings = Setting::getSettings();
         $currencySymbol = $settings->currency_symbol ?? '$';
-        
+
         // Get all products for the main grid (with filters)
         $query = Product::where('is_active', true)
             ->with(['category', 'brand', 'tags'])
-            ->withAvg(['approvedReviews as approved_rating' => function ($query) {
-                $query->where('is_approved', true);
-            }], 'rating')
-            ->withCount(['approvedReviews as approved_reviews_count' => function ($query) {
-                $query->where('is_approved', true);
-            }]);
-        
+            ->withAvg([
+                'approvedReviews as approved_rating' => function ($query) {
+                    $query->where('is_approved', true);
+                }
+            ], 'rating')
+            ->withCount([
+                'approvedReviews as approved_reviews_count' => function ($query) {
+                    $query->where('is_approved', true);
+                }
+            ]);
+
         // Apply search filter if provided
         if ($request->has('search') && $request->search) {
             $searchTerm = $request->search;
-            $query->where(function($q) use ($searchTerm) {
+            $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', '%' . $searchTerm . '%')
-                  ->orWhere('description', 'like', '%' . $searchTerm . '%')
-                  ->orWhere('sku', 'like', '%' . $searchTerm . '%');
+                    ->orWhere('description', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('sku', 'like', '%' . $searchTerm . '%');
             });
         }
-        
+
         // Apply filters if provided
         if ($request->has('category') && $request->category) {
             $query->where('category_id', $request->category);
         }
-        
+
         if ($request->has('brand') && $request->brand) {
             $query->where('brand_id', $request->brand);
         }
-        
+
         if ($request->has('tag') && $request->tag) {
-            $query->whereHas('tags', function($q) use ($request) {
+            $query->whereHas('tags', function ($q) use ($request) {
                 $q->where('tags.id', $request->tag);
             });
         }
-        
+
         if ($request->has('min_price') && $request->min_price) {
             $query->where('price', '>=', $request->min_price);
         }
-        
+
         if ($request->has('max_price') && $request->max_price) {
             $query->where('price', '<=', $request->max_price);
         }
-        
+
         // Apply sorting
         $sortBy = $request->get('sort', 'popular');
         switch ($sortBy) {
@@ -443,15 +461,15 @@ class HomeController extends Controller
             default:
                 // Most popular: featured first, then by created_at desc
                 $query->orderBy('is_featured', 'desc')
-                      ->orderBy('created_at', 'desc');
+                    ->orderBy('created_at', 'desc');
                 break;
         }
-        
+
         $products = $query->paginate(12)->appends($request->except('page'));
-        
+
         // Get total count for display
         $totalResults = $products->total();
-        
+
         // Build active filters array
         $activeFilters = [];
         if ($request->has('category') && $request->category) {
@@ -464,7 +482,7 @@ class HomeController extends Controller
                 ];
             }
         }
-        
+
         if ($request->has('brand') && $request->brand) {
             $brand = Brand::find($request->brand);
             if ($brand) {
@@ -475,7 +493,7 @@ class HomeController extends Controller
                 ];
             }
         }
-        
+
         if ($request->has('tag') && $request->tag) {
             $tag = Tag::find($request->tag);
             if ($tag) {
@@ -486,7 +504,7 @@ class HomeController extends Controller
                 ];
             }
         }
-        
+
         if ($request->has('min_price') && $request->min_price) {
             $activeFilters[] = [
                 'type' => 'min_price',
@@ -494,7 +512,7 @@ class HomeController extends Controller
                 'value' => $request->min_price
             ];
         }
-        
+
         if ($request->has('max_price') && $request->max_price) {
             $activeFilters[] = [
                 'type' => 'max_price',
@@ -502,10 +520,10 @@ class HomeController extends Controller
                 'value' => $request->max_price
             ];
         }
-        
+
         // Get wishlist from session
         $wishlist = session()->get('wishlist', []);
-        
+
         // Build product HTML
         $productsHtml = '';
         if ($products->count() > 0) {
@@ -553,7 +571,7 @@ class HomeController extends Controller
                 if ($reviewsCountValue > 0) {
                     $productsHtml .= '<span class="rating-count">' . number_format($ratingValue, 1) . ' (' . $reviewsCountValue . ')</span>';
                 } else {
-                $productsHtml .= '<span class="rating-count">(0)</span>';
+                    $productsHtml .= '<span class="rating-count">(0)</span>';
                 }
                 $productsHtml .= '</div>';
                 $productsHtml .= '<a href="' . $productUrl . '" class="text-decoration-none text-dark"><p class="product-title mt-2 mb-0">' . htmlspecialchars(\Illuminate\Support\Str::limit($product->name, 50)) . '</p></a>';
@@ -570,13 +588,13 @@ class HomeController extends Controller
         } else {
             $productsHtml = '<div class="col-12"><p class="text-center py-5">No products found.</p></div>';
         }
-        
+
         // Build pagination HTML
         $paginationHtml = '';
         if ($products->hasPages()) {
             $paginationHtml = '<nav class="pagination-nav d-flex justify-content-center mt-5" aria-label="Page navigation">' . $products->appends($request->query())->links()->toHtml() . '</nav>';
         }
-        
+
         // Build active filters HTML
         $activeFiltersHtml = '';
         if (count($activeFilters) > 0) {
@@ -587,7 +605,7 @@ class HomeController extends Controller
                 $activeFiltersHtml .= '</span>';
             }
         }
-        
+
         return response()->json([
             'success' => true,
             'products_html' => $productsHtml,
@@ -609,13 +627,13 @@ class HomeController extends Controller
         $wishlist = session()->get('wishlist', []);
         $settings = Setting::getSettings();
         $currencySymbol = $settings->currency_symbol ?? '£';
-        
+
         // Get products from wishlist
         $products = Product::whereIn('id', $wishlist)
             ->where('is_active', true)
             ->with(['category', 'brand'])
             ->get();
-        
+
         return view('frontend.wishlist', compact('products', 'settings', 'currencySymbol'));
     }
 
@@ -624,27 +642,30 @@ class HomeController extends Controller
         $order = null;
         $settings = Setting::getSettings();
         $currencySymbol = $settings->currency_symbol ?? '£';
-        
+
         // Get order number from query parameter or form submission
         $orderNumber = $request->input('order_id') ?? $request->input('order');
         $email = $request->input('email');
-        
+
         if ($orderNumber) {
             $orderNumber = trim($orderNumber);
-            
+
             // Search for order
-            $order = Order::with(['items.product', 'tracking' => function($q) {
-                $q->orderBy('tracking_date', 'desc')->orderBy('created_at', 'desc');
-            }])
-            ->where('order_number', $orderNumber)
-            ->first();
-            
+            $order = Order::with([
+                'items.product',
+                'tracking' => function ($q) {
+                    $q->orderBy('tracking_date', 'desc')->orderBy('created_at', 'desc');
+                }
+            ])
+                ->where('order_number', $orderNumber)
+                ->first();
+
             // Verify email if provided
             if ($order && $email && strtolower(trim($order->customer_email)) !== strtolower(trim($email))) {
                 $order = null;
             }
         }
-        
+
         return view('frontend.track-order', compact('order', 'settings', 'currencySymbol'));
     }
 
@@ -653,14 +674,14 @@ class HomeController extends Controller
         $cart = session()->get('cart', []);
         $settings = Setting::getSettings();
         $currencySymbol = $settings->currency_symbol ?? '$';
-        
+
         $cartItems = [];
         $subtotal = 0;
-        
+
         foreach ($cart as $key => $item) {
             $itemSubtotal = $item['price'] * $item['quantity'];
             $subtotal += $itemSubtotal;
-            
+
             $cartItems[] = [
                 'id' => $item['id'],
                 'cart_key' => $key,
@@ -675,11 +696,11 @@ class HomeController extends Controller
                 'variant_data' => $item['variant_data'] ?? []
             ];
         }
-        
+
         // Get applied coupon from session
         $appliedCoupon = session()->get('applied_coupon', null);
         $discount = 0;
-        
+
         if ($appliedCoupon) {
             $coupon = \App\Models\Coupon::where('code', $appliedCoupon)->first();
             if ($coupon && $coupon->isValid()) {
@@ -689,12 +710,12 @@ class HomeController extends Controller
                 $appliedCoupon = null;
             }
         }
-        
+
         // Calculate totals
         $shipping = 0; // Free shipping for now
         $tax = 0; // No tax for now
         $total = $subtotal + $shipping + $tax - $discount;
-        
+
         return view('frontend.cart', compact('cartItems', 'subtotal', 'shipping', 'discount', 'tax', 'total', 'settings', 'currencySymbol', 'appliedCoupon'));
     }
 
@@ -702,24 +723,27 @@ class HomeController extends Controller
     {
         $serviceId = $request->get('service_id');
         $deviceTypeId = $request->get('device_type_id');
-        
+
         $service = null;
         $deviceType = null;
         $issues = [];
         $mailInProcess = \App\Models\MailInProcess::getContent();
-        
+
         if ($serviceId) {
-            $service = \App\Models\RepairService::with(['deviceTypes' => function($q) {
-                $q->where('is_active', true);
-            }, 'issues' => function($q) {
-                $q->where('is_active', true);
-            }])->findOrFail($serviceId);
-            
+            $service = \App\Models\RepairService::with([
+                'deviceTypes' => function ($q) {
+                    $q->where('is_active', true);
+                },
+                'issues' => function ($q) {
+                    $q->where('is_active', true);
+                }
+            ])->findOrFail($serviceId);
+
             if ($deviceTypeId && $deviceTypeId !== 'other') {
                 $deviceType = \App\Models\RepairDeviceType::find($deviceTypeId);
             }
         }
-        
+
         return view('frontend.select', compact('service', 'deviceType', 'mailInProcess'));
     }
 
@@ -746,31 +770,31 @@ class HomeController extends Controller
             'shipping_county' => 'required_if:ship_to_different_address,1|nullable|string|max:255',
             'shipping_postcode' => 'required_if:ship_to_different_address,1|nullable|string|max:10',
             'shipping_country' => 'required_if:ship_to_different_address,1|nullable|string|max:2',
-            'payment_method' => 'required|in:stripe,paypal',
+            'payment_method' => 'required|in:stripe',
             'stripe_token' => 'required_if:payment_method,stripe|nullable|string',
-            'paypal_order_id' => 'required_if:payment_method,paypal|nullable|string',
+            // 'paypal_order_id' => 'required_if:payment_method,paypal|nullable|string',
             'order_notes' => 'nullable|string|max:1000',
         ]);
-        
+
         $cart = session()->get('cart', []);
-        
+
         if (empty($cart)) {
             return redirect()->route('frontend.cart')->with('error', 'Your cart is empty.');
         }
-        
+
         $settings = Setting::getSettings();
         $currencySymbol = $settings->currency_symbol ?? '£';
-        
+
         // Calculate totals
         $subtotal = 0;
         foreach ($cart as $item) {
             $subtotal += $item['price'] * $item['quantity'];
         }
-        
+
         $appliedCoupon = session()->get('applied_coupon', null);
         $couponId = null;
         $discount = 0;
-        
+
         if ($appliedCoupon) {
             $coupon = Coupon::where('code', $appliedCoupon)->first();
             if ($coupon && $coupon->isValid()) {
@@ -778,22 +802,19 @@ class HomeController extends Controller
                 $couponId = $coupon->id;
             }
         }
-        
+
         $shipping = 0;
         $tax = 0;
         $total = $subtotal + $shipping + $tax - $discount;
-        
+
         // Process payment
         $paymentStatus = 'pending';
         if ($validated['payment_method'] === 'stripe') {
             // In a real implementation, you would charge the card using Stripe API
             // For now, we'll mark as paid if token is provided
             $paymentStatus = $validated['stripe_token'] ? 'paid' : 'pending';
-        } elseif ($validated['payment_method'] === 'paypal') {
-            // Verify PayPal order
-            $paymentStatus = $validated['paypal_order_id'] ? 'paid' : 'pending';
         }
-        
+
         DB::beginTransaction();
         try {
             // Build addresses
@@ -801,7 +822,7 @@ class HomeController extends Controller
             if (!empty($validated['address_line_2'])) {
                 $billingAddress .= ', ' . $validated['address_line_2'];
             }
-            
+
             $shippingAddress = $billingAddress;
             if ($request->has('ship_to_different_address') && $request->ship_to_different_address) {
                 $shippingAddress = $validated['shipping_address_line_1'];
@@ -809,7 +830,7 @@ class HomeController extends Controller
                     $shippingAddress .= ', ' . $validated['shipping_address_line_2'];
                 }
             }
-            
+
             // Create order
             $order = Order::create([
                 'user_id' => auth()->id(),
@@ -833,11 +854,11 @@ class HomeController extends Controller
                 'payment_method' => $validated['payment_method'],
                 'notes' => $validated['order_notes'] ?? null,
             ]);
-            
+
             // Create order items
             foreach ($cart as $key => $item) {
                 $product = Product::find($item['id']);
-                
+
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $item['id'],
@@ -849,16 +870,16 @@ class HomeController extends Controller
                     'variant_data' => $item['variants'] ?? [],
                 ]);
             }
-            
+
             // Clear cart and coupon
             session()->forget('cart');
             session()->forget('applied_coupon');
-            
+
             DB::commit();
-            
+
             // Reload order with relationships for email
             $order->load(['items.product']);
-            
+
             // Send order confirmation email
             try {
                 Mail::to($order->customer_email)->send(new OrderConfirmation($order));
@@ -868,71 +889,23 @@ class HomeController extends Controller
                 \Log::error('Failed to send order confirmation email to ' . $order->customer_email . ': ' . $e->getMessage());
                 \Log::error('Email error details: ' . $e->getTraceAsString());
             }
-            
+
             return redirect()->route('frontend.thank-you', $order->id)
                 ->with('success', 'Order placed successfully!');
-                
+
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Failed to process order. Please try again.')->withInput();
         }
     }
-    
+
     public function thankYou($id)
     {
         $order = Order::with(['items.product'])->findOrFail($id);
         $settings = Setting::getSettings();
         $currencySymbol = $settings->currency_symbol ?? '£';
-        
+
         return view('frontend.thank-you', compact('order', 'settings', 'currencySymbol'));
-    }
-    
-    public function createPayPalOrder(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'total' => 'required|numeric|min:0',
-                'currency' => 'required|string|size:3',
-            ]);
-            
-            // Get cart items for order details
-            $cart = session()->get('cart', []);
-            $cartItems = [];
-            foreach ($cart as $item) {
-                $cartItems[] = [
-                    'name' => $item['name'],
-                    'quantity' => $item['quantity'],
-                    'unit_amount' => [
-                        'currency_code' => $validated['currency'],
-                        'value' => number_format($item['price'], 2, '.', '')
-                    ]
-                ];
-            }
-            
-            // In a real implementation, you would create a PayPal order using PayPal API
-            // For now, we'll return a mock order ID that PayPal SDK can use
-            // PayPal SDK expects an order ID string, which can be used later for capture
-            $orderId = 'PAYPAL-' . strtoupper(\Illuminate\Support\Str::random(16));
-            
-            // Store PayPal order in session temporarily for later verification
-            session()->put('paypal_order_' . $orderId, [
-                'total' => $validated['total'],
-                'currency' => $validated['currency'],
-                'items' => $cartItems,
-                'created_at' => now(),
-            ]);
-            
-            return response()->json([
-                'id' => $orderId,
-                'status' => 'CREATED'
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('PayPal order creation failed: ' . $e->getMessage());
-            return response()->json([
-                'error' => 'Failed to create PayPal order',
-                'message' => $e->getMessage()
-            ], 500);
-        }
     }
 
     public function productDetail($slug)
@@ -941,9 +914,9 @@ class HomeController extends Controller
             ->where('is_active', true)
             ->with(['category', 'brand', 'tags', 'variants.options', 'features', 'galleryImages', 'variantValues'])
             ->firstOrFail();
-        
+
         $settings = Setting::getSettings();
-        
+
         // Get related products (same category, exclude current product)
         $relatedProducts = Product::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
@@ -951,7 +924,7 @@ class HomeController extends Controller
             ->with(['category', 'brand'])
             ->limit(3)
             ->get();
-        
+
         // Get featured products
         $featuredProducts = Product::where('is_featured', true)
             ->where('id', '!=', $product->id)
@@ -959,7 +932,7 @@ class HomeController extends Controller
             ->with(['category', 'brand'])
             ->limit(3)
             ->get();
-        
+
         // Get products from same brand and same category (if brand exists)
         $brandProducts = collect();
         if ($product->brand_id) {
@@ -970,7 +943,7 @@ class HomeController extends Controller
                 ->with(['category', 'brand'])
                 ->limit(3)
                 ->get();
-            
+
             // If no products from same brand and category, get any products from same brand
             if ($brandProducts->isEmpty()) {
                 $brandProducts = Product::where('brand_id', $product->brand_id)
@@ -987,15 +960,15 @@ class HomeController extends Controller
         $reviewsCount = (clone $approvedReviewsQuery)->count();
         $averageRating = (float) round((clone $approvedReviewsQuery)->avg('rating') ?? 0, 1);
         $recentReviews = (clone $approvedReviewsQuery)->latest()->take(10)->get();
-        
+
         // Get shipping options
         $shippingOptions = ShippingOption::getActive();
-        
+
         // Get features: product-specific first, then global as fallback
         $productFeatures = $product->features()->orderBy('order')->get();
         $globalFeatures = GlobalFeature::getActive();
         $displayFeatures = $productFeatures->count() > 0 ? $productFeatures : $globalFeatures;
-        
+
         $wishlistIds = session()->get('wishlist', []);
         $isInWishlist = in_array($product->id, $wishlistIds);
 
@@ -1074,31 +1047,31 @@ class HomeController extends Controller
             'wishlist_count' => count($wishlist),
         ]);
     }
-    
+
     public function getVariantPrice(Request $request, $slug)
     {
         $product = Product::where('slug', $slug)
             ->where('is_active', true)
             ->with(['variantValues'])
             ->firstOrFail();
-        
+
         $settings = Setting::getSettings();
         $currencySymbol = $settings->currency_symbol ?? '$';
-        
+
         // Get selected variant option IDs from request
         $selectedVariants = $request->input('variants', []);
-        
+
         // Build variant combination from selected options
         $variantCombination = [];
         if (!empty($selectedVariants)) {
             // Load variants and options to get the combination
             $product->load(['variants.options']);
-            
+
             foreach ($selectedVariants as $variantId => $optionId) {
                 // Convert to integers for comparison
-                $variantId = (int)$variantId;
-                $optionId = (int)$optionId;
-                
+                $variantId = (int) $variantId;
+                $optionId = (int) $optionId;
+
                 foreach ($product->variants as $variant) {
                     if ($variant->id == $variantId) {
                         $option = $variant->options->firstWhere('id', $optionId);
@@ -1110,24 +1083,24 @@ class HomeController extends Controller
                 }
             }
         }
-        
+
         // Find matching variant value
         $variantValue = null;
         if (!empty($variantCombination)) {
             // Sort combination keys for consistent matching
             ksort($variantCombination);
-            
+
             foreach ($product->variantValues as $vv) {
-                $vvCombination = is_array($vv->variant_combination) 
-                    ? $vv->variant_combination 
+                $vvCombination = is_array($vv->variant_combination)
+                    ? $vv->variant_combination
                     : json_decode($vv->variant_combination, true);
-                
+
                 if (!is_array($vvCombination)) {
                     continue;
                 }
-                
+
                 ksort($vvCombination);
-                
+
                 // Compare combinations
                 if (json_encode($vvCombination) === json_encode($variantCombination)) {
                     $variantValue = $vv;
@@ -1135,22 +1108,22 @@ class HomeController extends Controller
                 }
             }
         }
-        
+
         // Get price
-        $price = $variantValue && $variantValue->price !== null 
-            ? $variantValue->price 
+        $price = $variantValue && $variantValue->price !== null
+            ? $variantValue->price
             : $product->price;
-        
+
         $compareAtPrice = $variantValue && $variantValue->compare_at_price !== null
             ? $variantValue->compare_at_price
             : $product->compare_at_price;
-        
+
         // Calculate discount
         $discount = null;
         if ($compareAtPrice && $compareAtPrice > $price) {
             $discount = (($compareAtPrice - $price) / $compareAtPrice) * 100;
         }
-        
+
         return response()->json([
             'success' => true,
             'price' => $price,
@@ -1166,16 +1139,16 @@ class HomeController extends Controller
     {
         $orderNumber = $request->get('order');
         $order = null;
-        
+
         if ($orderNumber) {
             $order = \App\Models\RepairOrder::with(['service', 'deviceType'])
                 ->where('order_number', $orderNumber)
                 ->first();
         }
-        
+
         $settings = \App\Models\Setting::first();
         $currencySymbol = $settings->currency_symbol ?? '£';
-        
+
         return view('frontend.place-order', compact('order', 'currencySymbol'));
     }
 
@@ -1188,13 +1161,15 @@ class HomeController extends Controller
     {
         $serviceId = $request->get('service');
         $service = null;
-        
+
         if ($serviceId) {
-            $service = \App\Models\RepairService::with(['deviceTypes' => function($q) {
-                $q->where('is_active', true)->with('repairBrand');
-            }])->findOrFail($serviceId);
+            $service = \App\Models\RepairService::with([
+                'deviceTypes' => function ($q) {
+                    $q->where('is_active', true)->with('repairBrand');
+                }
+            ])->findOrFail($serviceId);
         }
-        
+
         return view('frontend.mobile-repair', compact('service'));
     }
 
@@ -1206,22 +1181,22 @@ class HomeController extends Controller
             $deviceTypeId = $request->input('device_type_id');
             $selectedIssues = $request->input('issues', []);
             $isUnknown = $request->input('issue_unknown', false);
-            
+
             if (!$serviceId) {
                 return response()->json(['success' => false, 'message' => 'Service ID is required'], 400);
             }
-            
+
             $service = \App\Models\RepairService::findOrFail($serviceId);
             $subtotal = 0;
             $inspectionFee = 0;
-            
+
             // If no issues selected or unknown issue, charge inspection fee
             if (empty($selectedIssues) || $isUnknown) {
                 $inspectionPricing = \App\Models\RepairPricing::where('repair_service_id', $service->id)
                     ->where('is_inspection_fee', true)
                     ->where('is_active', true)
                     ->first();
-                
+
                 if ($inspectionPricing) {
                     $inspectionFee = $inspectionPricing->price;
                 }
@@ -1230,7 +1205,7 @@ class HomeController extends Controller
                 foreach ($selectedIssues as $issueId) {
                     $pricing = \App\Models\RepairPricing::where('repair_service_id', $service->id)
                         ->where('repair_issue_id', $issueId)
-                        ->where(function($q) use ($deviceTypeId) {
+                        ->where(function ($q) use ($deviceTypeId) {
                             if (!empty($deviceTypeId) && $deviceTypeId !== 'other') {
                                 $q->where('repair_device_type_id', $deviceTypeId);
                             } else {
@@ -1239,7 +1214,7 @@ class HomeController extends Controller
                         })
                         ->where('is_active', true)
                         ->first();
-                    
+
                     if ($pricing) {
                         $subtotal += $pricing->price;
                     }
@@ -1258,7 +1233,7 @@ class HomeController extends Controller
                 'currency_symbol' => $currencySymbol,
             ]);
         }
-        
+
         // Handle form submission
         $validated = $request->validate([
             'service_id' => 'required|exists:repair_services,id',
@@ -1279,13 +1254,13 @@ class HomeController extends Controller
         $subtotal = 0;
         $inspectionFee = 0;
         $selectedIssues = $validated['issues'] ?? [];
-        
+
         if (empty($selectedIssues)) {
             $inspectionPricing = \App\Models\RepairPricing::where('repair_service_id', $service->id)
                 ->where('is_inspection_fee', true)
                 ->where('is_active', true)
                 ->first();
-            
+
             if ($inspectionPricing) {
                 $inspectionFee = $inspectionPricing->price;
             }
@@ -1293,7 +1268,7 @@ class HomeController extends Controller
             foreach ($selectedIssues as $issueId) {
                 $pricing = \App\Models\RepairPricing::where('repair_service_id', $service->id)
                     ->where('repair_issue_id', $issueId)
-                    ->where(function($q) use ($validated) {
+                    ->where(function ($q) use ($validated) {
                         if (!empty($validated['device_type_id']) && $validated['device_type_id'] !== 'other') {
                             $q->where('repair_device_type_id', $validated['device_type_id']);
                         } else {
@@ -1302,7 +1277,7 @@ class HomeController extends Controller
                     })
                     ->where('is_active', true)
                     ->first();
-                
+
                 if ($pricing) {
                     $subtotal += $pricing->price;
                 }
@@ -1327,7 +1302,7 @@ class HomeController extends Controller
             'inspection_fee' => $inspectionFee,
             'total' => $total,
         ];
-        
+
         session(['repair_order' => $repairOrderData]);
         session()->save(); // Ensure session is saved immediately
 
@@ -1364,7 +1339,7 @@ class HomeController extends Controller
                 'inspection_fee' => 'nullable|numeric|min:0',
                 'total' => 'required|numeric|min:0',
             ]);
-            
+
             // Additional validation: payment_method and address required for online delivery
             if ($validated['delivery_method'] === 'online') {
                 if (empty($validated['payment_method'])) {
@@ -1374,15 +1349,16 @@ class HomeController extends Controller
                         'errors' => ['payment_method' => ['Payment method is required for online delivery.']]
                     ], 422);
                 }
-                if (empty($validated['address'])) {
+                // Address validation removed as per request
+                /*if (empty($validated['address'])) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Shipping address is required for online delivery.',
                         'errors' => ['address' => ['Shipping address is required for online delivery.']]
                     ], 422);
-                }
+                }*/
             }
-            
+
             // For visit us, payment_method can be empty (user will pay on visit)
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -1399,7 +1375,7 @@ class HomeController extends Controller
             $inspectionFee = $validated['inspection_fee'] ?? 0;
             $total = $validated['total'] ?? 0;
             $selectedIssues = $validated['issues'] ?? [];
-            
+
             // Recalculate pricing if not provided
             if ($total == 0) {
                 if (empty($selectedIssues)) {
@@ -1407,7 +1383,7 @@ class HomeController extends Controller
                         ->where('is_inspection_fee', true)
                         ->where('is_active', true)
                         ->first();
-                    
+
                     if ($inspectionPricing) {
                         $inspectionFee = $inspectionPricing->price;
                     }
@@ -1415,7 +1391,7 @@ class HomeController extends Controller
                     foreach ($selectedIssues as $issueId) {
                         $pricing = \App\Models\RepairPricing::where('repair_service_id', $service->id)
                             ->where('repair_issue_id', $issueId)
-                            ->where(function($q) use ($validated) {
+                            ->where(function ($q) use ($validated) {
                                 if (!empty($validated['device_type_id']) && $validated['device_type_id'] !== 'other') {
                                     $q->where('repair_device_type_id', $validated['device_type_id']);
                                 } else {
@@ -1424,7 +1400,7 @@ class HomeController extends Controller
                             })
                             ->where('is_active', true)
                             ->first();
-                        
+
                         if ($pricing) {
                             $subtotal += $pricing->price;
                         }
@@ -1436,7 +1412,7 @@ class HomeController extends Controller
             // Process Stripe payment if token is provided
             $paymentIntentId = $validated['payment_intent_id'] ?? null;
             $paypalOrderId = $validated['paypal_order_id'] ?? null;
-            
+
             if (!empty($validated['payment_method']) && $validated['payment_method'] === 'stripe' && !empty($validated['stripe_token'])) {
                 // Here you would process the Stripe payment
                 // For now, we'll just store the token
@@ -1486,9 +1462,9 @@ class HomeController extends Controller
                     'service_id' => $order->repair_service_id,
                     'service_loaded' => $order->service ? 'yes' : 'no',
                 ]));
-                
+
                 $mailResult = \Mail::to($order->customer_email)->send(new \App\Mail\RepairOrderConfirmation($order));
-                
+
                 \Log::info('Repair order confirmation email sent successfully to: ' . $order->customer_email);
                 \Log::info('Mail send result: ' . ($mailResult ? 'Success' : 'Failed'));
             } catch (\Swift_TransportException $e) {
