@@ -28,7 +28,7 @@
       </div>
     </section>
     <!-- Hero Section End -->
-    <section class="mb-custom">
+    <section id="animated-section-2" class="mb-custom overflow-hidden">
       <div class="container">
         <div class="row g-5">
           <div class="col-12 col-lg-5 col-xl-6">
@@ -87,7 +87,7 @@
     </section>
 
     <!-- repairing Service section  -->
-    <section class="mb-custom">
+    <section id="animated-section-3" class="mb-custom">
       <div class="container">
         <div class="row mb-custom">
           <div class="col-md-6">

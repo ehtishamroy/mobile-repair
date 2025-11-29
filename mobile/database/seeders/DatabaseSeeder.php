@@ -12,6 +12,8 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             AdminUserSeeder::class,
             FakeOrderSeeder::class,
+            RepairServiceSeeder::class,
+
         ]);
     }
 }

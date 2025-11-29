@@ -3,7 +3,7 @@
 @section('title', 'Join Us')
 
 @section('content')
-<section class="join-hero-section flex-stack mb-custom">
+<section class="hero-section join-hero-section flex-stack mb-custom">
       <div class="container flex-stack flex-column">
         <h1 class="display-2 fw-900 font-satoshi text-white mb-3">{{ $content->hero_title ?? 'Join Us' }}</h1>
 

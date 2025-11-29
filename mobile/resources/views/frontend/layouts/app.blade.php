@@ -427,65 +427,65 @@
 
 <body>
   <!-- Header Section Start -->
-  <header class="header-section">
-    <!-- Top Row -->
-    <div class="header-top d-none d-md-block">
-      <div class="container">
-        <div class="d-flex align-items-center justify-content-between">
-          <div>
-            <div class="social-icons d-flex align-items-center gap-3">
-              @if($settings->facebook_url ?? false)
-                <a href="{{ $settings->facebook_url }}" target="_blank" rel="noopener noreferrer" class="social-icon"><img
-                    src="{{ asset('front-assets/img/facebook.svg') }}" alt="Facebook"
-                    style="width: 28px; height: 28px;"></a>
-              @else
-                <a href="#" class="social-icon"><img src="{{ asset('front-assets/img/facebook.svg') }}" alt="Facebook"
-                    style="width: 28px; height: 28px;"></a>
-              @endif
+  <!-- Top Row -->
+  <div class="header-top d-none d-md-block">
+    <div class="container">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="social-icons d-flex align-items-center gap-3">
+            @if($settings->facebook_url ?? false)
+              <a href="{{ $settings->facebook_url }}" target="_blank" rel="noopener noreferrer" class="social-icon"><img
+                  src="{{ asset('front-assets/img/facebook.svg') }}" alt="Facebook"
+                  style="width: 28px; height: 28px;"></a>
+            @else
+              <a href="#" class="social-icon"><img src="{{ asset('front-assets/img/facebook.svg') }}" alt="Facebook"
+                  style="width: 28px; height: 28px;"></a>
+            @endif
 
-              @if($settings->instagram_url ?? false)
-                <a href="{{ $settings->instagram_url }}" target="_blank" rel="noopener noreferrer"
-                  class="social-icon"><img src="{{ asset('front-assets/img/instagram.svg') }}" alt="Instagram"
-                    style="width: 28px; height: 28px;"></a>
-              @else
-                <a href="#" class="social-icon"><img src="{{ asset('front-assets/img/instagram.svg') }}" alt="Instagram"
-                    style="width: 28px; height: 28px;"></a>
-              @endif
+            @if($settings->instagram_url ?? false)
+              <a href="{{ $settings->instagram_url }}" target="_blank" rel="noopener noreferrer"
+                class="social-icon"><img src="{{ asset('front-assets/img/instagram.svg') }}" alt="Instagram"
+                  style="width: 28px; height: 28px;"></a>
+            @else
+              <a href="#" class="social-icon"><img src="{{ asset('front-assets/img/instagram.svg') }}" alt="Instagram"
+                  style="width: 28px; height: 28px;"></a>
+            @endif
 
-              @if($settings->tiktok_url ?? false)
-                <a href="{{ $settings->tiktok_url }}" target="_blank" rel="noopener noreferrer" class="social-icon"><img
-                    src="{{ asset('front-assets/img/tiktok.svg') }}" alt="TikTok" style="width: 28px; height: 28px;"></a>
-              @else
-                <a href="#" class="social-icon"><img src="{{ asset('front-assets/img/tiktok.svg') }}" alt="TikTok"
-                    style="width: 28px; height: 28px;"></a>
-              @endif
+            @if($settings->tiktok_url ?? false)
+              <a href="{{ $settings->tiktok_url }}" target="_blank" rel="noopener noreferrer" class="social-icon"><img
+                  src="{{ asset('front-assets/img/tiktok.svg') }}" alt="TikTok" style="width: 28px; height: 28px;"></a>
+            @else
+              <a href="#" class="social-icon"><img src="{{ asset('front-assets/img/tiktok.svg') }}" alt="TikTok"
+                  style="width: 28px; height: 28px;"></a>
+            @endif
 
-              @if($settings->youtube_url ?? false)
-                <a href="{{ $settings->youtube_url }}" target="_blank" rel="noopener noreferrer" class="social-icon"><img
-                    src="{{ asset('front-assets/img/youtube.svg') }}" alt="YouTube"
-                    style="width: 28px; height: 28px;"></a>
-              @else
-                <a href="#" class="social-icon"><img src="{{ asset('front-assets/img/youtube.svg') }}" alt="YouTube"
-                    style="width: 28px; height: 28px;"></a>
-              @endif
-            </div>
-          </div>
-          <div>
-            @if($settings->promo_title ?? false)
-              <div class="d-flex align-items-center justify-content-end gap-3">
-                <button class="btn-promo">{{ __('Promo!') }}</button>
-                <span class="text-muted-custom fs-12 fw-400 font-satoshi">
-                  {{ $settings->promo_title }}
-                </span>
-              </div>
+            @if($settings->youtube_url ?? false)
+              <a href="{{ $settings->youtube_url }}" target="_blank" rel="noopener noreferrer" class="social-icon"><img
+                  src="{{ asset('front-assets/img/youtube.svg') }}" alt="YouTube"
+                  style="width: 28px; height: 28px;"></a>
+            @else
+              <a href="#" class="social-icon"><img src="{{ asset('front-assets/img/youtube.svg') }}" alt="YouTube"
+                  style="width: 28px; height: 28px;"></a>
             @endif
           </div>
         </div>
+        <div>
+          @if($settings->promo_title ?? false)
+            <div class="d-flex align-items-center justify-content-end gap-3">
+              <button class="btn-promo">{{ __('Promo!') }}</button>
+              <span class="text-muted-custom fs-12 fw-400 font-satoshi">
+                {{ $settings->promo_title }}
+              </span>
+            </div>
+          @endif
+        </div>
       </div>
     </div>
+  </div>
 
-    <!-- Divider Line -->
-    <hr class="header-divider">
+  <!-- Divider Line -->
+  <hr class="header-divider">
+  <header class="header-section">
 
     <!-- Bottom Row -->
     <div class="header-bottom">
@@ -512,7 +512,7 @@
             <nav class="main-nav">
               <a href="{{ route('frontend.about') }}" class="nav-link">About Us</a>
               <span class="nav-separator">&gt;</span>
-              <a href="{{ route('frontend.book-repair') }}" class="nav-link">Our Services</a>
+              <a href="{{ route('frontend.service') }}" class="nav-link">Our Services</a>
               <span class="nav-separator">&gt;</span>
               <a href="{{ route('frontend.book-repair') }}" class="nav-link">Book Repair</a>
               <span class="nav-separator">&gt;</span>
@@ -552,7 +552,7 @@
       <div class="offcanvas-body">
         <nav class="main-nav d-flex flex-column gap-3 h-100">
           <a href="{{ route('frontend.about') }}" class="nav-link">About Us</a>
-          <a href="{{ route('frontend.book-repair') }}" class="nav-link">Our Services</a>
+          <a href="{{ route('frontend.service') }}" class="nav-link">Our Services</a>
           <a href="{{ route('frontend.book-repair') }}" class="nav-link">Book Repair</a>
           <a href="{{ route('frontend.marketplace') }}" class="nav-link">Marketplace</a>
           <a href="{{ route('frontend.track-order') }}" class="nav-link">Track Order</a>
@@ -722,6 +722,163 @@
     </div>
   </footer>
   <!-- Footer Section End -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script>
+      // Register ScrollTrigger plugin
+gsap.registerPlugin(ScrollTrigger);
+
+window.addEventListener("load", () => {
+  // Initial page load animations
+  var tl = gsap.timeline();
+
+  tl.to(".hero-section .container", {
+    opacity: 1,
+    y: 0, // slide to normal position
+    duration: 0.8,
+    delay: 1.3,
+    ease: "power2.out",
+  });
+
+  tl.to(
+    ".header-section",
+    {
+      opacity: 1,
+      height: "auto",
+      y: 0,
+      delay: 1,
+      duration: 0.6,
+      ease: "power2.out",
+      // clearProps: "all",
+      // removes inline height so it returns to auto
+    },
+    "-=1.5"
+  );
+
+  // ONLY DESKTOP
+  if (window.innerWidth >= 768) {
+    tl.to(
+      ".header-top",
+      {
+        opacity: 1,
+        y: 0,
+        paddingTop: 12,
+        paddingBottom: 12,
+        delay: 0.5,
+        duration: 0.5,
+        ease: "power2.out",
+        // clearProps: "height,paddingTop,paddingBottom",
+      },
+      "-=1"
+    );
+
+    // Realistic Flicker Effect
+    tl.to(".header-divider", {
+      opacity: 0.2,
+      duration: 0.05,
+      ease: "power4.inOut",
+    })
+      .to(".header-divider", {
+        opacity: 1,
+        duration: 0.07,
+        ease: "power4.inOut",
+      })
+      .to(".header-divider", {
+        opacity: 0.3,
+        duration: 0.04,
+        ease: "power4.inOut",
+      })
+      .to(".header-divider", {
+        opacity: 1,
+        duration: 0.05,
+        ease: "power4.inOut",
+      })
+      .to(".header-divider", {
+        opacity: 0.5,
+        duration: 0.05,
+        ease: "power4.inOut",
+      })
+      .to(".header-divider", {
+        opacity: 1,
+        duration: 0.1,
+        ease: "power4.inOut",
+      });
+  }
+
+
+  // ScrollTrigger Animations
+
+  // Full section animation (bottom → top)
+  gsap.from("#animated-section-2", {
+    opacity: 0,
+    y: 200,
+    ease: "power2.out",
+    scrollTrigger: {
+      trigger: "#animated-section-2",
+      start: "top 90%",
+      end: "top 50%",
+      scrub: 0.6, // <-- smooth scrolling effect
+      markers: false,
+    },
+  });
+  gsap.from("#animated-section-3", {
+    opacity: 0,
+    y: 200,
+    ease: "power2.out",
+    scrollTrigger: {
+      trigger: "#animated-section-3",
+      start: "top 80%",
+      end: "top 60%",
+      scrub: 0.6, // <-- smooth scrolling effect
+      markers: false,
+    },
+  });
+
+  // Left column (slide from left)
+  gsap.from("#animated-section-2 .col-lg-5, #animated-section-2 .col-xl-6:first-child", {
+    opacity: 0,
+    x: "-100%",
+    y: "100%",
+    ease: "power2.out",
+    scrollTrigger: {
+      trigger: "#animated-section-2",
+      start: "top 90%",
+      end: "top 50%",
+      scrub: 0.6,
+    },
+  });
+
+  // Right column (slide from right)
+  gsap.from("#animated-section-2 .col-lg-7, #animated-section-2 .col-xl-6:last-child", {
+    opacity: 0,
+    x: "100%",
+    y: "100%",
+    ease: "power2.out",
+    scrollTrigger: {
+      trigger: "#animated-section-2",
+      start: "top 90%",
+      end: "top 50%",
+      scrub: 0.6,
+    },
+  });
+
+  gsap.utils.toArray(".repair-service-card").forEach((card) => {
+    gsap.from(card, {
+      scrollTrigger: {
+        trigger: card,
+        start: "top 80%",
+        toggleActions: "play none none reverse",
+      },
+      y: 30,
+      opacity: 0,
+      duration: 0.6,
+      ease: "power3.out",
+    });
+  });
+});
+
+    </script>
 
   <!-- Bootstrap Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

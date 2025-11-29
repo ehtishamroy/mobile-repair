@@ -4,7 +4,7 @@
 
 @section('content')
 <!-- Hero Section Start -->
-    <section class="about-hero-section flex-stack mb-custom">
+    <section class="hero-section about-hero-section flex-stack mb-custom">
       <div class="container flex-stack flex-column">
         <h1 class="display-2 fw-900 font-satoshi text-white mb-3">{{ $content->hero_title ?? 'About us' }}</h1>
 
@@ -14,7 +14,7 @@
       </div>
     </section>
     <!-- Hero Section End -->
-    <section class="mb-custom">
+    <section id="animated-section-2" class="mb-custom overflow-hidden">
       <div class="container">
         <div class="row g-5">
           <div class="col-12 col-lg-5 col-xl-6">

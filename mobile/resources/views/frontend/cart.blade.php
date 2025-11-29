@@ -185,7 +185,7 @@
             <div class="coupon-box mt-4">
               <h5 class="text-heading fw-500 fs-18 mb-3">Coupon Code</h5>
               @if($appliedCoupon)
-              <div class="alert alert-success mb-3">
+              <div class="alert alert-success mb-3 m-3">
                 <div class="d-flex justify-content-between align-items-center">
                   <span><strong>Applied:</strong> {{ $appliedCoupon }}</span>
                   <button type="button" class="btn btn-sm btn-link text-danger p-0" id="removeCouponBtn">

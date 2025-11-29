@@ -19,42 +19,200 @@ class FakeOrderSeeder extends Seeder
 {
     public function run(): void
     {
-        $category = Category::firstOrCreate(
-            ['slug' => 'sample-category'],
+        // Create categories
+        $mobileCategory = Category::firstOrCreate(
+            ['slug' => 'smartphones'],
             [
-                'name' => 'Sample Category',
-                'description' => 'Auto-generated sample category for fake order seeding.',
+                'name' => 'Smartphones',
+                'description' => 'Latest smartphones and mobile devices.',
                 'is_active' => true,
             ]
         );
 
-        $brand = Brand::firstOrCreate(
-            ['slug' => 'sample-brand'],
+        $laptopCategory = Category::firstOrCreate(
+            ['slug' => 'laptops'],
             [
-                'name' => 'Sample Brand',
-                'description' => 'Auto-generated sample brand for fake order seeding.',
+                'name' => 'Laptops',
+                'description' => 'Portable computers and laptops.',
                 'is_active' => true,
             ]
         );
 
-        $product = Product::firstOrCreate(
-            ['slug' => 'sample-product'],
+        $accessoriesCategory = Category::firstOrCreate(
+            ['slug' => 'accessories'],
             [
-                'name' => 'Sample Product',
-                'sku' => 'SAMPLE-' . Str::upper(Str::random(4)),
-                'category_id' => $category->id,
-                'brand_id' => $brand->id,
-                'description' => 'This is a sample product created for demonstrating fake orders.',
-                'price' => 259.99,
+                'name' => 'Accessories',
+                'description' => 'Phones and computer accessories.',
+                'is_active' => true,
+            ]
+        );
+
+        // Create brands
+        $brands = [
+            'apple' => Brand::firstOrCreate(
+                ['slug' => 'apple'],
+                ['name' => 'Apple', 'description' => 'Premium technology brand', 'is_active' => true]
+            ),
+            'samsung' => Brand::firstOrCreate(
+                ['slug' => 'samsung'],
+                ['name' => 'Samsung', 'description' => 'Electronics manufacturer', 'is_active' => true]
+            ),
+            'dell' => Brand::firstOrCreate(
+                ['slug' => 'dell'],
+                ['name' => 'Dell', 'description' => 'Computer hardware manufacturer', 'is_active' => true]
+            ),
+            'hp' => Brand::firstOrCreate(
+                ['slug' => 'hp'],
+                ['name' => 'HP', 'description' => 'Technology company', 'is_active' => true]
+            ),
+            'lenovo' => Brand::firstOrCreate(
+                ['slug' => 'lenovo'],
+                ['name' => 'Lenovo', 'description' => 'PC and laptop manufacturer', 'is_active' => true]
+            ),
+            'sony' => Brand::firstOrCreate(
+                ['slug' => 'sony'],
+                ['name' => 'Sony', 'description' => 'Electronics and entertainment', 'is_active' => true]
+            ),
+        ];
+
+        // Define products
+        $productsData = [
+            [
+                'name' => 'iPhone 15 Pro Max',
+                'slug' => 'iphone-15-pro-max',
+                'sku' => 'IPHONE15PM',
+                'category' => $mobileCategory,
+                'brand' => $brands['apple'],
+                'description' => 'Latest flagship iPhone with advanced camera and display.',
+                'price' => 1199.99,
+                'quantity' => 30,
+            ],
+            [
+                'name' => 'Samsung Galaxy S24 Ultra',
+                'slug' => 'samsung-galaxy-s24-ultra',
+                'sku' => 'SGS24ULTRA',
+                'category' => $mobileCategory,
+                'brand' => $brands['samsung'],
+                'description' => 'Powerful Android flagship with 200MP camera.',
+                'price' => 1299.99,
+                'quantity' => 25,
+            ],
+            [
+                'name' => 'Samsung Galaxy A54',
+                'slug' => 'samsung-galaxy-a54',
+                'sku' => 'SGS24A54',
+                'category' => $mobileCategory,
+                'brand' => $brands['samsung'],
+                'description' => 'Mid-range Android smartphone with excellent battery life.',
+                'price' => 449.99,
+                'quantity' => 40,
+            ],
+            [
+                'name' => 'Apple MacBook Pro 16"',
+                'slug' => 'macbook-pro-16',
+                'sku' => 'MBP16M3',
+                'category' => $laptopCategory,
+                'brand' => $brands['apple'],
+                'description' => 'Powerful laptop with Apple M3 Max chip for professionals.',
+                'price' => 2499.99,
+                'quantity' => 15,
+            ],
+            [
+                'name' => 'Dell XPS 15',
+                'slug' => 'dell-xps-15',
+                'sku' => 'DELLXPS15',
+                'category' => $laptopCategory,
+                'brand' => $brands['dell'],
+                'description' => 'Premium Windows laptop with stunning OLED display.',
+                'price' => 1899.99,
+                'quantity' => 20,
+            ],
+            [
+                'name' => 'HP Pavilion 15',
+                'slug' => 'hp-pavilion-15',
+                'sku' => 'HPPAV15',
+                'category' => $laptopCategory,
+                'brand' => $brands['hp'],
+                'description' => 'Affordable everyday laptop for home and office use.',
+                'price' => 599.99,
+                'quantity' => 35,
+            ],
+            [
+                'name' => 'Lenovo ThinkPad X1 Carbon',
+                'slug' => 'lenovo-thinkpad-x1-carbon',
+                'sku' => 'LPTP-X1C',
+                'category' => $laptopCategory,
+                'brand' => $brands['lenovo'],
+                'description' => 'Business ultrabook with exceptional durability and performance.',
+                'price' => 1599.99,
+                'quantity' => 18,
+            ],
+            [
+                'name' => 'Sony WH-1000XM5 Headphones',
+                'slug' => 'sony-wh-1000xm5',
+                'sku' => 'SONYWH1000',
+                'category' => $accessoriesCategory,
+                'brand' => $brands['sony'],
+                'description' => 'Premium noise-cancelling wireless headphones.',
+                'price' => 399.99,
                 'quantity' => 50,
-                'availability' => 'in_stock',
-                'is_featured' => false,
-                'is_best_deal' => false,
-                'is_hot_product' => false,
-                'has_color_variant' => true,
-                'is_active' => true,
-            ]
-        );
+            ],
+            [
+                'name' => 'Apple AirPods Pro Max',
+                'slug' => 'airpods-pro-max',
+                'sku' => 'AIRPODS-PM',
+                'category' => $accessoriesCategory,
+                'brand' => $brands['apple'],
+                'description' => 'Premium over-ear spatial audio headphones.',
+                'price' => 549.99,
+                'quantity' => 22,
+            ],
+            [
+                'name' => 'Samsung 65" QLED TV',
+                'slug' => 'samsung-qled-65',
+                'sku' => 'SGQLED65',
+                'category' => $accessoriesCategory,
+                'brand' => $brands['samsung'],
+                'description' => '4K QLED television with quantum dot technology.',
+                'price' => 1699.99,
+                'quantity' => 12,
+            ],
+        ];
+
+        // Create all products
+        $products = [];
+        foreach ($productsData as $productData) {
+            $product = Product::firstOrCreate(
+                ['slug' => $productData['slug']],
+                [
+                    'name' => $productData['name'],
+                    'sku' => $productData['sku'],
+                    'category_id' => $productData['category']->id,
+                    'brand_id' => $productData['brand']->id,
+                    'description' => $productData['description'],
+                    'price' => $productData['price'],
+                    'quantity' => $productData['quantity'],
+                    'availability' => 'in_stock',
+                    'is_featured' => false,
+                    'is_best_deal' => false,
+                    'is_hot_product' => false,
+                    'has_color_variant' => true,
+                    'is_active' => true,
+                ]
+            );
+
+            if (!$product->wasRecentlyCreated) {
+                $product->update([
+                    'quantity' => $productData['quantity'],
+                    'has_color_variant' => true,
+                ]);
+            }
+
+            $products[] = $product;
+        }
+
+        // Use the first product for the rest of the seeding
+        $product = $products[0];
 
         if (!$product->wasRecentlyCreated) {
             $product->update([
