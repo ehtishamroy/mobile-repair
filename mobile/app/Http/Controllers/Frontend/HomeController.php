@@ -1165,7 +1165,9 @@ class HomeController extends Controller
         if ($serviceId) {
             $service = \App\Models\RepairService::with([
                 'deviceTypes' => function ($q) {
-                    $q->where('is_active', true)->with('repairBrand');
+                    $q->where('is_active', true)
+                      ->with('repairBrand')
+                      ->orderBy('id', 'asc');
                 }
             ])->findOrFail($serviceId);
         }

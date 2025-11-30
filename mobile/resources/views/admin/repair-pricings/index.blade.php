@@ -2,7 +2,12 @@
 
 @section('title', 'Repair Pricing')
 @section('page-title', 'Repair Pricing')
-
+@push('styles')
+    <!-- DataTables -->
+    <link rel="stylesheet" href="{{ asset('admin-panel/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('admin-panel/plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('admin-panel/plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}">
+@endpush
 @section('breadcrumb')
     <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
     <li class="breadcrumb-item active">Repair Pricing</li>
@@ -20,62 +25,64 @@
                     </a>
                 </div>
             </div>
-            <div class="card-body table-responsive p-0">
-                <table class="table table-hover text-nowrap">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Service</th>
-                            <th>Device Type</th>
-                            <th>Issue</th>
-                            <th>Price</th>
-                            <th>Type</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($pricings as $pricing)
-                        <tr>
-                            <td>{{ $pricing->id }}</td>
-                            <td>{{ $pricing->service->name ?? 'N/A' }}</td>
-                            <td>{{ $pricing->deviceType->name ?? 'N/A' }}</td>
-                            <td>{{ $pricing->issue->name ?? 'N/A' }}</td>
-                            <td>£{{ number_format($pricing->price, 2) }}</td>
-                            <td>
-                                @if($pricing->is_inspection_fee)
-                                    <span class="badge badge-warning">Inspection Fee</span>
-                                @else
-                                    <span class="badge badge-info">Repair Price</span>
-                                @endif
-                            </td>
-                            <td>
-                                @if($pricing->is_active)
-                                    <span class="badge badge-success">Active</span>
-                                @else
-                                    <span class="badge badge-danger">Inactive</span>
-                                @endif
-                            </td>
-                            <td>
-                                <a href="{{ route('admin.repair-pricings.edit', $pricing->id) }}" class="btn btn-sm btn-info">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('admin.repair-pricings.destroy', $pricing->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this pricing?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="8" class="text-center">No pricing found.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table  id="repair-brands-table" class="table table-hover text-nowrap">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Service</th>
+                                <th>Device Type</th>
+                                <th>Issue</th>
+                                <th>Price</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($pricings as $pricing)
+                            <tr>
+                                <td>{{ $pricing->id }}</td>
+                                <td>{{ $pricing->service->name ?? 'N/A' }}</td>
+                                <td>{{ $pricing->deviceType->name ?? 'N/A' }}</td>
+                                <td>{{ $pricing->issue->name ?? 'N/A' }}</td>
+                                <td>£{{ number_format($pricing->price, 2) }}</td>
+                                <td>
+                                    @if($pricing->is_inspection_fee)
+                                        <span class="badge badge-warning">Inspection Fee</span>
+                                    @else
+                                        <span class="badge badge-info">Repair Price</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($pricing->is_active)
+                                        <span class="badge badge-success">Active</span>
+                                    @else
+                                        <span class="badge badge-danger">Inactive</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <a href="{{ route('admin.repair-pricings.edit', $pricing->id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{{ route('admin.repair-pricings.destroy', $pricing->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this pricing?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="8" class="text-center">No pricing found.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
             @if($pricings instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator && $pricings->hasPages())
             <div class="card-footer">
@@ -85,5 +92,31 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+    <!-- DataTables  & Plugins -->
+    <script src="{{ asset('admin-panel/plugins/datatables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('admin-panel/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+    <script src="{{ asset('admin-panel/plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+    <script src="{{ asset('admin-panel/plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+    <script>
+        $(document).ready(function () {
+            // Initialize DataTables
+            $('#repair-brands-table').DataTable({
+                "paging": true,
+                "lengthChange": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "responsive": true,
+                "columnDefs": [
+                    { "orderable": false, "targets": [1, 7] } // Disable sorting on Logo and Actions columns
+                ],
+                "order": [[0, 'desc']] // Default sort by ID desc
+            });
+        });
+    </script>
+@endpush
 @endsection
 

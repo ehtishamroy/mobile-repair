@@ -51,13 +51,19 @@
         
         <form id="deviceSelectionForm" action="{{ route('frontend.select') }}" method="GET">
             <input type="hidden" name="service_id" value="{{ $service->id }}">
-            <div id="deviceList" class="d-flex flex-wrap gap-3 mt-3 pt-3 justify-content-center">
+            <div class="text-center mt-5">
+                <button type="submit" class="btn-gradient py-3 rounded w-lg-25">
+                    Confirm
+                </button>
+            </div>
+            <div id="deviceList" class="device-grid mt-4 pt-2">
                 @foreach($service->deviceTypes as $deviceType)
                 @php
                     $brandModel = $deviceType->repairBrand;
                     $brandName = $brandModel ? $brandModel->name : ($deviceType->getAttributes()['brand'] ?? '');
                     $searchText = strtolower($deviceType->name . ' ' . $brandName);
                 @endphp
+               
                 <div class="device-item" data-search="{{ $searchText }}">
                     <input
                         type="radio"
@@ -67,13 +73,23 @@
                         value="{{ $deviceType->id }}"
                         autocomplete="off"
                     />
-                    <label class="device-card flex-center gap-3" for="device_{{ $deviceType->id }}">
+                    <label class="device-card flex-center gap-2" for="device_{{ $deviceType->id }}" style="padding: 5px 8px; font-size: 12px;">
                         @if($brandModel && $brandModel->logo)
-                            <img src="{{ asset('storage/' . $brandModel->logo) }}" alt="{{ $deviceType->name }}" style="height: 40px;">
+                            <img src="{{ asset('storage/' . $brandModel->logo) }}" alt="{{ $deviceType->name }}" style="height: 15px;">
                         @elseif($deviceType->brand === 'Apple')
                             <i class="bi bi-apple"></i>
                         @elseif($deviceType->brand === 'Samsung')
-                            <img src="{{ asset('front-assets/img/repair-samsung-2.svg') }}" alt="{{ $deviceType->name }}" style="height: 40px;">
+                            <img src="{{ asset('front-assets/img/repair-samsung-2.svg') }}" alt="{{ $deviceType->name }}" style="height: 15px;">
+                        @elseif($deviceType->brand === 'Google Pixel')
+                            <img src="{{ asset('front-assets/img/Googlep.png') }}" alt="{{ $deviceType->name }}" style="height: 15px;">
+                             @elseif($deviceType->brand === 'Dell')
+                            <img src="{{ asset('front-assets/img/dell-logo.png') }}" alt="{{ $deviceType->name }}" style="height: 15px;">
+                             @elseif($deviceType->brand === 'HP')
+                            <img src="{{ asset('front-assets/img/hp-logo.png') }}" alt="{{ $deviceType->name }}" style="height: 15px;">
+                             @elseif($deviceType->brand === 'Asus')
+                            <img src="{{ asset('front-assets/img/asus-logo.png') }}" alt="{{ $deviceType->name }}" style="height: 15px;">
+                             @elseif($deviceType->brand === 'Lenovo')
+                            <img src="{{ asset('front-assets/img/lenovo-logo.jpg') }}" alt="{{ $deviceType->name }}" style="height: 15px;">
                         @endif
                         {{ $deviceType->name }}
                         <span class="check-icon">
@@ -82,7 +98,7 @@
                     </label>
                 </div>
                 @endforeach
-                
+                 
                 <div class="device-item device-item-others" data-search="others">
                     <input
                         type="radio"
@@ -92,7 +108,7 @@
                         value="other"
                         autocomplete="off"
                     />
-                    <label class="device-card" for="device_other">
+                    <label class="device-card" for="device_other" style="padding: 8px 12px; font-size: 12px;">
                         Others
                         <span class="check-icon">
                             <img src="{{ asset('front-assets/img/select-check.svg') }}" alt="" />
@@ -100,11 +116,9 @@
                     </label>
                 </div>
             </div>
-            <div class="text-center mt-5">
-                <button type="submit" class="btn-gradient py-3 rounded w-lg-25">
-                    Confirm
-                </button>
-            </div>
+
+       
+           
         </form>
     </div>
 </section>
@@ -133,6 +147,29 @@
         color: var(--primary, #684471) !important;
     }
     
+    .device-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        max-width: 1000px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    @media (max-width: 768px) {
+        .device-grid {
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .device-grid {
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+        }
+    }
+    
     .device-item {
         transition: opacity 0.3s ease, transform 0.3s ease;
     }
@@ -140,6 +177,22 @@
     .device-item[style*="display: none"] {
         opacity: 0;
         transform: scale(0.95);
+    }
+
+    /* Checked state styles */
+    .btn-check:checked + .device-card {
+        background-color: var(--primary, #684471) !important;
+        color: white !important;
+        border-color: var(--primary, #684471) !important;
+    }
+
+    .btn-check:checked + .device-card .check-icon {
+        display: none;
+    }
+
+    .btn-check:checked + .device-card img,
+    .btn-check:checked + .device-card i {
+        filter: brightness(0) invert(1);
     }
 </style>
 @endpush

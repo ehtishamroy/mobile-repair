@@ -8,7 +8,7 @@
 
   @php
     // Get site title from settings
-    $siteTitle = $settings->meta_title ?? $settings->website_title ?? $settings->website_name ?? 'Harrow Mobiles';
+    $siteTitle = $settings->meta_title ?? $settings->website_title ?? $settings->website_name;
 
     // Default meta description from settings
     $defaultMetaDescription = $settings->meta_description ?? $settings->website_description ?? '';
@@ -485,328 +485,89 @@
 
   <!-- Divider Line -->
   <hr class="header-divider">
-  <!-- Header Section Start -->
-<header class="header-section">
+  <header class="header-section">
 
     <!-- Bottom Row -->
     <div class="header-bottom">
-        <div class="container">
-            <div class="flex-between">
-                <div class="flex-center gap-2">
-                    <!-- Hamburger Button -->
-                    <button class="navbar-toggler d-block d-lg-none"
-                        type="button"
-                        data-bs-toggle="offcanvas"
-                        data-bs-target="#mobileMenu"
-                        aria-controls="mobileMenu">
-                        <i class="bi bi-list fs-4"></i>
-                    </button>
+      <div class="container">
+        <div class="flex-between">
+          <div class="flex-center gap-2">
+            <!-- Hamburger Button (visible on mobile) -->
+            <button class="navbar-toggler d-block d-lg-none" type="button" data-bs-toggle="offcanvas"
+              data-bs-target="#mobileMenu" aria-controls="mobileMenu">
+              <i class="bi bi-list fs-4"></i>
+            </button>
+            @if($settings->website_logo ?? false)
+              <a href="{{ route('home') }}" class="d-inline-block">
+                <img src="{{ asset('storage/' . $settings->website_logo) }}" alt="{{ $settings->website_name ?? 'Logo' }}"
+                  style="max-height: 40px; max-width: 150px;">
+              </a>
+            @else
+              <h6 class="mb-0">{{ $settings->website_name ?? 'Harrow Mobiles' }}</h6>
+            @endif
+          </div>
 
-                    @if($settings->website_logo ?? false)
-                        <a href="{{ route('home') }}" class="d-inline-block">
-                            <img src="{{ asset('storage/' . $settings->website_logo) }}"
-                                 alt="{{ $settings->website_name ?? 'Logo' }}"
-                                 style="max-height:40px; max-width:150px;">
-                        </a>
-                    @else
-                        <h6 class="mb-0">Mobile Repair</h6>
-                    @endif
-                </div>
+          <!-- Normal nav for lg and up -->
+          <div class="d-none d-lg-block">
+            <nav class="main-nav">
+              <a href="{{ route('frontend.about') }}" class="nav-link">About Us</a>
+              <span class="nav-separator">&gt;</span>
+              <a href="{{ route('frontend.service') }}" class="nav-link">Our Services</a>
+              <span class="nav-separator">&gt;</span>
+              <a href="{{ route('frontend.book-repair') }}" class="nav-link">Book Repair</a>
+              <span class="nav-separator">&gt;</span>
+              <a href="{{ route('frontend.marketplace') }}" class="nav-link">Marketplace</a>
+              <span class="nav-separator">&gt;</span>
+              <a href="{{ route('frontend.track-order') }}" class="nav-link">Track Order</a>
+              @if($wishlistCount > 0)
+                <span class="nav-separator">&gt;</span>
+                <a href="{{ route('frontend.wishlist') }}" class="nav-link">Wishlist</a>
+              @endif
+              <span class="nav-separator">&gt;</span>
+              <a href="{{ route('frontend.join') }}" class="nav-link">Join Us</a>
+            </nav>
+          </div>
 
-                <!-- NAVIGATION (Desktop) -->
-                <div class="d-none d-lg-block">
-                    <nav class="main-nav">
-
-                        <a href="{{ route('frontend.about') }}" class="nav-link">About Us</a>
-                        <span class="nav-separator">></span>
-
-                        <!-- SERVICES DROPDOWN -->
-                        <div class="nav-item-dropdown">
-                            <a href="{{ route('frontend.service') }}" class="nav-link has-dropdown">
-                                Our Services
-                            </a>
-
-                            <div class="dropdown-menu">
-
-                                <div class="dropdown-column">
-                                    <a href="{{ route('frontend.book-repair') }}" class="dropdown-item">
-                                        <span class="dropdown-title">Repair Services</span>
-                                        <span class="dropdown-desc">All repair options</span>
-                                    </a>
-
-                                    <!-- SMARTPHONE -->
-                                    <div class="dropdown-item has-nested">
-                                        <div class="dropdown-main d-flex flex-column">
-                                            <span class="dropdown-title">Smartphone Repair</span>
-                                            <span class="dropdown-desc">iPhone, Android & more</span>
-                                        </div>
-
-                                        <div class="nested-dropdown">
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">iPhone Repair</span><span class="dropdown-desc">All iPhone models</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">Samsung Repair</span><span class="dropdown-desc">Galaxy series</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">Google Pixel</span><span class="dropdown-desc">Pixel devices</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">OnePlus Repair</span><span class="dropdown-desc">OnePlus models</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">Other Brands</span><span class="dropdown-desc">All other phones</span></a>
-                                        </div>
-                                    </div>
-
-                                    <!-- LAPTOP -->
-                                    <div class="dropdown-item has-nested">
-                                        <div class="dropdown-main d-flex flex-column">
-                                            <span class="dropdown-title">Laptop Repair</span>
-                                            <span class="dropdown-desc">All brands supported</span>
-                                        </div>
-
-                                        <div class="nested-dropdown">
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">MacBook Repair</span><span class="dropdown-desc">Apple laptops</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">Dell Repair</span><span class="dropdown-desc">Dell laptops</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">HP Repair</span><span class="dropdown-desc">HP laptops</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">Lenovo Repair</span><span class="dropdown-desc">Lenovo laptops</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">ASUS Repair</span><span class="dropdown-desc">ASUS laptops</span></a>
-                                        </div>
-                                    </div>
-
-                                    <a href="#" class="dropdown-item"><span class="dropdown-title">Tablet Repair</span><span class="dropdown-desc">Quick & reliable</span></a>
-                                </div>
-
-                                <div class="dropdown-column">
-                                    <a href="#" class="dropdown-item"><span class="dropdown-title">Console Repair</span><span class="dropdown-desc">Gaming consoles</span></a>
-                                    <a href="#" class="dropdown-item"><span class="dropdown-title">Gaming PC Repair</span><span class="dropdown-desc">High-performance systems</span></a>
-                                    <a href="#" class="dropdown-item"><span class="dropdown-title">Software Optimization</span><span class="dropdown-desc">Speed up your device</span></a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <span class="nav-separator">></span>
-
-                        <!-- MARKETPLACE DROPDOWN -->
-                        <div class="nav-item-dropdown">
-                            <a href="{{ route('frontend.marketplace') }}" class="nav-link has-dropdown">
-                                Marketplace
-                            </a>
-
-                            <div class="dropdown-menu">
-
-                                <div class="dropdown-column">
-                                    <a href="{{ route('frontend.marketplace') }}" class="dropdown-item">
-                                        <span class="dropdown-title">All Products</span>
-                                        <span class="dropdown-desc">Browse everything</span>
-                                    </a>
-
-                                    <!-- Phones -->
-                                    <div class="dropdown-item has-nested">
-                                        <div class="dropdown-main d-flex flex-column">
-                                            <span class="dropdown-title">Phones</span>
-                                            <span class="dropdown-desc">Latest smartphones</span>
-                                        </div>
-
-                                        <div class="nested-dropdown">
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">iPhone</span><span class="dropdown-desc">Latest iPhones</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">Samsung</span><span class="dropdown-desc">Galaxy series</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">Google Pixel</span><span class="dropdown-desc">Pixel phones</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">OnePlus</span><span class="dropdown-desc">OnePlus phones</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">Xiaomi</span><span class="dropdown-desc">Xiaomi phones</span></a>
-                                        </div>
-                                    </div>
-
-                                    <!-- Accessories -->
-                                    <div class="dropdown-item has-nested">
-                                        <div class="dropdown-main d-flex flex-column">
-                                            <span class="dropdown-title">Accessories</span>
-                                            <span class="dropdown-desc">Cases, chargers & more</span>
-                                        </div>
-
-                                        <div class="nested-dropdown">
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">Phone Cases</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">Chargers</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">Screen Protectors</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">Headphones</span></a>
-                                            <a href="#" class="dropdown-item"><span class="dropdown-title">Power Banks</span></a>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="dropdown-column">
-                                    <a href="#" class="dropdown-item"><span class="dropdown-title">Watches</span><span class="dropdown-desc">Smartwatches & bands</span></a>
-                                    <a href="#" class="dropdown-item"><span class="dropdown-title">Deals</span><span class="dropdown-desc">Special offers</span></a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <span class="nav-separator">></span>
-
-                        <a href="{{ route('frontend.join') }}" class="nav-link">Join Us</a>
-                    </nav>
-                </div>
-
-                <div class="flex-center gap-3">
-                    <a href="{{ route('frontend.cart') }}" class="cart-icon">
-                        <img src="{{ asset('front-assets/img/cart.svg') }}" alt="">
-                    </a>
-                    <a href="{{ route('frontend.contact') }}" class="btn-gradient">Contact Us</a>
-                </div>
-            </div>
+          <div class="flex-center gap-3">
+            <a href="{{ route('frontend.cart') }}" class="cart-icon" aria-label="View cart">
+              <img src="{{ asset('front-assets/img/cart.svg') }}" alt="">
+            </a>
+            <a href="{{ route('frontend.contact') }}" class="btn-gradient">Contact Us</a>
+          </div>
         </div>
+      </div>
     </div>
 
-</header>
-<!-- Header Section End -->
-
-<!-- MOBILE MENU (Offcanvas Accordion) -->
-<div class="offcanvas offcanvas-start"
-     tabindex="-1"
-     id="mobileMenu"
-     aria-labelledby="mobileMenuLabel">
-
-    <div class="offcanvas-header">
+    <!-- Offcanvas Drawer -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
+      <div class="offcanvas-header">
         @if($settings->website_logo ?? false)
-            <img src="{{ asset('storage/' . $settings->website_logo) }}"
-                 alt="{{ $settings->website_name ?? 'Logo' }}"
-                 style="max-height:30px; max-width:120px;">
+          <img src="{{ asset('storage/' . $settings->website_logo) }}" alt="{{ $settings->website_name ?? 'Logo' }}"
+            style="max-height: 30px; max-width: 120px;">
         @else
-            <h5 id="mobileMenuLabel">Mobile Repair</h5>
+          <h5 class="offcanvas-title" id="mobileMenuLabel">{{ $settings->website_name ?? 'Harrow Mobiles' }}</h5>
         @endif
-
-        <button type="button" class="btn-close text-reset"
-                data-bs-dismiss="offcanvas"></button>
-    </div>
-
-    <div class="offcanvas-body">
-
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
         <nav class="main-nav d-flex flex-column gap-3 h-100">
-            <a href="{{ route('frontend.about') }}" class="nav-link">About Us</a>
-
-            <!-- Accordion: Services -->
-            <div class="accordion" id="mobileMenuAccordion">
-
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingServicesMobile">
-                        <button class="accordion-button collapsed"
-                            type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#collapseServicesMobile"
-                            aria-expanded="false">
-                            Our Services
-                        </button>
-                    </h2>
-
-                    <div id="collapseServicesMobile"
-                         class="accordion-collapse collapse"
-                         data-bs-parent="#mobileMenuAccordion">
-
-                        <div class="accordion-body px-0">
-                            <ul class="list-unstyled mb-0">
-
-                                <li>
-                                    <a href="{{ route('frontend.book-repair') }}" class="nav-link ps-3">
-                                        Repair Services
-                                        <small class="text-muted d-block">All repair options</small>
-                                    </a>
-                                </li>
-
-                                <!-- Smartphones -->
-                                <li class="mt-2">
-                                    <span class="fw-semibold ps-3 d-block">Smartphone Repair</span>
-                                    <ul class="list-unstyled ps-4 mt-1">
-                                        <li><a href="#" class="nav-link">iPhone Repair</a></li>
-                                        <li><a href="#" class="nav-link">Samsung Repair</a></li>
-                                        <li><a href="#" class="nav-link">Pixel</a></li>
-                                        <li><a href="#" class="nav-link">OnePlus</a></li>
-                                        <li><a href="#" class="nav-link">Others</a></li>
-                                    </ul>
-                                </li>
-
-                                <!-- Laptop -->
-                                <li class="mt-2">
-                                    <span class="fw-semibold ps-3 d-block">Laptop Repair</span>
-                                    <ul class="list-unstyled ps-4 mt-1">
-                                        <li><a href="#" class="nav-link">MacBook Repair</a></li>
-                                        <li><a href="#" class="nav-link">Dell Repair</a></li>
-                                        <li><a href="#" class="nav-link">HP Repair</a></li>
-                                        <li><a href="#" class="nav-link">Lenovo Repair</a></li>
-                                        <li><a href="#" class="nav-link">ASUS Repair</a></li>
-                                    </ul>
-                                </li>
-
-                                <li class="mt-2"><a href="#" class="nav-link ps-3">Tablet Repair</a></li>
-                                <li class="mt-2"><a href="#" class="nav-link ps-3">Console Repair</a></li>
-                                <li class="mt-2"><a href="#" class="nav-link ps-3">Gaming PC Repair</a></li>
-                                <li class="mt-2"><a href="#" class="nav-link ps-3">Software Optimization</a></li>
-
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Marketplace Accordion -->
-                <div class="accordion-item mt-2">
-                    <h2 class="accordion-header" id="headingMarketplaceMobile">
-                        <button class="accordion-button collapsed"
-                            type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#collapseMarketplaceMobile">
-                            Marketplace
-                        </button>
-                    </h2>
-
-                    <div id="collapseMarketplaceMobile"
-                         class="accordion-collapse collapse"
-                         data-bs-parent="#mobileMenuAccordion">
-
-                        <div class="accordion-body px-0">
-                            <ul class="list-unstyled mb-0">
-
-                                <li>
-                                    <a href="{{ route('frontend.marketplace') }}" class="nav-link ps-3">
-                                        All Products
-                                    </a>
-                                </li>
-
-                                <li class="mt-2">
-                                    <span class="fw-semibold ps-3 d-block">Phones</span>
-                                    <ul class="list-unstyled ps-4 mt-1">
-                                        <li><a href="#" class="nav-link">iPhone</a></li>
-                                        <li><a href="#" class="nav-link">Samsung</a></li>
-                                        <li><a href="#" class="nav-link">Google Pixel</a></li>
-                                        <li><a href="#" class="nav-link">OnePlus</a></li>
-                                        <li><a href="#" class="nav-link">Xiaomi</a></li>
-                                    </ul>
-                                </li>
-
-                                <li class="mt-2">
-                                    <span class="fw-semibold ps-3 d-block">Accessories</span>
-                                    <ul class="list-unstyled ps-4 mt-1">
-                                        <li><a href="#" class="nav-link">Phone Cases</a></li>
-                                        <li><a href="#" class="nav-link">Chargers</a></li>
-                                        <li><a href="#" class="nav-link">Screen Protectors</a></li>
-                                        <li><a href="#" class="nav-link">Headphones</a></li>
-                                        <li><a href="#" class="nav-link">Power Banks</a></li>
-                                    </ul>
-                                </li>
-
-                                <li class="mt-2"><a href="#" class="nav-link ps-3">Watches</a></li>
-                                <li class="mt-2"><a href="#" class="nav-link ps-3">Deals</a></li>
-
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-            </div> <!-- End Accordion -->
-
-            <a href="{{ route('frontend.join') }}" class="nav-link mt-3">Join Us</a>
-
-            <div class="mt-auto">
-                <hr>
-                <a href="{{ route('frontend.contact') }}" class="btn-gradient w-100 text-center">
-                    Contact Us
-                </a>
-            </div>
+          <a href="{{ route('frontend.about') }}" class="nav-link">About Us</a>
+          <a href="{{ route('frontend.service') }}" class="nav-link">Our Services</a>
+          <a href="{{ route('frontend.book-repair') }}" class="nav-link">Book Repair</a>
+          <a href="{{ route('frontend.marketplace') }}" class="nav-link">Marketplace</a>
+          <a href="{{ route('frontend.track-order') }}" class="nav-link">Track Order</a>
+          @if($wishlistCount > 0)
+            <a href="{{ route('frontend.wishlist') }}" class="nav-link">Wishlist</a>
+          @endif
+          <a href="{{ route('frontend.join') }}" class="nav-link">Join Us</a>
+          <div class="mt-auto">
+            <hr>
+            <a href="{{ route('frontend.contact') }}" class="btn-gradient w-100 text-center">Contact Us</a>
+          </div>
         </nav>
-
+      </div>
     </div>
-</div>
-
+  </header>
   <!-- Header Section End -->
 
   <!-- Main Content -->
@@ -1004,13 +765,12 @@ window.addEventListener("load", () => {
         y: 0,
         paddingTop: 12,
         paddingBottom: 12,
-        visibility: "visible",
         delay: 0.5,
         duration: 0.5,
         ease: "power2.out",
         // clearProps: "height,paddingTop,paddingBottom",
       },
-      "-=0.1"
+      "-=1"
     );
 
     // Realistic Flicker Effect
