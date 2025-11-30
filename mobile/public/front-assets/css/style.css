@@ -462,7 +462,6 @@
 }
 .hero-section {
     background: url("../img/hero.svg") center center/cover no-repeat;
- min-height: 50vh;
 }
 .about-hero-section {
     background: url("../img/about-hero-bg.svg") center center/cover no-repeat;
