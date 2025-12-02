@@ -49,6 +49,7 @@ Route::post('/wishlist/add/{product}', [HomeController::class, 'addToWishlist'])
 Route::post('/wishlist/remove/{product}', [HomeController::class, 'removeFromWishlist'])->name('frontend.wishlist.remove');
 Route::get('/place-order', [HomeController::class, 'placeOrder'])->name('frontend.place-order');
 Route::get('/book-repair', [HomeController::class, 'bookRepair'])->name('frontend.book-repair');
+Route::get('/api/quality-tiers/{issueId}', [HomeController::class, 'getQualityTiers'])->name('frontend.api.quality-tiers');
 Route::get('/mobile-repair', [HomeController::class, 'mobileRepair'])->name('frontend.mobile-repair');
 Route::post('/repair/process', [HomeController::class, 'processRepairOrder'])->name('frontend.repair.process');
 Route::post('/repair/payment', [HomeController::class, 'processRepairPayment'])->name('frontend.repair.payment');
@@ -190,6 +191,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::resource('repair-pricings', \App\Http\Controllers\Admin\RepairPricingController::class);
             Route::get('/repair-pricings/get-device-types', [\App\Http\Controllers\Admin\RepairPricingController::class, 'getDeviceTypes'])->name('repair-pricings.get-device-types');
             Route::get('/repair-pricings/get-issues', [\App\Http\Controllers\Admin\RepairPricingController::class, 'getIssues'])->name('repair-pricings.get-issues');
+
+            // Quality Tiers Management
+            Route::resource('repair-quality-tiers', \App\Http\Controllers\Admin\RepairQualityTierController::class);
 
             // Repair Orders Management
             Route::resource('repair-orders', \App\Http\Controllers\Admin\RepairOrderController::class)->only(['index', 'show', 'update']);

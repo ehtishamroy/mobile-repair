@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,18 +15,21 @@
             padding: 20px;
             background-color: #f4f4f4;
         }
+
         .email-container {
             background-color: #ffffff;
             border-radius: 8px;
             padding: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         .header {
             text-align: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
             border-bottom: 2px solid #5B265D;
         }
+
         .success-icon {
             width: 60px;
             height: 60px;
@@ -37,11 +41,13 @@
             font-size: 30px;
             margin-bottom: 15px;
         }
+
         h1 {
             color: #5B265D;
             margin: 10px 0;
             font-size: 24px;
         }
+
         h2 {
             color: #333;
             font-size: 20px;
@@ -50,28 +56,34 @@
             border-bottom: 1px solid #eee;
             padding-bottom: 10px;
         }
+
         .order-info {
             background-color: #f9f9f9;
             padding: 15px;
             border-radius: 5px;
             margin: 20px 0;
         }
+
         .info-row {
             display: flex;
             justify-content: space-between;
             padding: 8px 0;
             border-bottom: 1px solid #eee;
         }
+
         .info-row:last-child {
             border-bottom: none;
         }
+
         .info-label {
             font-weight: bold;
             color: #666;
         }
+
         .info-value {
             color: #333;
         }
+
         .total-row {
             font-size: 18px;
             font-weight: bold;
@@ -80,6 +92,7 @@
             padding-top: 10px;
             border-top: 2px solid #5B265D;
         }
+
         .button {
             display: inline-block;
             padding: 12px 30px;
@@ -90,6 +103,7 @@
             margin: 20px 0;
             text-align: center;
         }
+
         .footer {
             text-align: center;
             margin-top: 30px;
@@ -100,6 +114,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="email-container">
         <div class="header">
@@ -146,55 +161,66 @@
                 <span class="info-value">{{ $order->device_model }}</span>
             </div>
             @if($order->deviceType)
-            <div class="info-row">
-                <span class="info-label">Device Type:</span>
-                <span class="info-value">{{ $order->deviceType->name }}</span>
-            </div>
+                <div class="info-row">
+                    <span class="info-label">Device Type:</span>
+                    <span class="info-value">{{ $order->deviceType->name }}</span>
+                </div>
             @endif
             @if($order->selected_issues && count($order->selected_issues) > 0)
-            <div class="info-row">
-                <span class="info-label">Selected Issues:</span>
-                <span class="info-value">
-                    @php
-                        $issueNames = \App\Models\RepairIssue::whereIn('id', $order->selected_issues)->pluck('name')->toArray();
-                    @endphp
-                    {{ implode(', ', $issueNames) }}
-                </span>
-            </div>
+                <div class="info-row">
+                    <span class="info-label">Selected Issues:</span>
+                    <span class="info-value">
+                        @php
+                            $issueNames = \App\Models\RepairIssue::whereIn('id', $order->selected_issues)->pluck('name')->toArray();
+                        @endphp
+                        {{ implode(', ', $issueNames) }}
+                    </span>
+                </div>
             @else
-            <div class="info-row">
-                <span class="info-label">Issue:</span>
-                <span class="info-value">Inspection Required</span>
-            </div>
+                <div class="info-row">
+                    <span class="info-label">Issue:</span>
+                    <span class="info-value">Inspection Required</span>
+                </div>
             @endif
             @if($order->issue_description)
-            <div class="info-row">
-                <span class="info-label">Description:</span>
-                <span class="info-value">{{ $order->issue_description }}</span>
-            </div>
+                <div class="info-row">
+                    <span class="info-label">Description:</span>
+                    <span class="info-value">{{ $order->issue_description }}</span>
+                </div>
+            @endif
+            @if($order->qualityTier)
+                <div class="info-row">
+                    <span class="info-label">Quality/Part Type:</span>
+                    <span class="info-value">
+                        {{ $order->qualityTier->name }}
+                        @if($order->qualityTier->price_modifier > 0)
+                            (+{{ $currencySymbol }}{{ number_format($order->qualityTier->price_modifier, 2) }})
+                        @endif
+                    </span>
+                </div>
             @endif
         </div>
 
         @if($order->address)
-        <h2>Shipping Address</h2>
-        <div class="order-info">
-            <p style="margin: 0; white-space: pre-line;">{{ $order->address }}</p>
-        </div>
+            <h2>Shipping Address</h2>
+            <div class="order-info">
+                <p style="margin: 0; white-space: pre-line;">{{ $order->address }}</p>
+            </div>
         @endif
 
         <h2>Order Summary</h2>
         <div class="order-info">
             @if($order->subtotal > 0)
-            <div class="info-row">
-                <span class="info-label">Repair Cost:</span>
-                <span class="info-value">{{ $currencySymbol }}{{ number_format($order->subtotal, 2) }}</span>
-            </div>
+                <div class="info-row">
+                    <span class="info-label">Repair Cost:</span>
+                    <span class="info-value">{{ $currencySymbol }}{{ number_format($order->subtotal, 2) }}</span>
+                </div>
             @endif
             @if($order->inspection_fee > 0)
-            <div class="info-row">
-                <span class="info-label">Inspection Fee:</span>
-                <span class="info-value">{{ $currencySymbol }}{{ number_format($order->inspection_fee, 2) }}</span>
-            </div>
+                <div class="info-row">
+                    <span class="info-label">Inspection Fee:</span>
+                    <span class="info-value">{{ $currencySymbol }}{{ number_format($order->inspection_fee, 2) }}</span>
+                </div>
             @endif
             <div class="info-row total-row">
                 <span>Total Amount:</span>
@@ -208,5 +234,5 @@
         </div>
     </div>
 </body>
-</html>
 
+</html>

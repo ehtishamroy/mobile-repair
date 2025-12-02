@@ -26,6 +26,7 @@ class RepairOrder extends Model
         'inspection_fee',
         'total',
         'address',
+        'repair_quality_tier_id',
     ];
 
     protected $casts = [
@@ -38,7 +39,7 @@ class RepairOrder extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($order) {
             if (empty($order->order_number)) {
                 $order->order_number = 'REP-' . strtoupper(Str::random(8)) . '-' . date('Ymd');
@@ -54,5 +55,10 @@ class RepairOrder extends Model
     public function deviceType()
     {
         return $this->belongsTo(RepairDeviceType::class, 'repair_device_type_id');
+    }
+
+    public function qualityTier()
+    {
+        return $this->belongsTo(RepairQualityTier::class, 'repair_quality_tier_id');
     }
 }

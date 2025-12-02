@@ -134,6 +134,16 @@
                                     <small class="text-muted d-block mt-2">If you don't know the issue, we'll charge an
                                         inspection fee.</small>
                                 </div>
+
+                                <!-- Quality Tier Selection (shown dynamically) -->
+                                <div id="quality-tier-selection" class="mt-4" style="display: none;">
+                                    <label class="form-label">Select Quality/Part Type <span
+                                            class="text-danger">*</span></label>
+                                    <div id="quality-tier-options" class="d-flex flex-column gap-2">
+                                        <!-- Tiers will be loaded dynamically -->
+                                    </div>
+                                    <input type="hidden" name="quality_tier_id" id="selected_tier_id">
+                                </div>
                             </div>
                             <div class="col-12">
                                 <div class="">
@@ -153,8 +163,10 @@
 
                     <!-- Step 2: Delivery Method Selection -->
                     <div class="step-content">
-                        <h1 class="text-sm-center my-4 mb-5">How would you like to proceed?</h1>
-                        <div class="row">
+                        <h1 class="text-sm-center my-4 mb-5" id="delivery-step-title">How would you like to proceed?</h1>
+
+                        <!-- Normal delivery options (shown when cost > 0) -->
+                        <div class="row" id="normal-delivery-options">
                             <div class="col-md-6 mb-3">
                                 <div class="py-4 flex-center flex-column gap-2 border delivery-option-item"
                                     data-delivery="visit"
@@ -177,6 +189,44 @@
                                     <p class="text-center text-muted small">Pay online for delivery</p>
                                     <input type="radio" name="delivery_method" value="online" id="delivery_online"
                                         class="custom-radio">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Zero-cost visit option (shown when cost = 0) -->
+                        <div id="zero-cost-visit-option" style="display: none;">
+                            <div class="row justify-content-center">
+                                <div class="col-md-8">
+                                    <div class="alert alert-info text-center mb-4">
+                                        <i class="fas fa-info-circle"></i> We need to inspect your device to provide an accurate
+                                        quote. Please visit our store.
+                                    </div>
+                                    <div class="card border-primary">
+                                        <div class="card-body text-center p-4">
+                                            <i class="fas fa-store mb-3" style="font-size: 3rem; color: #684471;"></i>
+                                            <h4 class="mb-3">Visit Our Store</h4>
+                                            <div class="text-left" style="max-width: 500px; margin: 0 auto;">
+                                                <p class="mb-2"><i class="fas fa-map-marker-alt text-primary mr-2"></i>
+                                                    <strong>Address:</strong>
+                                                </p>
+                                                <p class="ml-4 mb-3">Unit-2, 260 Streatfield Road<br>Harrow, London<br>United
+                                                    Kingdom, HA3 9BY</p>
+
+                                                <p class="mb-2"><i class="fas fa-phone text-primary mr-2"></i>
+                                                    <strong>Phone:</strong>
+                                                </p>
+                                                <p class="ml-4 mb-3"><a href="tel:+447503683786">+44 7503 683786</a></p>
+
+                                                <p class="mb-2"><i class="fas fa-envelope text-primary mr-2"></i>
+                                                    <strong>Email:</strong>
+                                                </p>
+                                                <p class="ml-4 mb-0"><a
+                                                        href="mailto:harrowmobiles@gmail.com">harrowmobiles@gmail.com</a></p>
+                                            </div>
+                                            <input type="radio" name="delivery_method" value="visit" id="delivery_visit_zero"
+                                                checked style="display: none;">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -225,6 +275,10 @@
                                     <div class="col-12 section-details">
                                         <label>Selected Issues:</label>
                                         <p id="confirm_issues"></p>
+                                    </div>
+                                    <div class="col-12 section-details" id="confirm_quality_tier_row" style="display: none;">
+                                        <label>Quality/Part Type:</label>
+                                        <p id="confirm_quality_tier"></p>
                                     </div>
                                     <div class="col-12 section-details">
                                         <label>Comments:</label>
@@ -360,6 +414,8 @@
             }
 
             function updateStepper() {
+                const isZeroCost = !formData.total || formData.total === 0;
+
                 steps.forEach((step, index) => {
                     step.classList.remove("active", "completed");
                     if (index < currentStep) step.classList.add("completed");
@@ -370,19 +426,48 @@
                     content.classList.toggle("active", index === currentStep);
                 });
 
-                prevBtn.disabled = currentStep === 0;
+                // prevBtn.disabled = currentStep === 0; // Enable previous button on step 0
+                prevBtn.disabled = false;
 
                 if (currentStep === 0) {
                     nextBtn.textContent = "Continue";
                 } else if (currentStep === 1) {
                     // Delivery method step
-                    nextBtn.textContent = "Continue";
+                    const normalDeliveryOptions = document.getElementById('normal-delivery-options');
+                    const zeroCostVisitOption = document.getElementById('zero-cost-visit-option');
+                    const deliveryStepTitle = document.getElementById('delivery-step-title');
+
+                    if (isZeroCost) {
+                        // Show only Visit Us option with contact info
+                        if (normalDeliveryOptions) normalDeliveryOptions.style.display = 'none';
+                        if (zeroCostVisitOption) zeroCostVisitOption.style.display = 'block';
+                        if (deliveryStepTitle) deliveryStepTitle.textContent = 'Visit Us for a Quote';
+
+                        // Auto-select visit option
+                        const visitRadioZero = document.getElementById('delivery_visit_zero');
+                        if (visitRadioZero) {
+                            visitRadioZero.checked = true;
+                            document.getElementById('delivery_method').value = 'visit';
+                        }
+
+                        nextBtn.textContent = "Submit Request";
+                    } else {
+                        // Show normal delivery options
+                        if (normalDeliveryOptions) normalDeliveryOptions.style.display = 'flex';
+                        if (zeroCostVisitOption) zeroCostVisitOption.style.display = 'none';
+                        if (deliveryStepTitle) deliveryStepTitle.textContent = 'How would you like to proceed?';
+                        nextBtn.textContent = "Continue";
+                    }
                 } else if (currentStep === 2) {
                     // Process info step
                     nextBtn.textContent = "Continue";
                 } else if (currentStep === 3) {
                     // Confirm details step
-                    nextBtn.textContent = "Proceed to Payment";
+                    if (isZeroCost) {
+                        nextBtn.textContent = "Submit Request";
+                    } else {
+                        nextBtn.textContent = "Proceed to Payment";
+                    }
                 } else if (currentStep === 4) {
                     // Payment step - always show Pay Now
                     nextBtn.textContent = "Pay Now";
@@ -630,19 +715,129 @@
                 }
             });
 
-            issueCheckboxes.forEach(cb => {
-                cb.addEventListener('change', function () {
-                    if (this.checked) {
+            issueCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function () {
+                    if (this.checked && issueUnknown) {
                         issueUnknown.checked = false;
                     }
                     calculatePricing();
+                    loadQualityTiersForSelectedIssues();
                 });
             });
+
+            // Load quality tiers when issues are selected
+            function loadQualityTiersForSelectedIssues() {
+                const selectedIssues = Array.from(document.querySelectorAll('.issue-checkbox:checked')).map(cb => cb.value);
+                const qualityTierSection = document.getElementById('quality-tier-selection');
+                const qualityTierOptions = document.getElementById('quality-tier-options');
+
+                // Hide tier selection if no issues or unknown issue is selected
+                if (selectedIssues.length === 0 || (issueUnknown && issueUnknown.checked)) {
+                    qualityTierSection.style.display = 'none';
+                    qualityTierOptions.innerHTML = ''; // Clear tier radio buttons
+                    document.getElementById('selected_tier_id').value = '';
+                    calculatePricing(); // Recalculate pricing without tier modifier
+                    return;
+                }
+
+                // For simplicity, check only the first selected issue for tiers
+                // You can modify this to handle multiple issues differently
+                const firstIssueId = selectedIssues[0];
+
+                fetch(`/api/quality-tiers/${firstIssueId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.tiers && data.tiers.length > 0) {
+                            // Show tier selection
+                            qualityTierSection.style.display = 'block';
+
+                            // Get currently selected tier ID (if any)
+                            const currentlySelectedTierId = document.getElementById('selected_tier_id').value;
+
+                            // Build tier options
+                            let tiersHtml = '';
+                            let currentTierStillExists = false;
+
+                            data.tiers.forEach(tier => {
+                                const isCurrentlySelected = currentlySelectedTierId && tier.id == currentlySelectedTierId;
+                                const isDefault = tier.is_default;
+
+                                // Check if currently selected tier exists in new tier list
+                                if (isCurrentlySelected) {
+                                    currentTierStillExists = true;
+                                }
+
+                                // Only check as default if no tier is currently selected
+                                const shouldBeChecked = currentlySelectedTierId
+                                    ? isCurrentlySelected
+                                    : isDefault;
+
+                                const priceText = tier.price_modifier > 0
+                                    ? ` (+{{ $currencySymbol }}${parseFloat(tier.price_modifier).toFixed(2)})`
+                                    : '';
+
+                                tiersHtml += `
+                                                                                    <div class="form-check custom-check">
+                                                                                        <input class="form-check-input tier-radio" type="radio" 
+                                                                                               name="quality_tier" id="tier_${tier.id}" 
+                                                                                               value="${tier.id}" data-price="${tier.price_modifier}"
+                                                                                               ${shouldBeChecked ? 'checked' : ''}>
+                                                                                        <label class="form-check-label" for="tier_${tier.id}">
+                                                                                            <strong>${tier.name}</strong>${priceText}
+                                                                                            ${tier.description ? `<br><small class="text-muted">${tier.description}</small>` : ''}
+                                                                                        </label>
+                                                                                    </div>
+                                                                                `;
+                            });
+
+                            qualityTierOptions.innerHTML = tiersHtml;
+
+                            // Update selected_tier_id based on what's checked
+                            if (currentlySelectedTierId && currentTierStillExists) {
+                                // Keep the current selection
+                                document.getElementById('selected_tier_id').value = currentlySelectedTierId;
+                            } else {
+                                // Set default tier if exists and no previous selection
+                                const defaultTier = data.tiers.find(t => t.is_default);
+                                if (defaultTier) {
+                                    document.getElementById('selected_tier_id').value = defaultTier.id;
+                                }
+                            }
+
+                            // Add event listeners to tier radios
+                            document.querySelectorAll('.tier-radio').forEach(radio => {
+                                radio.addEventListener('change', function () {
+                                    document.getElementById('selected_tier_id').value = this.value;
+                                    calculatePricing();
+                                });
+                            });
+
+                            // Recalculate pricing with the selected tier
+                            calculatePricing();
+                        } else {
+                            // No tiers for this issue, hide section
+                            qualityTierSection.style.display = 'none';
+                            qualityTierOptions.innerHTML = ''; // Clear tier radio buttons
+                            document.getElementById('selected_tier_id').value = '';
+                            calculatePricing(); // Recalculate pricing without tier modifier
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading quality tiers:', error);
+                        qualityTierSection.style.display = 'none';
+                        qualityTierOptions.innerHTML = ''; // Clear tier radio buttons
+                        document.getElementById('selected_tier_id').value = '';
+                        calculatePricing(); // Recalculate pricing without tier modifier
+                    });
+            }
 
             function calculatePricing() {
                 const selectedIssues = Array.from(document.querySelectorAll('.issue-checkbox:checked')).map(cb => cb.value);
                 const isUnknown = issueUnknown && issueUnknown.checked;
                 const deviceTypeId = document.getElementById('device_type_id') ? document.getElementById('device_type_id').value : null;
+
+                const selectedTier = document.querySelector('.tier-radio:checked');
+                const tierModifier = selectedTier ? parseFloat(selectedTier.dataset.price) : 0;
 
                 if (selectedIssues.length === 0 && !isUnknown) {
                     document.getElementById('pricing-preview').style.display = 'none';
@@ -663,7 +858,8 @@
                         service_id: {{ $service->id }},
                         device_type_id: deviceTypeId && deviceTypeId !== 'other' ? deviceTypeId : null,
                         issues: selectedIssues,
-                        issue_unknown: isUnknown
+                        issue_unknown: isUnknown,
+                        tier_modifier: tierModifier
                     })
                 })
                     .then(response => {
@@ -754,6 +950,15 @@
                     formData.comments = 'None';
                 }
 
+                // Get selected quality tier
+                const selectedTierRadio = document.querySelector('.tier-radio:checked');
+                if (selectedTierRadio) {
+                    const tierLabel = document.querySelector(`label[for="${selectedTierRadio.id}"]`);
+                    formData.qualityTier = tierLabel ? tierLabel.textContent.trim() : 'Not selected';
+                } else {
+                    formData.qualityTier = null;
+                }
+
                 // Update confirmation display
                 const confirmNameEl = document.getElementById('confirm_name');
                 const confirmEmailEl = document.getElementById('confirm_email');
@@ -763,6 +968,8 @@
                 const confirmCommentsEl = document.getElementById('confirm_comments');
                 const confirmDeliveryEl = document.getElementById('confirm_delivery');
                 const confirmPaymentMethodEl = document.getElementById('confirm_payment_method');
+                const confirmQualityTierRow = document.getElementById('confirm_quality_tier_row');
+                const confirmQualityTierEl = document.getElementById('confirm_quality_tier');
 
                 if (confirmNameEl) confirmNameEl.textContent = formData.name || 'Not provided';
                 if (confirmEmailEl) confirmEmailEl.textContent = formData.email || 'Not provided';
@@ -772,6 +979,14 @@
                 if (confirmCommentsEl) confirmCommentsEl.textContent = formData.comments || 'None';
                 if (confirmDeliveryEl) confirmDeliveryEl.textContent = formData.deliveryMethodText || 'Not selected';
                 if (confirmPaymentMethodEl) confirmPaymentMethodEl.textContent = formData.paymentMethodText || 'Not selected';
+
+                // Show/hide quality tier row based on selection
+                if (formData.qualityTier && confirmQualityTierRow && confirmQualityTierEl) {
+                    confirmQualityTierRow.style.display = 'block';
+                    confirmQualityTierEl.textContent = formData.qualityTier;
+                } else if (confirmQualityTierRow) {
+                    confirmQualityTierRow.style.display = 'none';
+                }
 
                 // Update pricing display
                 const confirmSubtotalRow = document.getElementById('confirm_subtotal_row');
@@ -817,7 +1032,8 @@
                     }
 
                     // Calculate pricing if not already done
-                    if (formData.total === undefined || formData.total === 0) {
+                    // Check if pricing has been calculated (formData.total should be defined, even if 0)
+                    if (formData.total === undefined) {
                         const pricingPromise = calculatePricing();
                         if (pricingPromise) {
                             pricingPromise.then(() => {
@@ -961,6 +1177,8 @@
             }
 
             nextBtn.addEventListener("click", async () => {
+                const isZeroCost = !formData.total || formData.total === 0;
+
                 if (!validateStep(currentStep)) {
                     return;
                 }
@@ -968,6 +1186,13 @@
                 // Update confirmation step when moving to step 3
                 if (currentStep === 1) {
                     updateConfirmStep();
+                }
+
+                // Handle zero-cost submission on step 3 (Confirm Details)
+                if (currentStep === 3 && isZeroCost) {
+                    // Submit form without payment for zero-cost orders
+                    submitForm('visit', null, null);
+                    return;
                 }
 
                 if (currentStep === 4) {
@@ -1027,6 +1252,17 @@
 
                 if (currentStep < steps.length - 1) {
                     currentStep++;
+
+                    // Skip Process Info step (step 2) if zero cost
+                    if (currentStep === 2 && isZeroCost) {
+                        currentStep++; // Skip to step 3 (Confirm Details)
+                    }
+
+                    // Skip Payment step (step 4) if zero cost - should not reach here
+                    if (currentStep === 4 && isZeroCost) {
+                        currentStep++; // This shouldn't happen, but just in case
+                    }
+
                     updateStepper();
 
                     // Update confirmation step when entering step 4
@@ -1037,8 +1273,20 @@
             });
 
             prevBtn.addEventListener("click", () => {
+                const isZeroCost = !formData.total || formData.total === 0;
+
+                if (currentStep === 0) {
+                    window.history.back();
+                    return;
+                }
                 if (currentStep > 0) {
                     currentStep--;
+
+                    // Skip Process Info step (step 2) if zero cost when going backwards
+                    if (currentStep === 2 && isZeroCost) {
+                        currentStep--; // Skip back to step 1 (Delivery Method)
+                    }
+
                     updateStepper();
                 }
             });

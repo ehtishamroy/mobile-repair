@@ -1166,8 +1166,8 @@ class HomeController extends Controller
             $service = \App\Models\RepairService::with([
                 'deviceTypes' => function ($q) {
                     $q->where('is_active', true)
-                      ->with('repairBrand')
-                      ->orderBy('id', 'asc');
+                        ->with('repairBrand')
+                        ->orderBy('id', 'asc');
                 }
             ])->findOrFail($serviceId);
         }
@@ -1183,6 +1183,7 @@ class HomeController extends Controller
             $deviceTypeId = $request->input('device_type_id');
             $selectedIssues = $request->input('issues', []);
             $isUnknown = $request->input('issue_unknown', false);
+            $tierModifier = $request->input('tier_modifier', 0);
 
             if (!$serviceId) {
                 return response()->json(['success' => false, 'message' => 'Service ID is required'], 400);
@@ -1223,7 +1224,8 @@ class HomeController extends Controller
                 }
             }
 
-            $total = $subtotal + $inspectionFee;
+            // Add tier modifier to total
+            $total = $subtotal + $inspectionFee + $tierModifier;
             $settings = \App\Models\Setting::first();
             $currencySymbol = $settings->currency_symbol ?? '£';
 
@@ -1248,6 +1250,8 @@ class HomeController extends Controller
             'issues' => 'nullable|array',
             'issues.*' => 'exists:repair_issues,id',
             'issue_description' => 'nullable|string',
+            'quality_tier_id' => 'nullable|exists:repair_quality_tiers,id',
+            'issue_unknown' => 'nullable|boolean',
             'payment_method' => 'required|in:stripe,paypal',
         ]);
 
@@ -1340,6 +1344,7 @@ class HomeController extends Controller
                 'subtotal' => 'nullable|numeric|min:0',
                 'inspection_fee' => 'nullable|numeric|min:0',
                 'total' => 'required|numeric|min:0',
+                'selected_tier_id' => 'nullable|exists:repair_quality_tiers,id',
             ]);
 
             // Additional validation: payment_method and address required for online delivery
@@ -1449,11 +1454,12 @@ class HomeController extends Controller
                 'inspection_fee' => $inspectionFee,
                 'total' => $total,
                 'address' => $validated['address'] ?? null,
+                'repair_quality_tier_id' => $validated['selected_tier_id'] ?? null,
             ]);
 
             // Refresh order from database and load relationships for email
             $order->refresh();
-            $order->load(['service', 'deviceType']);
+            $order->load(['service', 'deviceType', 'qualityTier']);
 
             // Send confirmation email
             try {
@@ -1463,11 +1469,46 @@ class HomeController extends Controller
                     'customer_email' => $order->customer_email,
                     'service_id' => $order->repair_service_id,
                     'service_loaded' => $order->service ? 'yes' : 'no',
+                    'total' => $order->total,
                 ]));
 
-                $mailResult = \Mail::to($order->customer_email)->send(new \App\Mail\RepairOrderConfirmation($order));
+                // Check if this is a zero-cost quote request
+                if ($order->total == 0) {
+                    // Send quote request email for zero-cost orders
+                    $issues = $order->issues ?? 'Not specified';
+                    if (is_array($order->issues)) {
+                        $issueModels = \App\Models\RepairIssue::whereIn('id', $order->issues)->pluck('name')->toArray();
+                        $issues = implode(', ', $issueModels);
+                    }
 
-                \Log::info('Repair order confirmation email sent successfully to: ' . $order->customer_email);
+                    // Get quality tier name if selected
+                    $qualityTierName = null;
+                    if ($order->qualityTier) {
+                        $qualityTierName = $order->qualityTier->name;
+                        if ($order->qualityTier->price_modifier > 0) {
+                            $qualityTierName .= ' (+' . ($settings->currency_symbol ?? '£') . number_format($order->qualityTier->price_modifier, 2) . ')';
+                        }
+                    }
+
+                    $mailResult = \Mail::to($order->customer_email)->send(
+                        new \App\Mail\RepairQuoteRequest(
+                            $order->order_number,
+                            $order->customer_name,
+                            $order->customer_email,
+                            $order->customer_phone,
+                            $order->device_model,
+                            $issues,
+                            $order->issue_description ?? 'None',
+                            $qualityTierName
+                        )
+                    );
+                    \Log::info('Repair quote request email sent successfully to: ' . $order->customer_email);
+                } else {
+                    // Send regular order confirmation for paid orders
+                    $mailResult = \Mail::to($order->customer_email)->send(new \App\Mail\RepairOrderConfirmation($order));
+                    \Log::info('Repair order confirmation email sent successfully to: ' . $order->customer_email);
+                }
+
                 \Log::info('Mail send result: ' . ($mailResult ? 'Success' : 'Failed'));
             } catch (\Swift_TransportException $e) {
                 \Log::error('Swift Transport Exception - Failed to send repair order confirmation email: ' . $e->getMessage());
@@ -1560,5 +1601,18 @@ class HomeController extends Controller
                 'message' => 'Sorry, there was an error processing your subscription. Please try again later.'
             ], 500);
         }
+    }
+
+    public function getQualityTiers($issueId)
+    {
+        $tiers = \App\Models\RepairQualityTier::where('repair_issue_id', $issueId)
+            ->where('is_active', true)
+            ->orderBy('order')
+            ->get(['id', 'name', 'price_modifier', 'description', 'is_default']);
+
+        return response()->json([
+            'success' => true,
+            'tiers' => $tiers
+        ]);
     }
 }
