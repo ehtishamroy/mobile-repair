@@ -426,6 +426,15 @@
 </head>
 
 <body>
+  @php
+    $repairServices = \App\Models\RepairService::where('is_active', true)->get();
+    $smartphoneService = $repairServices->where('name', 'Smartphone Repair')->first();
+    $laptopService = $repairServices->where('name', 'Laptop Repair')->first();
+    $tabletService = $repairServices->where('name', 'Tablet Repair')->first();
+    $consoleService = $repairServices->where('name', 'Console Repair')->first();
+    $pcService = $repairServices->where('name', 'Gaming PC Repair')->first();
+    $softwareService = $repairServices->where('name', 'Software Optimization')->first();
+  @endphp
   <!-- Header Section Start -->
   <!-- Top Row -->
   <div class="header-top d-none d-md-block">
@@ -537,15 +546,20 @@
                       </div>
 
                       <div class="nested-dropdown">
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">iPhone Repair</span><span
+                        <a href="{{ $smartphoneService ? route('frontend.mobile-repair', ['service' => $smartphoneService->id, 'search' => 'iPhone']) : '#' }}"
+                          class="dropdown-item"><span class="dropdown-title">iPhone Repair</span><span
                             class="dropdown-desc">All iPhone models</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">Samsung Repair</span><span
+                        <a href="{{ $smartphoneService ? route('frontend.mobile-repair', ['service' => $smartphoneService->id, 'search' => 'Samsung']) : '#' }}"
+                          class="dropdown-item"><span class="dropdown-title">Samsung Repair</span><span
                             class="dropdown-desc">Galaxy series</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">Google Pixel</span><span
+                        <a href="{{ $smartphoneService ? route('frontend.mobile-repair', ['service' => $smartphoneService->id, 'search' => 'Pixel']) : '#' }}"
+                          class="dropdown-item"><span class="dropdown-title">Google Pixel</span><span
                             class="dropdown-desc">Pixel devices</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">OnePlus Repair</span><span
+                        <a href="{{ $smartphoneService ? route('frontend.mobile-repair', ['service' => $smartphoneService->id, 'search' => 'OnePlus']) : '#' }}"
+                          class="dropdown-item"><span class="dropdown-title">OnePlus Repair</span><span
                             class="dropdown-desc">OnePlus models</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">Other Brands</span><span
+                        <a href="{{ $smartphoneService ? route('frontend.mobile-repair', ['service' => $smartphoneService->id]) : '#' }}"
+                          class="dropdown-item"><span class="dropdown-title">Other Brands</span><span
                             class="dropdown-desc">All other phones</span></a>
                       </div>
                     </div>
@@ -558,29 +572,38 @@
                       </div>
 
                       <div class="nested-dropdown">
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">MacBook Repair</span><span
+                        <a href="{{ $laptopService ? route('frontend.mobile-repair', ['service' => $laptopService->id, 'search' => 'MacBook']) : '#' }}"
+                          class="dropdown-item"><span class="dropdown-title">MacBook Repair</span><span
                             class="dropdown-desc">Apple laptops</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">Dell Repair</span><span
+                        <a href="{{ $laptopService ? route('frontend.mobile-repair', ['service' => $laptopService->id, 'search' => 'Dell']) : '#' }}"
+                          class="dropdown-item"><span class="dropdown-title">Dell Repair</span><span
                             class="dropdown-desc">Dell laptops</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">HP Repair</span><span
+                        <a href="{{ $laptopService ? route('frontend.mobile-repair', ['service' => $laptopService->id, 'search' => 'HP']) : '#' }}"
+                          class="dropdown-item"><span class="dropdown-title">HP Repair</span><span
                             class="dropdown-desc">HP laptops</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">Lenovo Repair</span><span
+                        <a href="{{ $laptopService ? route('frontend.mobile-repair', ['service' => $laptopService->id, 'search' => 'Lenovo']) : '#' }}"
+                          class="dropdown-item"><span class="dropdown-title">Lenovo Repair</span><span
                             class="dropdown-desc">Lenovo laptops</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">ASUS Repair</span><span
+                        <a href="{{ $laptopService ? route('frontend.mobile-repair', ['service' => $laptopService->id, 'search' => 'ASUS']) : '#' }}"
+                          class="dropdown-item"><span class="dropdown-title">ASUS Repair</span><span
                             class="dropdown-desc">ASUS laptops</span></a>
                       </div>
                     </div>
 
-                    <a href="#" class="dropdown-item"><span class="dropdown-title">Tablet Repair</span><span
+                    <a href="{{ $tabletService ? route('frontend.mobile-repair', ['service' => $tabletService->id]) : '#' }}"
+                      class="dropdown-item"><span class="dropdown-title">Tablet Repair</span><span
                         class="dropdown-desc">Quick & reliable</span></a>
                   </div>
 
                   <div class="dropdown-column">
-                    <a href="#" class="dropdown-item"><span class="dropdown-title">Console Repair</span><span
+                    <a href="{{ $consoleService ? route('frontend.mobile-repair', ['service' => $consoleService->id]) : '#' }}"
+                      class="dropdown-item"><span class="dropdown-title">Console Repair</span><span
                         class="dropdown-desc">Gaming consoles</span></a>
-                    <a href="#" class="dropdown-item"><span class="dropdown-title">Gaming PC Repair</span><span
+                    <a href="{{ $pcService ? route('frontend.mobile-repair', ['service' => $pcService->id]) : '#' }}"
+                      class="dropdown-item"><span class="dropdown-title">Gaming PC Repair</span><span
                         class="dropdown-desc">High-performance systems</span></a>
-                    <a href="#" class="dropdown-item"><span class="dropdown-title">Software Optimization</span><span
+                    <a href="{{ $softwareService ? route('frontend.mobile-repair', ['service' => $softwareService->id]) : '#' }}"
+                      class="dropdown-item"><span class="dropdown-title">Software Optimization</span><span
                         class="dropdown-desc">Speed up your device</span></a>
                   </div>
                 </div>
@@ -610,15 +633,15 @@
                       </div>
 
                       <div class="nested-dropdown">
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">iPhone</span><span
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">iPhone</span><span
                             class="dropdown-desc">Latest iPhones</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">Samsung</span><span
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Samsung</span><span
                             class="dropdown-desc">Galaxy series</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">Google Pixel</span><span
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Google Pixel</span><span
                             class="dropdown-desc">Pixel phones</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">OnePlus</span><span
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">OnePlus</span><span
                             class="dropdown-desc">OnePlus phones</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">Xiaomi</span><span
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Xiaomi</span><span
                             class="dropdown-desc">Xiaomi phones</span></a>
                       </div>
                     </div>
@@ -631,20 +654,19 @@
                       </div>
 
                       <div class="nested-dropdown">
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">Phone Cases</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">Chargers</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">Screen Protectors</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">Headphones</span></a>
-                        <a href="#" class="dropdown-item"><span class="dropdown-title">Power Banks</span></a>
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Phone Cases</span></a>
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Chargers</span></a>
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Screen Protectors</span></a>
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Headphones</span></a>
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Power Banks</span></a>
                       </div>
                     </div>
                   </div>
 
                   <div class="dropdown-column">
-                    <a href="#" class="dropdown-item"><span class="dropdown-title">Watches</span><span
+                    <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Watches</span><span
                         class="dropdown-desc">Smartwatches & bands</span></a>
-                    <a href="#" class="dropdown-item"><span class="dropdown-title">Deals</span><span
-                        class="dropdown-desc">Special offers</span></a>
+
                   </div>
                 </div>
               </div>
@@ -714,11 +736,21 @@
                   <li class="mt-2">
                     <span class="fw-semibold ps-3 d-block">Smartphone Repair</span>
                     <ul class="list-unstyled ps-4 mt-1">
-                      <li><a href="#" class="nav-link">iPhone Repair</a></li>
-                      <li><a href="#" class="nav-link">Samsung Repair</a></li>
-                      <li><a href="#" class="nav-link">Pixel</a></li>
-                      <li><a href="#" class="nav-link">OnePlus</a></li>
-                      <li><a href="#" class="nav-link">Others</a></li>
+                      <li><a
+                          href="{{ $smartphoneService ? route('frontend.mobile-repair', ['service' => $smartphoneService->id, 'search' => 'iPhone']) : '#' }}"
+                          class="nav-link">iPhone Repair</a></li>
+                      <li><a
+                          href="{{ $smartphoneService ? route('frontend.mobile-repair', ['service' => $smartphoneService->id, 'search' => 'Samsung']) : '#' }}"
+                          class="nav-link">Samsung Repair</a></li>
+                      <li><a
+                          href="{{ $smartphoneService ? route('frontend.mobile-repair', ['service' => $smartphoneService->id, 'search' => 'Pixel']) : '#' }}"
+                          class="nav-link">Pixel</a></li>
+                      <li><a
+                          href="{{ $smartphoneService ? route('frontend.mobile-repair', ['service' => $smartphoneService->id, 'search' => 'OnePlus']) : '#' }}"
+                          class="nav-link">OnePlus</a></li>
+                      <li><a
+                          href="{{ $smartphoneService ? route('frontend.mobile-repair', ['service' => $smartphoneService->id]) : '#' }}"
+                          class="nav-link">Others</a></li>
                     </ul>
                   </li>
 
@@ -726,18 +758,36 @@
                   <li class="mt-2">
                     <span class="fw-semibold ps-3 d-block">Laptop Repair</span>
                     <ul class="list-unstyled ps-4 mt-1">
-                      <li><a href="#" class="nav-link">MacBook Repair</a></li>
-                      <li><a href="#" class="nav-link">Dell Repair</a></li>
-                      <li><a href="#" class="nav-link">HP Repair</a></li>
-                      <li><a href="#" class="nav-link">Lenovo Repair</a></li>
-                      <li><a href="#" class="nav-link">ASUS Repair</a></li>
+                      <li><a
+                          href="{{ $laptopService ? route('frontend.mobile-repair', ['service' => $laptopService->id, 'search' => 'MacBook']) : '#' }}"
+                          class="nav-link">MacBook Repair</a></li>
+                      <li><a
+                          href="{{ $laptopService ? route('frontend.mobile-repair', ['service' => $laptopService->id, 'search' => 'Dell']) : '#' }}"
+                          class="nav-link">Dell Repair</a></li>
+                      <li><a
+                          href="{{ $laptopService ? route('frontend.mobile-repair', ['service' => $laptopService->id, 'search' => 'HP']) : '#' }}"
+                          class="nav-link">HP Repair</a></li>
+                      <li><a
+                          href="{{ $laptopService ? route('frontend.mobile-repair', ['service' => $laptopService->id, 'search' => 'Lenovo']) : '#' }}"
+                          class="nav-link">Lenovo Repair</a></li>
+                      <li><a
+                          href="{{ $laptopService ? route('frontend.mobile-repair', ['service' => $laptopService->id, 'search' => 'ASUS']) : '#' }}"
+                          class="nav-link">ASUS Repair</a></li>
                     </ul>
                   </li>
 
-                  <li class="mt-2"><a href="#" class="nav-link ps-3">Tablet Repair</a></li>
-                  <li class="mt-2"><a href="#" class="nav-link ps-3">Console Repair</a></li>
-                  <li class="mt-2"><a href="#" class="nav-link ps-3">Gaming PC Repair</a></li>
-                  <li class="mt-2"><a href="#" class="nav-link ps-3">Software Optimization</a></li>
+                  <li class="mt-2"><a
+                      href="{{ $tabletService ? route('frontend.mobile-repair', ['service' => $tabletService->id]) : '#' }}"
+                      class="nav-link ps-3">Tablet Repair</a></li>
+                  <li class="mt-2"><a
+                      href="{{ $consoleService ? route('frontend.mobile-repair', ['service' => $consoleService->id]) : '#' }}"
+                      class="nav-link ps-3">Console Repair</a></li>
+                  <li class="mt-2"><a
+                      href="{{ $pcService ? route('frontend.mobile-repair', ['service' => $pcService->id]) : '#' }}"
+                      class="nav-link ps-3">Gaming PC Repair</a></li>
+                  <li class="mt-2"><a
+                      href="{{ $softwareService ? route('frontend.mobile-repair', ['service' => $softwareService->id]) : '#' }}"
+                      class="nav-link ps-3">Software Optimization</a></li>
 
                 </ul>
               </div>
@@ -768,27 +818,27 @@
                   <li class="mt-2">
                     <span class="fw-semibold ps-3 d-block">Phones</span>
                     <ul class="list-unstyled ps-4 mt-1">
-                      <li><a href="#" class="nav-link">iPhone</a></li>
-                      <li><a href="#" class="nav-link">Samsung</a></li>
-                      <li><a href="#" class="nav-link">Google Pixel</a></li>
-                      <li><a href="#" class="nav-link">OnePlus</a></li>
-                      <li><a href="#" class="nav-link">Xiaomi</a></li>
+                      <li><a href="{{ route('frontend.marketplace') }}" class="nav-link">iPhone</a></li>
+                      <li><a href="{{ route('frontend.marketplace') }}" class="nav-link">Samsung</a></li>
+                      <li><a href="{{ route('frontend.marketplace') }}" class="nav-link">Google Pixel</a></li>
+                      <li><a href="{{ route('frontend.marketplace') }}" class="nav-link">OnePlus</a></li>
+                      <li><a href="{{ route('frontend.marketplace') }}" class="nav-link">Xiaomi</a></li>
                     </ul>
                   </li>
 
                   <li class="mt-2">
                     <span class="fw-semibold ps-3 d-block">Accessories</span>
                     <ul class="list-unstyled ps-4 mt-1">
-                      <li><a href="#" class="nav-link">Phone Cases</a></li>
-                      <li><a href="#" class="nav-link">Chargers</a></li>
-                      <li><a href="#" class="nav-link">Screen Protectors</a></li>
-                      <li><a href="#" class="nav-link">Headphones</a></li>
-                      <li><a href="#" class="nav-link">Power Banks</a></li>
+                      <li><a href="{{ route('frontend.marketplace') }}" class="nav-link">Phone Cases</a></li>
+                      <li><a href="{{ route('frontend.marketplace') }}" class="nav-link">Chargers</a></li>
+                      <li><a href="{{ route('frontend.marketplace') }}" class="nav-link">Screen Protectors</a></li>
+                      <li><a href="{{ route('frontend.marketplace') }}" class="nav-link">Headphones</a></li>
+                      <li><a href="{{ route('frontend.marketplace') }}" class="nav-link">Power Banks</a></li>
                     </ul>
                   </li>
 
-                  <li class="mt-2"><a href="#" class="nav-link ps-3">Watches</a></li>
-                  <li class="mt-2"><a href="#" class="nav-link ps-3">Deals</a></li>
+                  <li class="mt-2"><a href="{{ route('frontend.marketplace') }}" class="nav-link ps-3">Watches</a></li>
+
 
                 </ul>
               </div>

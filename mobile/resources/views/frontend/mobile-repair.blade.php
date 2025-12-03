@@ -14,26 +14,31 @@
             </p>
         </div>
 
-    <!-- Confirmation Modal -->
-    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title" id="confirmationModalLabel">Confirm Selection</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center py-4">
-                    <p class="fs-18 mb-3">You have selected <span id="selectedDeviceName" class="fw-bold text-primary"></span>.</p>
-                    <p class="text-muted">Do you want to proceed with this device?</p>
-                </div>
-                <div class="modal-footer border-0 justify-content-center pb-4">
-                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn-gradient px-5" id="confirmSelectionBtn">Yes, Proceed</button>
+        <!-- Confirmation Modal -->
+        <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0 justify-content-center position-relative">
+                        <h5 class="modal-title fs-24 fw-bold" id="confirmationModalLabel">Confirm Selection</h5>
+                        <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center py-4">
+                        <p class="fs-18 mb-3">You have selected <span id="selectedDeviceName"
+                                class="fw-bold text-primary"></span>.</p>
+                        <p class="text-muted">Do you want to proceed with this device?</p>
+                    </div>
+                    <div class="modal-footer border-0 justify-content-center pb-4 gap-3">
+                        <button type="button" class="btn btn-outline-secondary px-0" style="width: 160px;"
+                            data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn-gradient px-0" style="width: 160px;" id="confirmSelectionBtn">Yes,
+                            Proceed</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
     @if($service)
         <section>
@@ -326,51 +331,59 @@
                     });
 
                     // Initial state
-            updateClearButton();
-        }
+                    updateClearButton();
 
-        // Device selection modal logic
-        const deviceRadios = document.querySelectorAll('input[name="device_type_id"]');
-        const modalElement = document.getElementById('confirmationModal');
-        // Check if modal element exists before initializing
-        if (modalElement) {
-            const confirmationModal = new bootstrap.Modal(modalElement);
-            const selectedDeviceNameSpan = document.getElementById('selectedDeviceName');
-            const confirmSelectionBtn = document.getElementById('confirmSelectionBtn');
-            const form = document.getElementById('deviceSelectionForm');
-
-            deviceRadios.forEach(radio => {
-                radio.addEventListener('change', function() {
-                    if (this.checked) {
-                        let deviceName = '';
-                        const label = this.nextElementSibling;
-                        if (label) {
-                            // Clone the label to avoid modifying the original
-                            const labelClone = label.cloneNode(true);
-                            // Remove the check icon from the clone if it exists
-                            const checkIcon = labelClone.querySelector('.check-icon');
-                            if (checkIcon) {
-                                checkIcon.remove();
-                            }
-                            // Extract text content
-                            deviceName = labelClone.innerText.trim();
-                        }
-                        
-                        if (selectedDeviceNameSpan) {
-                            selectedDeviceNameSpan.textContent = deviceName;
-                        }
-                        confirmationModal.show();
+                    // Check for search query parameter
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const searchParam = urlParams.get('search');
+                    if (searchParam) {
+                        searchInput.value = searchParam;
+                        searchInput.dispatchEvent(new Event('input'));
                     }
-                });
-            });
+                }
 
-            if (confirmSelectionBtn) {
-                confirmSelectionBtn.addEventListener('click', function() {
-                    form.submit();
-                });
-            }
-        }
-    });
+                // Device selection modal logic
+                const deviceRadios = document.querySelectorAll('input[name="device_type_id"]');
+                const modalElement = document.getElementById('confirmationModal');
+                // Check if modal element exists before initializing
+                if (modalElement) {
+                    const confirmationModal = new bootstrap.Modal(modalElement);
+                    const selectedDeviceNameSpan = document.getElementById('selectedDeviceName');
+                    const confirmSelectionBtn = document.getElementById('confirmSelectionBtn');
+                    const form = document.getElementById('deviceSelectionForm');
+
+                    deviceRadios.forEach(radio => {
+                        radio.addEventListener('change', function () {
+                            if (this.checked) {
+                                let deviceName = '';
+                                const label = this.nextElementSibling;
+                                if (label) {
+                                    // Clone the label to avoid modifying the original
+                                    const labelClone = label.cloneNode(true);
+                                    // Remove the check icon from the clone if it exists
+                                    const checkIcon = labelClone.querySelector('.check-icon');
+                                    if (checkIcon) {
+                                        checkIcon.remove();
+                                    }
+                                    // Extract text content
+                                    deviceName = labelClone.innerText.trim();
+                                }
+
+                                if (selectedDeviceNameSpan) {
+                                    selectedDeviceNameSpan.textContent = deviceName;
+                                }
+                                confirmationModal.show();
+                            }
+                        });
+                    });
+
+                    if (confirmSelectionBtn) {
+                        confirmSelectionBtn.addEventListener('click', function () {
+                            form.submit();
+                        });
+                    }
+                }
+            });
         </script>
     @endpush
 
