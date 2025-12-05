@@ -1603,11 +1603,19 @@ class HomeController extends Controller
         }
     }
 
-    public function getQualityTiers($issueId)
+    public function getQualityTiers(Request $request, $issueId)
     {
-        $tiers = \App\Models\RepairQualityTier::where('repair_issue_id', $issueId)
-            ->where('is_active', true)
-            ->orderBy('order')
+        $deviceTypeId = $request->get('device_type_id');
+
+        $query = \App\Models\RepairQualityTier::where('repair_issue_id', $issueId)
+            ->where('is_active', true);
+
+        // Filter by device type if provided
+        if ($deviceTypeId && $deviceTypeId !== 'other') {
+            $query->where('repair_device_type_id', $deviceTypeId);
+        }
+
+        $tiers = $query->orderBy('order')
             ->get(['id', 'name', 'price_modifier', 'description', 'is_default']);
 
         return response()->json([
