@@ -7,94 +7,26 @@
 @section('title', $pageTitle)
 
 @section('content')
-  <!-- Swiper Hero Section -->
-<div class="swiper mySwiper swiper-hero-section mb-custom">
-    <div class="swiper-wrapper">
+  <!-- Hero Section Start -->
+  <section class="hero-section mb-custom d-flex align-items-center">
+    <div class="container text-center text-md-start">
+      <span class="badge rounded-pill bg-light fw-semibold px-3 py-2 mb-3 text-primary-custom text-uppercase">
+        {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
+      </span>
 
-        <!-- Slide 1 -->
-        <div class="swiper-slide">
-            <div class="slide-bg">
-                <img src="{{ $content->hero_image_1 ?? './assets/img/hero.svg' }}" alt="Hero Slide 1" />
-            </div>
+      <h1 class="display-2 fw-900 font-satoshi text-white mb-3">
+        {!! $content->hero_title ?? 'Fast, Reliable Phone &<br /> Laptop Repairs' !!}
+      </h1>
 
-            <div class="hero-content container text-center text-md-start">
-                <span class="badge rounded-pill bg-light fw-semibold px-3 py-2 mb-3 text-primary-custom text-uppercase">
-                    {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
-                </span>
+      <p class="text-white fs-18 mb-4">
+        {!! nl2br(e($content->hero_description ?? 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard.')) !!}
+      </p>
 
-                <h1 class="display-2 fw-900 font-satoshi text-white mb-3">
-                    {!! $content->hero_title ?? 'Fast, Reliable Phone &<br /> Laptop Repairs' !!}
-                </h1>
-
-                <p class="text-white fs-18 mb-4">
-                    {!! nl2br(e($content->hero_description ?? 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry’s standard.')) !!}
-                </p>
-
-                <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
-                    {{ $content->hero_button_text ?? 'Book a repair!' }}
-                </a>
-            </div>
-        </div>
-
-        <!-- Slide 2 -->
-        <div class="swiper-slide">
-            <div class="slide-bg">
-                <img src="{{ $content->hero_image_2 ?? 'https://swiperjs.com/demos/images/nature-3.jpg' }}" alt="Hero Slide 2" />
-            </div>
-
-            <div class="hero-content container text-center text-md-start">
-                <span class="badge rounded-pill bg-light fw-semibold px-3 py-2 mb-3 text-primary-custom text-uppercase">
-                    {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
-                </span>
-
-                <h1 class="display-2 fw-900 font-satoshi text-white mb-3">
-                    {!! $content->hero_title ?? 'Fast, Reliable Phone &<br /> Laptop Repairs' !!}
-                </h1>
-
-                <p class="text-white fs-18 mb-4">
-                    {!! nl2br(e($content->hero_description ?? 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry’s standard.')) !!}
-                </p>
-
-                <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
-                    {{ $content->hero_button_text ?? 'Book a repair!' }}
-                </a>
-            </div>
-        </div>
-
-        <!-- Slide 3 -->
-        <div class="swiper-slide">
-            <div class="slide-bg">
-                <img src="{{ $content->hero_image_3 ?? 'https://swiperjs.com/demos/images/nature-4.jpg' }}" alt="Hero Slide 3" />
-            </div>
-
-            <div class="hero-content container text-center text-md-start">
-                <span class="badge rounded-pill bg-light fw-semibold px-3 py-2 mb-3 text-primary-custom text-uppercase">
-                    {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
-                </span>
-
-                <h1 class="display-2 fw-900 font-satoshi text-white mb-3">
-                    {!! $content->hero_title ?? 'Fast, Reliable Phone &<br /> Laptop Repairs' !!}
-                </h1>
-
-                <p class="text-white fs-18 mb-4">
-                    {!! nl2br(e($content->hero_description ?? 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry’s standard.')) !!}
-                </p>
-
-                <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
-                    {{ $content->hero_button_text ?? 'Book a repair!' }}
-                </a>
-            </div>
-        </div>
-
+      <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
+        {{ $content->hero_button_text ?? 'Book a repair!' }} </a>
     </div>
-
-    <!-- Swiper Navigation -->
-    <div class="swiper-button-next"></div>
-    <div class="swiper-button-prev"></div>
-
-    <!-- Swiper Pagination -->
-    <div class="swiper-pagination"></div>
-</div>
+  </section>
+  <!-- Hero Section End -->
   <section id="animated-section-2" class="mb-custom overflow-hidden">
     <div class="container">
       <div class="row g-5">
