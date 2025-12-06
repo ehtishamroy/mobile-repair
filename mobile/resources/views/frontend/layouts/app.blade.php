@@ -1042,7 +1042,7 @@
     /* ------------------------------
         HERO SECTION ANIMATION
     ------------------------------ */
-    tl.to(".swiper-hero-section .container", {
+    tl.to(".swiper-hero-section .container, .hero-section .container", {
       opacity: 1,
       y: 0,
       duration: 1,

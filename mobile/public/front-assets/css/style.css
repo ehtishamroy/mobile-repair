@@ -558,12 +558,15 @@
 }
 .about-hero-section {
     background: url("../img/about-hero-bg.svg") center center/cover no-repeat;
+      min-height: 50vh !important;
 }
 .service-hero-section {
     background: url("../img/service-hero-bg.svg") center center/cover no-repeat;
+      min-height: 50vh !important;
 }
 .join-hero-section {
     background: url("../img/join-hero-bg.svg") center center/cover no-repeat;
+      min-height: 50vh !important;
 }
 
 .feature-card {

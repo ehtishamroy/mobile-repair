@@ -14,7 +14,7 @@
         <!-- Slide 1 -->
         <div class="swiper-slide">
             <div class="slide-bg">
-                <img src="{{ $content->hero_image_1 ?? './assets/img/hero.svg' }}" alt="Hero Slide 1" />
+                <img src="{{ asset('front-assets/img/hero-slider/mobile-hero.webp') }}" alt="Hero Slide 1" />
             </div>
 
             <div class="hero-content container text-center text-md-start">
@@ -22,12 +22,12 @@
                     {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
                 </span>
 
-                <h1 class="display-2 fw-900 font-satoshi text-white mb-3">
-                    {!! $content->hero_title ?? 'Fast, Reliable Phone &<br /> Laptop Repairs' !!}
+                <h1 class="display-2 fw-700 font-satoshi text-white mb-3">
+                    {!! $content->hero_title ?? 'Diagnose Free &<br /> Quick Repairs' !!}
                 </h1>
 
                 <p class="text-white fs-18 mb-4">
-                    {!! nl2br(e($content->hero_description ?? 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry’s standard.')) !!}
+                    {!! nl2br(e($content->hero_description ?? 'A fast, no-cost device checkup that leads straight to a quick and reliable repair.')) !!}
                 </p>
 
                 <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
@@ -39,7 +39,7 @@
         <!-- Slide 2 -->
         <div class="swiper-slide">
             <div class="slide-bg">
-                <img src="{{ $content->hero_image_2 ?? 'https://swiperjs.com/demos/images/nature-3.jpg' }}" alt="Hero Slide 2" />
+                <img src="{{ asset('front-assets/img/hero-slider/laptop-hero.webp') }}" alt="Hero Slide 2" />
             </div>
 
             <div class="hero-content container text-center text-md-start">
@@ -47,12 +47,12 @@
                     {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
                 </span>
 
-                <h1 class="display-2 fw-900 font-satoshi text-white mb-3">
-                    {!! $content->hero_title ?? 'Fast, Reliable Phone &<br /> Laptop Repairs' !!}
+                <h1 class="display-2 fw-700 font-satoshi text-white mb-3">
+                    {!! $content->hero_title ?? 'Expert Laptop Repairs &<br /> with Quick Turnaround' !!}
                 </h1>
 
                 <p class="text-white fs-18 mb-4">
-                    {!! nl2br(e($content->hero_description ?? 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry’s standard.')) !!}
+                    {!! nl2br(e($content->hero_description ?? 'Skilled technicians, premium parts, and a hassle-free repair process designed to save your time.')) !!}
                 </p>
 
                 <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
@@ -64,7 +64,7 @@
         <!-- Slide 3 -->
         <div class="swiper-slide">
             <div class="slide-bg">
-                <img src="{{ $content->hero_image_3 ?? 'https://swiperjs.com/demos/images/nature-4.jpg' }}" alt="Hero Slide 3" />
+                <img src="{{ asset('front-assets/img/hero-slider/tablet-hero.webp') }}" alt="Hero Slide 3" />
             </div>
 
             <div class="hero-content container text-center text-md-start">
@@ -72,12 +72,36 @@
                     {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
                 </span>
 
-                <h1 class="display-2 fw-900 font-satoshi text-white mb-3">
-                    {!! $content->hero_title ?? 'Fast, Reliable Phone &<br /> Laptop Repairs' !!}
+                <h1 class="display-2 fw-700 font-satoshi text-white mb-3">
+                    {!! $content->hero_title ?? 'Restor Your Tablet <br /> Performance - Fast & Reliable' !!}
                 </h1>
 
                 <p class="text-white fs-18 mb-4">
-                    {!! nl2br(e($content->hero_description ?? 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry’s standard.')) !!}
+                    {!! nl2br(e($content->hero_description ?? 'Hassle-free repairs that make your tablet feel brand new—done with precision and care.')) !!}
+                </p>
+
+                <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
+                    {{ $content->hero_button_text ?? 'Book a repair!' }}
+                </a>
+            </div>
+        </div>
+         <!-- Slide 4 -->
+        <div class="swiper-slide">
+            <div class="slide-bg">
+                <img src="{{ asset('front-assets/img/hero-slider/cpu-hero.webp') }}" alt="Hero Slide 3" />
+            </div>
+
+            <div class="hero-content container text-center text-md-start">
+                <span class="badge rounded-pill bg-light fw-semibold px-3 py-2 mb-3 text-primary-custom text-uppercase">
+                    {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
+                </span>
+
+                <h1 class="display-2 fw-700 font-satoshi text-white mb-3">
+                    {!! $content->hero_title ?? 'Expert CPU Troubleshooting &<br /> Repairs' !!}
+                </h1>
+
+                <p class="text-white fs-18 mb-4">
+                    {!! nl2br(e($content->hero_description ?? 'From heating issues to performance drops, our experts fix CPU problems with accuracy and speed.')) !!}
                 </p>
 
                 <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
