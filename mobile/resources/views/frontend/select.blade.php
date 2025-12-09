@@ -758,86 +758,102 @@
                 fetch(`/api/quality-tiers/${firstIssueId}?device_type_id=${deviceTypeId}`)
                     .then(response => response.json())
                     .then(data => {
-                        if (data.success && data.tiers && data.tiers.length > 0) {
-                            // Show tier selection
-                            qualityTierSection.style.display = 'block';
+                        if (data.success) {
+                            // Check if quality tier selection is required
+                            if (data.requires_quality_tier === false) {
+                                // No quality tier needed - hide the section
+                                qualityTierSection.style.display = 'none';
+                                qualityTierOptions.innerHTML = '';
+                                document.getElementById('selected_tier_id').value = '';
 
-                            // Get currently selected tier ID (if any)
-                            const currentlySelectedTierId = document.getElementById('selected_tier_id').value;
+                                // Store base price for pricing calculation
+                                window.issueBasePrice = data.base_price || 0;
 
-                            // Build tier options
-                            let tiersHtml = '';
-                            let currentTierStillExists = false;
+                                calculatePricing();
+                            } else if (data.tiers && data.tiers.length > 0) {
+                                // Quality tier required and tiers available - show tier selection
+                                window.issueBasePrice = null; // Clear base price
+                                qualityTierSection.style.display = 'block';
 
-                            data.tiers.forEach(tier => {
-                                const isCurrentlySelected = currentlySelectedTierId && tier.id == currentlySelectedTierId;
-                                const isDefault = tier.is_default;
+                                // Get currently selected tier ID (if any)
+                                const currentlySelectedTierId = document.getElementById('selected_tier_id').value;
 
-                                // Check if currently selected tier exists in new tier list
-                                if (isCurrentlySelected) {
-                                    currentTierStillExists = true;
-                                }
+                                // Build tier options
+                                let tiersHtml = '';
+                                let currentTierStillExists = false;
 
-                                // Only check as default if no tier is currently selected
-                                const shouldBeChecked = currentlySelectedTierId
-                                    ? isCurrentlySelected
-                                    : isDefault;
+                                data.tiers.forEach(tier => {
+                                    const isCurrentlySelected = currentlySelectedTierId && tier.id == currentlySelectedTierId;
+                                    const isDefault = tier.is_default;
 
-                                const priceText = tier.price_modifier > 0
-                                    ? ` (+{{ $currencySymbol }}${parseFloat(tier.price_modifier).toFixed(2)})`
-                                    : '';
+                                    // Check if currently selected tier exists in new tier list
+                                    if (isCurrentlySelected) {
+                                        currentTierStillExists = true;
+                                    }
 
-                                tiersHtml += `
-                                                                                                            <div class="form-check custom-check p-3 border rounded bg-white">
-                                                                                                                <input class="form-check-input tier-radio mt-1" type="radio" 
-                                                                                                                       name="quality_tier" id="tier_${tier.id}" 
-                                                                                                                       value="${tier.id}" data-price="${tier.price_modifier}"
-                                                                                                                       ${shouldBeChecked ? 'checked' : ''}>
-                                                                                                                <label class="form-check-label w-100 cursor-pointer ps-2" for="tier_${tier.id}">
-                                                                                                                    <div class="d-flex justify-content-between align-items-center">
-                                                                                                                        <strong class="fs-16">${tier.name}</strong>
-                                                                                                                        <span class="badge bg-light text-dark border">${priceText}</span>
+                                    // Only check as default if no tier is currently selected
+                                    const shouldBeChecked = currentlySelectedTierId
+                                        ? isCurrentlySelected
+                                        : isDefault;
+
+                                    const priceText = tier.price_modifier > 0
+                                        ? ` (+{{ $currencySymbol }}${parseFloat(tier.price_modifier).toFixed(2)})`
+                                        : '';
+
+                                    tiersHtml += `
+                                                                                                                    <div class="form-check custom-check p-3 border rounded bg-white">
+                                                                                                                        <input class="form-check-input tier-radio mt-1" type="radio" 
+                                                                                                                               name="quality_tier" id="tier_${tier.id}" 
+                                                                                                                               value="${tier.id}" data-price="${tier.price_modifier}"
+                                                                                                                               ${shouldBeChecked ? 'checked' : ''}>
+                                                                                                                        <label class="form-check-label w-100 cursor-pointer ps-2" for="tier_${tier.id}">
+                                                                                                                            <div class="d-flex justify-content-between align-items-center">
+                                                                                                                                <strong class="fs-16">${tier.name}</strong>
+                                                                                                                                <span class="badge bg-light text-dark border">${priceText}</span>
+                                                                                                                            </div>
+                                                                                                                            ${tier.description ? `<small class="text-muted d-block mt-1">${tier.description}</small>` : ''}
+                                                                                                                        </label>
                                                                                                                     </div>
-                                                                                                                    ${tier.description ? `<small class="text-muted d-block mt-1">${tier.description}</small>` : ''}
-                                                                                                                </label>
-                                                                                                            </div>
-                                                                                                                               `;
-                            });
-
-                            qualityTierOptions.innerHTML = tiersHtml;
-
-                            // Update selected_tier_id based on what's checked
-                            if (currentlySelectedTierId && currentTierStillExists) {
-                                // Keep the current selection
-                                document.getElementById('selected_tier_id').value = currentlySelectedTierId;
-                            } else {
-                                // Set default tier if exists and no previous selection
-                                const defaultTier = data.tiers.find(t => t.is_default);
-                                if (defaultTier) {
-                                    document.getElementById('selected_tier_id').value = defaultTier.id;
-                                }
-                            }
-
-                            // Add event listeners to tier radios
-                            document.querySelectorAll('.tier-radio').forEach(radio => {
-                                radio.addEventListener('change', function () {
-                                    document.getElementById('selected_tier_id').value = this.value;
-                                    calculatePricing();
+                                                                                                                                       `;
                                 });
-                            });
 
-                            // Recalculate pricing with the selected tier
-                            calculatePricing();
-                        } else {
-                            // No tiers for this issue, hide section
-                            qualityTierSection.style.display = 'none';
-                            qualityTierOptions.innerHTML = ''; // Clear tier radio buttons
-                            document.getElementById('selected_tier_id').value = '';
-                            calculatePricing(); // Recalculate pricing without tier modifier
+                                qualityTierOptions.innerHTML = tiersHtml;
+
+                                // Update selected_tier_id based on what's checked
+                                if (currentlySelectedTierId && currentTierStillExists) {
+                                    // Keep the current selection
+                                    document.getElementById('selected_tier_id').value = currentlySelectedTierId;
+                                } else {
+                                    // Set default tier if exists and no previous selection
+                                    const defaultTier = data.tiers.find(t => t.is_default);
+                                    if (defaultTier) {
+                                        document.getElementById('selected_tier_id').value = defaultTier.id;
+                                    }
+                                }
+
+                                // Add event listeners to tier radios
+                                document.querySelectorAll('.tier-radio').forEach(radio => {
+                                    radio.addEventListener('change', function () {
+                                        document.getElementById('selected_tier_id').value = this.value;
+                                        calculatePricing();
+                                    });
+                                });
+
+                                // Recalculate pricing with the selected tier
+                                calculatePricing();
+                            } else {
+                                // No tiers available and quality tier is required - hide section
+                                window.issueBasePrice = null;
+                                qualityTierSection.style.display = 'none';
+                                qualityTierOptions.innerHTML = '';
+                                document.getElementById('selected_tier_id').value = '';
+                                calculatePricing();
+                            }
                         }
                     })
                     .catch(error => {
                         console.error('Error loading quality tiers:', error);
+                        window.issueBasePrice = null;
                         qualityTierSection.style.display = 'none';
                         qualityTierOptions.innerHTML = ''; // Clear tier radio buttons
                         document.getElementById('selected_tier_id').value = '';
@@ -851,7 +867,14 @@
                 const deviceTypeId = document.getElementById('device_type_id') ? document.getElementById('device_type_id').value : null;
 
                 const selectedTier = document.querySelector('.tier-radio:checked');
-                const tierModifier = selectedTier ? parseFloat(selectedTier.dataset.price) : 0;
+                // Use tier modifier if tier is selected, otherwise use base price if available
+                let tierModifier = 0;
+                if (selectedTier) {
+                    tierModifier = parseFloat(selectedTier.dataset.price) || 0;
+                } else if (window.issueBasePrice !== undefined && window.issueBasePrice !== null) {
+                    // Add base price as modifier when no tier selection is required
+                    tierModifier = parseFloat(window.issueBasePrice) || 0;
+                }
 
                 if (selectedIssues.length === 0 && !isUnknown) {
                     document.getElementById('pricing-preview').style.display = 'none';

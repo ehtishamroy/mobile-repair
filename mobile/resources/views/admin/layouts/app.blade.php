@@ -162,9 +162,9 @@
 
                         @if(Auth::user()->hasPermission('manage-repairs'))
                             <li
-                                class="nav-item {{ request()->routeIs('admin.repair-orders.*') || request()->routeIs('admin.repair-services.*') || request()->routeIs('admin.repair-brands.*') || request()->routeIs('admin.repair-device-types.*') || request()->routeIs('admin.repair-issues.*') || request()->routeIs('admin.repair-pricings.*') || request()->routeIs('admin.repair-quality-tiers.*') || request()->routeIs('admin.mail-in-process.*') ? 'menu-open' : '' }}">
+                                class="nav-item {{ request()->routeIs('admin.repair-orders.*') || request()->routeIs('admin.repair-services.*') || request()->routeIs('admin.repair-brands.*') || request()->routeIs('admin.repair-device-types.*') || request()->routeIs('admin.repair-issues.*') || request()->routeIs('admin.repair-pricings.*') || request()->routeIs('admin.repair-quality-tiers.*') || request()->routeIs('admin.repair-device-issues.*') || request()->routeIs('admin.mail-in-process.*') ? 'menu-open' : '' }}">
                                 <a href="#"
-                                    class="nav-link {{ request()->routeIs('admin.repair-orders.*') || request()->routeIs('admin.repair-services.*') || request()->routeIs('admin.repair-brands.*') || request()->routeIs('admin.repair-device-types.*') || request()->routeIs('admin.repair-issues.*') || request()->routeIs('admin.repair-pricings.*') || request()->routeIs('admin.repair-quality-tiers.*') || request()->routeIs('admin.mail-in-process.*') ? 'active' : '' }}">
+                                    class="nav-link {{ request()->routeIs('admin.repair-orders.*') || request()->routeIs('admin.repair-services.*') || request()->routeIs('admin.repair-brands.*') || request()->routeIs('admin.repair-device-types.*') || request()->routeIs('admin.repair-issues.*') || request()->routeIs('admin.repair-pricings.*') || request()->routeIs('admin.repair-quality-tiers.*') || request()->routeIs('admin.repair-device-issues.*') || request()->routeIs('admin.mail-in-process.*') ? 'active' : '' }}">
                                     <i class="nav-icon fas fa-tools"></i>
                                     <p>
                                         Repair Booking
@@ -219,6 +219,13 @@
                                             class="nav-link {{ request()->routeIs('admin.repair-quality-tiers.*') ? 'active' : '' }}">
                                             <i class="far fa-circle nav-icon"></i>
                                             <p>Quality Tiers</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.repair-device-issues.index') }}"
+                                            class="nav-link {{ request()->routeIs('admin.repair-device-issues.*') ? 'active' : '' }}">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Device Issue Availability</p>
                                         </a>
                                     </li>
                                     @if(Auth::user()->isAdmin())

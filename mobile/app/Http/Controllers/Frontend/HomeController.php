@@ -734,13 +734,39 @@ class HomeController extends Controller
                 'deviceTypes' => function ($q) {
                     $q->where('is_active', true);
                 },
-                'issues' => function ($q) {
-                    $q->where('is_active', true);
-                }
             ])->findOrFail($serviceId);
 
             if ($deviceTypeId && $deviceTypeId !== 'other') {
                 $deviceType = \App\Models\RepairDeviceType::find($deviceTypeId);
+
+                // Get issues for device - filter by availability
+                if ($deviceType) {
+                    $issues = \App\Models\RepairIssue::where('repair_service_id', $serviceId)
+                        ->where('is_active', true)
+                        ->where(function ($query) use ($deviceTypeId) {
+                            // Include issues that are either:
+                            // 1. Not configured (no availability record) - default to available
+                            // 2. Explicitly marked as available for this device
+                            $query->whereDoesntHave('deviceAvailability', function ($q) use ($deviceTypeId) {
+                                $q->where('repair_device_type_id', $deviceTypeId);
+                            })
+                                ->orWhereHas('deviceAvailability', function ($q) use ($deviceTypeId) {
+                                $q->where('repair_device_type_id', $deviceTypeId)
+                                    ->where('is_available', true);
+                            });
+                        })
+                        ->orderBy('order')
+                        ->get();
+
+                    $service->setRelation('issues', $issues);
+                }
+            } else {
+                // No device selected or "other" device - show all active issues
+                $issues = \App\Models\RepairIssue::where('repair_service_id', $serviceId)
+                    ->where('is_active', true)
+                    ->orderBy('order')
+                    ->get();
+                $service->setRelation('issues', $issues);
             }
         }
 
@@ -1160,20 +1186,65 @@ class HomeController extends Controller
     public function mobileRepair(Request $request)
     {
         $serviceId = $request->get('service');
+        $brandId = $request->get('brand');
         $service = null;
+        $brands = collect();
+        $deviceTypes = collect();
+        $selectedBrand = null;
 
         if ($serviceId) {
-            $service = \App\Models\RepairService::with([
-                'deviceTypes' => function ($q) {
-                    $q->where('is_active', true)
+            $service = \App\Models\RepairService::findOrFail($serviceId);
+
+            if ($brandId) {
+                // Brand is selected - show device types for this brand
+                if ($brandId === 'other') {
+                    // Show device types with no brand (legacy or unbranded)
+                    $deviceTypes = \App\Models\RepairDeviceType::where('repair_service_id', $serviceId)
+                        ->where('is_active', true)
+                        ->whereNull('repair_brand_id')
+                        ->orderBy('id', 'asc')
+                        ->get();
+                } else {
+                    // Show device types for the selected brand
+                    $selectedBrand = \App\Models\RepairBrand::find($brandId);
+                    $deviceTypes = \App\Models\RepairDeviceType::where('repair_service_id', $serviceId)
+                        ->where('is_active', true)
+                        ->where('repair_brand_id', $brandId)
                         ->with('repairBrand')
-                        ->orderBy('id', 'asc');
+                        ->orderBy('id', 'asc')
+                        ->get();
                 }
-            ])->findOrFail($serviceId);
+            } else {
+                // No brand selected - show brand selection page
+                // Get distinct brands that have device types for this service
+                $brandIds = \App\Models\RepairDeviceType::where('repair_service_id', $serviceId)
+                    ->where('is_active', true)
+                    ->whereNotNull('repair_brand_id')
+                    ->distinct()
+                    ->pluck('repair_brand_id');
+
+                $brands = \App\Models\RepairBrand::whereIn('id', $brandIds)
+                    ->where('is_active', true)
+                    ->orderBy('order')
+                    ->get();
+
+                // Check if there are any unbranded device types (for "Other" button visibility)
+                $hasUnbrandedDevices = \App\Models\RepairDeviceType::where('repair_service_id', $serviceId)
+                    ->where('is_active', true)
+                    ->whereNull('repair_brand_id')
+                    ->exists();
+            }
         }
 
-        return view('frontend.mobile-repair', compact('service'));
+        return view('frontend.mobile-repair', compact(
+            'service',
+            'brands',
+            'deviceTypes',
+            'selectedBrand',
+            'brandId'
+        ));
     }
+
 
     public function processRepairOrder(Request $request)
     {
@@ -1607,6 +1678,43 @@ class HomeController extends Controller
     {
         $deviceTypeId = $request->get('device_type_id');
 
+        // Check device-issue availability settings
+        $availability = null;
+        if ($deviceTypeId && $deviceTypeId !== 'other') {
+            $availability = \App\Models\RepairDeviceIssueAvailability::where('repair_device_type_id', $deviceTypeId)
+                ->where('repair_issue_id', $issueId)
+                ->first();
+        }
+
+        // If availability record exists and doesn't require quality tier
+        if ($availability && !$availability->requires_quality_tier) {
+            // Get base price - use stored value OR fetch from repair_pricings
+            $basePrice = $availability->base_price;
+
+            if ($basePrice === null) {
+                // Fetch from repair_pricings table automatically
+                $pricing = \App\Models\RepairPricing::where('repair_issue_id', $issueId)
+                    ->where(function ($q) use ($deviceTypeId) {
+                        $q->where('repair_device_type_id', $deviceTypeId)
+                            ->orWhereNull('repair_device_type_id');
+                    })
+                    ->where('is_active', true)
+                    ->first();
+
+                $basePrice = $pricing ? floatval($pricing->price) : 0;
+            } else {
+                $basePrice = floatval($basePrice);
+            }
+
+            return response()->json([
+                'success' => true,
+                'requires_quality_tier' => false,
+                'base_price' => $basePrice,
+                'tiers' => []
+            ]);
+        }
+
+        // Otherwise, fetch quality tiers as before
         $query = \App\Models\RepairQualityTier::where('repair_issue_id', $issueId)
             ->where('is_active', true);
 
@@ -1620,6 +1728,8 @@ class HomeController extends Controller
 
         return response()->json([
             'success' => true,
+            'requires_quality_tier' => true,
+            'base_price' => null,
             'tiers' => $tiers
         ]);
     }

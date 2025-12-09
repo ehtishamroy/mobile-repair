@@ -195,6 +195,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             // Quality Tiers Management
             Route::resource('repair-quality-tiers', \App\Http\Controllers\Admin\RepairQualityTierController::class);
 
+            // Device Issue Availability Management
+            Route::get('/repair-device-issues', [\App\Http\Controllers\Admin\RepairDeviceIssueController::class, 'index'])->name('repair-device-issues.index');
+            Route::get('/repair-device-issues/settings', [\App\Http\Controllers\Admin\RepairDeviceIssueController::class, 'getSettings'])->name('repair-device-issues.get-settings');
+            Route::post('/repair-device-issues/settings', [\App\Http\Controllers\Admin\RepairDeviceIssueController::class, 'updateSettings'])->name('repair-device-issues.update-settings');
+
             // Repair Orders Management
             Route::resource('repair-orders', \App\Http\Controllers\Admin\RepairOrderController::class)->only(['index', 'show', 'update']);
 

@@ -27,4 +27,26 @@ class RepairIssue extends Model
     {
         return $this->hasMany(RepairPricing::class);
     }
+
+    public function deviceAvailability()
+    {
+        return $this->hasMany(RepairDeviceIssueAvailability::class, 'repair_issue_id');
+    }
+
+    /**
+     * Check if this issue is available for a specific device
+     */
+    public function availableForDevice($deviceTypeId)
+    {
+        $availability = $this->deviceAvailability()
+            ->where('repair_device_type_id', $deviceTypeId)
+            ->first();
+
+        // If no record exists, assume available (backward compatibility)
+        if (!$availability) {
+            return true;
+        }
+
+        return $availability->is_available;
+    }
 }

@@ -40,4 +40,22 @@ class RepairDeviceType extends Model
     {
         return $this->hasMany(RepairPricing::class);
     }
+
+    public function issueAvailability()
+    {
+        return $this->hasMany(RepairDeviceIssueAvailability::class, 'repair_device_type_id');
+    }
+
+    /**
+     * Get available issues for this device
+     */
+    public function availableIssues()
+    {
+        return $this->service->issues()
+            ->where('is_active', true)
+            ->whereHas('deviceAvailability', function ($query) {
+                $query->where('repair_device_type_id', $this->id)
+                    ->where('is_available', true);
+            });
+    }
 }
