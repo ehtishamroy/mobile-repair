@@ -713,7 +713,7 @@
 
     <div class="offcanvas-body">
 
-      <nav class="main-nav d-flex flex-column gap-3 h-100">
+      <nav class="main-nav d-flex flex-column gap-5 h-100">
         <a href="{{ route('frontend.about') }}" class="nav-link">About Us</a>
 
         <!-- Accordion: Services -->
