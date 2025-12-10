@@ -47,32 +47,32 @@
                         @foreach($brands as $brand)
                             <div class="device-item" data-search="{{ strtolower($brand->name) }}">
                                 <a href="{{ route('frontend.mobile-repair', ['service' => $service->id, 'brand' => $brand->id]) }}"
-                                    class="device-card flex-center gap-2 text-decoration-none"
-                                    style="padding: 12px 10px; font-size: 12px;">
+                                    class="device-card flex-center  text-decoration-none"
+                                    style="padding: 10px; font-size: 15pt;">
                                     @if($brand->logo)
-                                        <img src="{{ asset('storage/' . $brand->logo) }}" alt="{{ $brand->name }}" style="height: 15px;">
+                                        <img src="{{ asset('storage/' . $brand->logo) }}" alt="{{ $brand->name }}" style="padding:10px; height: 100px;">
                                     @elseif(strtolower($brand->name) === 'apple' || strtolower($brand->name) === 'iphone')
                                         <i class="bi bi-apple"></i>
                                     @elseif(strtolower($brand->name) === 'samsung')
-                                        <img src="{{ asset('front-assets/img/repair-samsung-2.svg') }}" alt="{{ $brand->name }}"
-                                            style="height: 15px;">
+                                        <img src="{{ asset('front-assets/img/brand-logo/samsung.svg') }}" alt="{{ $brand->name }}"
+                                            style="height: 80px;">
                                     @elseif(strtolower($brand->name) === 'google pixel' || strtolower($brand->name) === 'google')
-                                        <img src="{{ asset('front-assets/img/Googlep.png') }}" alt="{{ $brand->name }}"
-                                            style="height: 15px;">
+                                        <img src="{{ asset('front-assets/img/brand-logo/google.svg') }}" alt="{{ $brand->name }}"
+                                            style="height: 80px;">
                                     @elseif(strtolower($brand->name) === 'dell')
-                                        <img src="{{ asset('front-assets/img/dell-logo.png') }}" alt="{{ $brand->name }}"
-                                            style="height: 15px;">
+                                        <img src="{{ asset('front-assets/img/brand-logo/dell.svg') }}" alt="{{ $brand->name }}"
+                                            style="height: 80px;">
                                     @elseif(strtolower($brand->name) === 'hp')
-                                        <img src="{{ asset('front-assets/img/hp-logo.png') }}" alt="{{ $brand->name }}"
-                                            style="height: 15px;">
+                                        <img src="{{ asset('front-assets/img/brand-logo/hp.svg') }}" alt="{{ $brand->name }}"
+                                            style="height: 80px;">
                                     @elseif(strtolower($brand->name) === 'asus')
-                                        <img src="{{ asset('front-assets/img/asus-logo.png') }}" alt="{{ $brand->name }}"
-                                            style="height: 15px;">
+                                        <img src="{{ asset('front-assets/img/brand-logo/asus.svg') }}" alt="{{ $brand->name }}"
+                                            style="height: 80px;">
                                     @elseif(strtolower($brand->name) === 'lenovo')
-                                        <img src="{{ asset('front-assets/img/lenovo-logo.jpg') }}" alt="{{ $brand->name }}"
-                                            style="height: 15px;">
+                                        <img src="{{ asset('front-assets/img/brand-logo/lenovo.svg') }}" alt="{{ $brand->name }}"
+                                            style="height: 80px;">
                                     @endif
-                                    {{ $brand->name }}
+                                    <!-- {{ $brand->name }} -->
                                     <span class="check-icon">
                                         <img src="{{ asset('front-assets/img/select-check.svg') }}" alt="" />
                                     </span>
@@ -82,7 +82,7 @@
 
                         <div class="device-item device-item-others" data-search="others other">
                             <a href="{{ route('frontend.select', ['service_id' => $service->id, 'device_type_id' => 'other']) }}"
-                                class="device-card text-decoration-none" style="padding: 15px 12px; font-size: 12px;">
+                                class="device-card text-decoration-none" style="padding: 10px 10px; font-size: 20pt;">
                                 Others
                                 <span class="check-icon">
                                     <img src="{{ asset('front-assets/img/select-check.svg') }}" alt="" />
@@ -148,30 +148,30 @@
                                     <input type="radio" class="btn-check" name="device_type_id" id="device_{{ $deviceType->id }}"
                                         value="{{ $deviceType->id }}" autocomplete="off" />
                                     <label class="device-card flex-center gap-2" for="device_{{ $deviceType->id }}"
-                                        style="padding: 12px 10px; font-size: 12px;">
+                                        style="padding: 10px 10px; font-size: 15px;">
                                         @if($brandModel && $brandModel->logo)
                                             <img src="{{ asset('storage/' . $brandModel->logo) }}" alt="{{ $deviceType->name }}"
-                                                style="height: 15px;">
+                                                style="height: 20px;">
                                         @elseif($deviceType->brand === 'Apple')
                                             <i class="bi bi-apple"></i>
                                         @elseif($deviceType->brand === 'Samsung')
                                             <img src="{{ asset('front-assets/img/repair-samsung-2.svg') }}" alt="{{ $deviceType->name }}"
-                                                style="height: 15px;">
+                                                style="height: 25px;">
                                         @elseif($deviceType->brand === 'Google Pixel')
                                             <img src="{{ asset('front-assets/img/Googlep.png') }}" alt="{{ $deviceType->name }}"
-                                                style="height: 15px;">
+                                                style="height: 25px;">
                                         @elseif($deviceType->brand === 'Dell')
                                             <img src="{{ asset('front-assets/img/dell-logo.png') }}" alt="{{ $deviceType->name }}"
-                                                style="height: 15px;">
+                                                style="height: 25px;">
                                         @elseif($deviceType->brand === 'HP')
                                             <img src="{{ asset('front-assets/img/hp-logo.png') }}" alt="{{ $deviceType->name }}"
-                                                style="height: 15px;">
+                                                style="height: 25px;">
                                         @elseif($deviceType->brand === 'Asus')
                                             <img src="{{ asset('front-assets/img/asus-logo.png') }}" alt="{{ $deviceType->name }}"
-                                                style="height: 15px;">
+                                                style="height: 25px;">
                                         @elseif($deviceType->brand === 'Lenovo')
                                             <img src="{{ asset('front-assets/img/lenovo-logo.jpg') }}" alt="{{ $deviceType->name }}"
-                                                style="height: 15px;">
+                                                style="height: 25px;">
                                         @endif
                                         {{ $deviceType->name }}
                                         <span class="check-icon">
@@ -184,11 +184,9 @@
                             <div class="device-item device-item-others" data-search="others">
                                 <input type="radio" class="btn-check" name="device_type_id" id="device_other" value="other"
                                     autocomplete="off" />
-                                <label class="device-card" for="device_other" style="padding: 15px 12px; font-size: 12px;">
+                                <label class="device-card" for="device_other" style="padding: 10px 10px; font-size: 15px;">
                                     Others
-                                    <span class="check-icon">
-                                        <img src="{{ asset('front-assets/img/select-check.svg') }}" alt="" />
-                                    </span>
+                                  
                                 </label>
                             </div>
                         </div>
@@ -240,6 +238,7 @@
 
             .device-card {
                 color: #000000;
+<<<<<<< HEAD
                 min-height: 80px; /* Balanced height */
                 display: flex;
                 flex-direction: row; /* Side by side */
@@ -248,6 +247,44 @@
                 text-align: center;
                 gap: 10px;
                 padding: 10px 15px;
+=======
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                background-color: #f8f8f8;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-wrap: wrap;
+                min-height: 80px;
+                gap: 8px;
+            }
+
+            .device-card i {
+                font-size: 24px !important;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .device-card img {
+                max-width: 100%;
+                max-height: 60px;
+                width: auto;
+                height: auto;
+                object-fit: contain;
+            }
+
+            .device-card:hover {
+                background-color: var(--primary, #684471) !important;
+                color: white !important;
+                border-color: var(--primary, #684471) !important;
+            }
+
+            .device-card:hover img,
+            .device-card:hover i {
+                filter: brightness(0) invert(1);
+>>>>>>> c05f138f1b5b7a88f5efaedf0ed8941e3e536bde
             }
 
             #deviceSearch:focus,
@@ -271,6 +308,7 @@
 
             @media (max-width: 768px) {
                 .device-grid {
+<<<<<<< HEAD
                     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
                     gap: 12px;
                 }
@@ -278,13 +316,52 @@
                 .device-card {
                     min-height: 70px;
                     font-size: 14px;
+=======
+                    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                    gap: 8px;
+                }
+
+                .device-card {
+                    min-height: 70px;
+                    padding: 8px !important;
+                    font-size: 11px !important;
+                    gap: 6px !important;
+                }
+
+                .device-card i {
+                    font-size: 18px !important;
+                }
+
+                .device-card img {
+                    max-height: 30px;
+>>>>>>> c05f138f1b5b7a88f5efaedf0ed8941e3e536bde
                 }
             }
 
             @media (max-width: 576px) {
                 .device-grid {
+<<<<<<< HEAD
                     grid-template-columns: repeat(auto-fit, minmax(100%, 1fr));
                     gap: 10px;
+=======
+                    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+                    gap: 6px;
+                }
+
+                .device-card {
+                    min-height: 60px;
+                    padding: 6px !important;
+                    font-size: 10px !important;
+                    gap: 4px !important;
+                }
+
+                .device-card i {
+                    font-size: 16px !important;
+                }
+
+                .device-card img {
+                    max-height: 25px;
+>>>>>>> c05f138f1b5b7a88f5efaedf0ed8941e3e536bde
                 }
             }
 
@@ -314,14 +391,14 @@
             }
 
             /* Brand card hover state */
-            .device-card:hover {
+            a.device-card:hover {
                 background-color: var(--primary, #684471) !important;
                 color: white !important;
                 border-color: var(--primary, #684471) !important;
             }
 
-            .device-card:hover img,
-            .device-card:hover i {
+            a.device-card:hover img,
+            a.device-card:hover i {
                 filter: brightness(0) invert(1);
             }
 
