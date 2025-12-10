@@ -18,6 +18,8 @@ class RepairOrder extends Model
         'selected_issues',
         'issue_description',
         'delivery_method',
+        'appointment_date',
+        'appointment_time',
         'payment_method',
         'payment_intent_id',
         'paypal_order_id',

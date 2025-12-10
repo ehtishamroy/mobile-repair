@@ -2,6 +2,36 @@
 
 @section('title', 'Device Issue Availability')
 
+@push('styles')
+    <!-- DataTables -->
+    <link rel="stylesheet" href="{{ asset('admin-panel/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+    <link rel="stylesheet"
+        href="{{ asset('admin-panel/plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('admin-panel/plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}">
+    <style>
+        .bg-success-light {
+            background-color: #d4edda !important;
+        }
+
+        .bg-danger-light {
+            background-color: #f8d7da !important;
+        }
+
+        .bg-info-light {
+            background-color: #d1ecf1 !important;
+        }
+
+        table td {
+            vertical-align: middle;
+        }
+
+        table td:hover {
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+    </style>
+@endpush
+
 @section('content')
     <div class="container-fluid">
         <div class="card">
@@ -24,7 +54,7 @@
             <div class="card-body">
                 @if($devices->count() > 0 && $issues->count() > 0)
                     <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
+                        <table id="device-issues-table" class="table table-bordered table-hover">
                             <thead class="thead-light">
                                 <tr>
                                     <th style="min-width: 150px;">Device / Issue</th>
@@ -163,33 +193,36 @@
         </div>
     </div>
 
-    @push('styles')
-        <style>
-            .bg-success-light {
-                background-color: #d4edda !important;
-            }
-
-            .bg-danger-light {
-                background-color: #f8d7da !important;
-            }
-
-            .bg-info-light {
-                background-color: #d1ecf1 !important;
-            }
-
-            table td {
-                vertical-align: middle;
-            }
-
-            table td:hover {
-                opacity: 0.8;
-                transition: opacity 0.2s;
-            }
-        </style>
-    @endpush
-
     @push('scripts')
+        <!-- DataTables  & Plugins -->
+        <script src="{{ asset('admin-panel/plugins/datatables/jquery.dataTables.min.js') }}"></script>
+        <script src="{{ asset('admin-panel/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+        <script src="{{ asset('admin-panel/plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+        <script src="{{ asset('admin-panel/plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+
         <script>
+            $(document).ready(function () {
+                // Initialize DataTable
+                $('#device-issues-table').DataTable({
+                    "paging": true,
+                    "lengthChange": true,
+                    "searching": true,
+                    "ordering": true,
+                    "info": true,
+                    "autoWidth": false,
+                    "responsive": true,
+                    "order": [[0, 'asc']], // Sort by Device Name asc
+                    "columnDefs": [
+                        { "orderable": false, "targets": "_all" }, // specific column sorting might be confusing in a matrix, enable mainly for device name
+                        { "orderable": true, "targets": 0 } // Enable sorting only for device name column
+                    ]
+                });
+
+                // Event listeners for switches
+                $('#is_available').on('change', updateAvailabilityLabel);
+                $('#requires_quality_tier').on('change', updateTierLabel);
+            });
+
             function openSettingsModal(deviceId, issueId, deviceName, issueName) {
                 // Set context
                 $('#modal-device-id').val(deviceId);
@@ -299,12 +332,6 @@
                     $('#base_price').prop('required', false);
                 }
             }
-
-            $(document).ready(function () {
-                // Event listeners for switches
-                $('#is_available').on('change', updateAvailabilityLabel);
-                $('#requires_quality_tier').on('change', updateTierLabel);
-            });
         </script>
     @endpush
 @endsection

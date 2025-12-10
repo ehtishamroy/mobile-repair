@@ -240,6 +240,14 @@
 
             .device-card {
                 color: #000000;
+                min-height: 80px; /* Balanced height */
+                display: flex;
+                flex-direction: row; /* Side by side */
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                gap: 10px;
+                padding: 10px 15px;
             }
 
             #deviceSearch:focus,
@@ -255,23 +263,28 @@
             .device-grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 12px;
-                max-width: 1000px;
+                gap: 15px;
+                max-width: 1200px;
                 margin-left: auto;
                 margin-right: auto;
             }
 
             @media (max-width: 768px) {
                 .device-grid {
-                    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-                    gap: 10px;
+                    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                    gap: 12px;
+                }
+                
+                .device-card {
+                    min-height: 70px;
+                    font-size: 14px;
                 }
             }
 
             @media (max-width: 576px) {
                 .device-grid {
-                    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-                    gap: 8px;
+                    grid-template-columns: repeat(auto-fit, minmax(100%, 1fr));
+                    gap: 10px;
                 }
             }
 
@@ -311,162 +324,174 @@
             .device-card:hover i {
                 filter: brightness(0) invert(1);
             }
+
+            /* Logo sizing */
+            .device-card img {
+                height: 24px !important; /* Balanced icon size */
+                margin-bottom: 0;
+                object-fit: contain;
+            }
+
+            .device-card i {
+                font-size: 20px;
+                margin-bottom: 0;
+            }
         </style>
     @endpush
 
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                        // Brand search functionality
-                        const brandSearchInput = document.getElementById('brandSearch');
-                        const brandList = document.getElementById('brandList');
+                // Brand search functionality
+                const brandSearchInput = document.getElementById('brandSearch');
+                const brandList = document.getElementById('brandList');
 
-                        // Device search functionality
-                        const deviceSearchInput = document.getElementById('deviceSearch');
-                        const deviceList = document.getElementById('deviceList');
+                // Device search functionality
+                const deviceSearchInput = document.getElementById('deviceSearch');
+                const deviceList = document.getElementById('deviceList');
 
-                        const clearBtn = document.getElementById('clearSearch');
+                const clearBtn = document.getElementById('clearSearch');
 
-                        // Get the active search input and list
-                        const searchInput = brandSearchInput || deviceSearchInput;
-                        const itemList = brandList || deviceList;
-                        const items = itemList ? itemList.querySelectorAll('.device-item') : [];
+                // Get the active search input and list
+                const searchInput = brandSearchInput || deviceSearchInput;
+                const itemList = brandList || deviceList;
+                const items = itemList ? itemList.querySelectorAll('.device-item') : [];
 
-                        function updateClearButton() {
-                            if (searchInput && clearBtn) {
-                                if (searchInput.value.trim() !== '') {
-                                    clearBtn.classList.remove('d-none');
-                                } else {
-                                    clearBtn.classList.add('d-none');
-                                }
-                            }
+                function updateClearButton() {
+                    if (searchInput && clearBtn) {
+                        if (searchInput.value.trim() !== '') {
+                            clearBtn.classList.remove('d-none');
+                        } else {
+                            clearBtn.classList.add('d-none');
                         }
+                    }
+                }
 
-                        if (searchInput) {
-                            // Show/hide clear button
-                            searchInput.addEventListener('input', function (e) {
-                                updateClearButton();
-                                const searchTerm = e.target.value.toLowerCase().trim();
+                if (searchInput) {
+                    // Show/hide clear button
+                    searchInput.addEventListener('input', function (e) {
+                        updateClearButton();
+                        const searchTerm = e.target.value.toLowerCase().trim();
 
-                                let visibleCount = 0;
-                                let firstVisible = null;
-                                const othersItem = itemList.querySelector('.device-item-others');
+                        let visibleCount = 0;
+                        let firstVisible = null;
+                        const othersItem = itemList.querySelector('.device-item-others');
 
-                                // Filter items (exclude "Others")
-                                items.forEach(function (item) {
-                                    // Skip "Others" button - it should always be visible
-                                    if (item.classList.contains('device-item-others')) {
-                                        return;
-                                    }
-
-                                    const searchText = item.getAttribute('data-search') || '';
-                                    const isVisible = searchText.includes(searchTerm);
-
-                                    if (isVisible) {
-                                        item.style.display = '';
-                                        if (visibleCount === 0) {
-                                            firstVisible = item;
-                                        }
-                                        visibleCount++;
-                                    } else {
-                                        item.style.display = 'none';
-                                        // Uncheck hidden items (for device selection)
-                                        const radio = item.querySelector('input[type="radio"]');
-                                        if (radio && radio.checked) {
-                                            radio.checked = false;
-                                        }
-                                    }
-                                });
-
-                                // Always show "Others" button
-                                if (othersItem) {
-                                    othersItem.style.display = '';
-                                }
-
-                                // Show/hide "No results" message
-                                const noResultsMsg = document.getElementById('noResultsMessage');
-                                if (visibleCount === 0 && searchTerm !== '') {
-                                    if (!noResultsMsg) {
-                                        const msg = document.createElement('div');
-                                        msg.id = 'noResultsMessage';
-                                        msg.className = 'text-center py-3 mb-3';
-                                        msg.style.color = 'var(--muted, #6c757d)';
-                                        msg.style.width = '100%';
-                                        msg.innerHTML = '<p class="mb-0 fs-18">No results found. You can select "Others" below.</p>';
-                                        itemList.insertBefore(msg, othersItem);
-                                    }
-                                } else {
-                                    if (noResultsMsg) {
-                                        noResultsMsg.remove();
-                                    }
-                                }
-                            });
-
-                            // Clear search button
-                            if (clearBtn) {
-                                clearBtn.addEventListener('click', function () {
-                                    searchInput.value = '';
-                                    searchInput.dispatchEvent(new Event('input'));
-                                    searchInput.focus();
-                                });
+                        // Filter items (exclude "Others")
+                        items.forEach(function (item) {
+                            // Skip "Others" button - it should always be visible
+                            if (item.classList.contains('device-item-others')) {
+                                return;
                             }
 
-                            // Clear search on Escape key
-                            searchInput.addEventListener('keydown', function (e) {
-                                if (e.key === 'Escape') {
-                                    e.target.value = '';
-                                    e.target.dispatchEvent(new Event('input'));
-                                    e.target.blur();
-                                }
-                            });
+                            const searchText = item.getAttribute('data-search') || '';
+                            const isVisible = searchText.includes(searchTerm);
 
-                            // Initial state
-                            updateClearButton();
+                            if (isVisible) {
+                                item.style.display = '';
+                                if (visibleCount === 0) {
+                                    firstVisible = item;
+                                }
+                                visibleCount++;
+                            } else {
+                                item.style.display = 'none';
+                                // Uncheck hidden items (for device selection)
+                                const radio = item.querySelector('input[type="radio"]');
+                                if (radio && radio.checked) {
+                                    radio.checked = false;
+                                }
+                            }
+                        });
+
+                        // Always show "Others" button
+                        if (othersItem) {
+                            othersItem.style.display = '';
                         }
 
-                        // Device selection modal logic (only for device selection view)
-                        const deviceRadios = document.querySelectorAll('input[name="device_type_id"]');
-                        const modalElement = document.getElementById('confirmationModal');
-
-                        if (modalElement && deviceRadios.length > 0) {
-                            const confirmationModal = new bootstrap.Modal(modalElement);
-                            const selectedDeviceNameSpan = document.getElementById('selectedDeviceName');
-                            const confirmSelectionBtn = document.getElementById('confirmSelectionBtn');
-                            const form = document.getElementById('deviceSelectionForm');
-
-                            deviceRadios.forEach(radio => {
-                                radio.addEventListener('change', function () {
-                                    if (this.checked) {
-                                        let deviceName = '';
-                                        const label = this.nextElementSibling;
-                                        if (label) {
-                                            // Clone the label to avoid modifying the original
-                                            const labelClone = label.cloneNode(true);
-                                            // Remove the check icon from the clone if it exists
-                                            const checkIcon = labelClone.querySelector('.check-icon');
-                                            if (checkIcon) {
-                                                checkIcon.remove();
-                                            }
-                                            // Extract text content
-                                            deviceName = labelClone.innerText.trim();
-                                        }
-
-                                        if (selectedDeviceNameSpan) {
-                                            selectedDeviceNameSpan.textContent = deviceName;
-                                        }
-                                        confirmationModal.show();
-                                    }
-                                });
-                            });
-
-                            if (confirmSelectionBtn) {
-                                confirmSelectionBtn.addEventListener('click', function () {
-                                    form.submit();
-                                });
+                        // Show/hide "No results" message
+                        const noResultsMsg = document.getElementById('noResultsMessage');
+                        if (visibleCount === 0 && searchTerm !== '') {
+                            if (!noResultsMsg) {
+                                const msg = document.createElement('div');
+                                msg.id = 'noResultsMessage';
+                                msg.className = 'text-center py-3 mb-3';
+                                msg.style.color = 'var(--muted, #6c757d)';
+                                msg.style.width = '100%';
+                                msg.innerHTML = '<p class="mb-0 fs-18">No results found. You can select "Others" below.</p>';
+                                itemList.insertBefore(msg, othersItem);
+                            }
+                        } else {
+                            if (noResultsMsg) {
+                                noResultsMsg.remove();
                             }
                         }
                     });
-                </script>
+
+                    // Clear search button
+                    if (clearBtn) {
+                        clearBtn.addEventListener('click', function () {
+                            searchInput.value = '';
+                            searchInput.dispatchEvent(new Event('input'));
+                            searchInput.focus();
+                        });
+                    }
+
+                    // Clear search on Escape key
+                    searchInput.addEventListener('keydown', function (e) {
+                        if (e.key === 'Escape') {
+                            e.target.value = '';
+                            e.target.dispatchEvent(new Event('input'));
+                            e.target.blur();
+                        }
+                    });
+
+                    // Initial state
+                    updateClearButton();
+                }
+
+                // Device selection modal logic (only for device selection view)
+                const deviceRadios = document.querySelectorAll('input[name="device_type_id"]');
+                const modalElement = document.getElementById('confirmationModal');
+
+                if (modalElement && deviceRadios.length > 0) {
+                    const confirmationModal = new bootstrap.Modal(modalElement);
+                    const selectedDeviceNameSpan = document.getElementById('selectedDeviceName');
+                    const confirmSelectionBtn = document.getElementById('confirmSelectionBtn');
+                    const form = document.getElementById('deviceSelectionForm');
+
+                    deviceRadios.forEach(radio => {
+                        radio.addEventListener('change', function () {
+                            if (this.checked) {
+                                let deviceName = '';
+                                const label = this.nextElementSibling;
+                                if (label) {
+                                    // Clone the label to avoid modifying the original
+                                    const labelClone = label.cloneNode(true);
+                                    // Remove the check icon from the clone if it exists
+                                    const checkIcon = labelClone.querySelector('.check-icon');
+                                    if (checkIcon) {
+                                        checkIcon.remove();
+                                    }
+                                    // Extract text content
+                                    deviceName = labelClone.innerText.trim();
+                                }
+
+                                if (selectedDeviceNameSpan) {
+                                    selectedDeviceNameSpan.textContent = deviceName;
+                                }
+                                confirmationModal.show();
+                            }
+                        });
+                    });
+
+                    if (confirmSelectionBtn) {
+                        confirmSelectionBtn.addEventListener('click', function () {
+                            form.submit();
+                        });
+                    }
+                }
+            });
+        </script>
     @endpush
 
 @endsection

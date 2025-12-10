@@ -203,6 +203,47 @@
                             </div>
                         </div>
 
+                        <!-- Appointment Scheduling (shown when Visit Us is selected) -->
+                        <div class="row justify-content-center mt-4" id="appointment-fields" style="display: none;">
+                            <div class="col-md-8">
+                                <div class="card border-primary shadow-sm">
+                                    <div class="card-body p-4">
+                                        <h5 class="card-title mb-4 text-center">
+                                            <i class="fas fa-calendar-alt text-primary mr-2"></i>
+                                            Select Your Appointment
+                                        </h5>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="appointment_date" class="form-label">
+                                                    Preferred Date <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="date" class="custom-input" id="appointment_date"
+                                                    name="appointment_date">
+                                                <small class="text-muted">Select a date within the next 30 days</small>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="appointment_time" class="form-label">
+                                                    Preferred Time <span class="text-danger">*</span>
+                                                </label>
+                                                <select class="custom-input" id="appointment_time" name="appointment_time">
+                                                    <option value="">Select a time slot</option>
+                                                    <option value="09:00:00">9:00 AM - 12:00 PM</option>
+                                                    <option value="12:00:00">12:00 PM - 3:00 PM</option>
+                                                    <option value="15:00:00">3:00 PM - 6:00 PM</option>
+                                                </select>
+                                                <small class="text-muted">Choose your preferred time slot</small>
+                                            </div>
+                                        </div>
+                                        <div class="alert alert-info mb-0 mt-2">
+                                            <i class="fas fa-info-circle mr-2"></i>
+                                            <small>Please arrive within your selected time slot. We'll confirm your appointment
+                                                via email.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Zero-cost visit option (shown when cost = 0) -->
                         <div id="zero-cost-visit-option" style="display: none;">
                             <div class="row justify-content-center">
@@ -297,6 +338,10 @@
                                     <div class="col-12 section-details">
                                         <label class="fw-bold">Delivery Method:</label>
                                         <p id="confirm_delivery"></p>
+                                    </div>
+                                    <div class="col-12 section-details" id="confirm_appointment_row" style="display: none;">
+                                        <label class="fw-bold">Appointment:</label>
+                                        <p id="confirm_appointment"></p>
                                     </div>
                                     <div class="col-12 section-details">
                                         <label>Payment Method:</label>
@@ -642,6 +687,44 @@
                         selectedItem.style.backgroundColor = '#f8f9fa';
                     }
 
+                    // Handle appointment fields
+                    const appointmentFields = document.getElementById('appointment-fields');
+                    const appointmentDate = document.getElementById('appointment_date');
+                    const appointmentTime = document.getElementById('appointment_time');
+
+                    if (this.value === 'visit') {
+                        // Show appointment fields
+                        if (appointmentFields) {
+                            appointmentFields.style.display = '';
+
+                            // Set date constraints
+                            if (appointmentDate) {
+                                const today = new Date();
+                                const maxDate = new Date();
+                                maxDate.setDate(today.getDate() + 30);
+                                appointmentDate.min = today.toISOString().split('T')[0];
+                                appointmentDate.max = maxDate.toISOString().split('T')[0];
+                                appointmentDate.required = true;
+                            }
+                            if (appointmentTime) {
+                                appointmentTime.required = true;
+                            }
+                        }
+                    } else {
+                        // Hide appointment fields for online delivery
+                        if (appointmentFields) {
+                            appointmentFields.style.display = 'none';
+                            if (appointmentDate) {
+                                appointmentDate.required = false;
+                                appointmentDate.value = '';
+                            }
+                            if (appointmentTime) {
+                                appointmentTime.required = false;
+                                appointmentTime.value = '';
+                            }
+                        }
+                    }
+
                     // Update address field visibility and requirements
                     if (this.value === 'visit') {
                         // Visit us - hide shipping address section
@@ -801,20 +884,20 @@
                                         : '';
 
                                     tiersHtml += `
-                                                                                                                    <div class="form-check custom-check p-3 border rounded bg-white">
-                                                                                                                        <input class="form-check-input tier-radio mt-1" type="radio" 
-                                                                                                                               name="quality_tier" id="tier_${tier.id}" 
-                                                                                                                               value="${tier.id}" data-price="${tier.price_modifier}"
-                                                                                                                               ${shouldBeChecked ? 'checked' : ''}>
-                                                                                                                        <label class="form-check-label w-100 cursor-pointer ps-2" for="tier_${tier.id}">
-                                                                                                                            <div class="d-flex justify-content-between align-items-center">
-                                                                                                                                <strong class="fs-16">${tier.name}</strong>
-                                                                                                                                <span class="badge bg-light text-dark border">${priceText}</span>
-                                                                                                                            </div>
-                                                                                                                            ${tier.description ? `<small class="text-muted d-block mt-1">${tier.description}</small>` : ''}
-                                                                                                                        </label>
-                                                                                                                    </div>
-                                                                                                                                       `;
+                                                                                                                                    <div class="form-check custom-check p-3 border rounded bg-white">
+                                                                                                                                        <input class="form-check-input tier-radio mt-1" type="radio" 
+                                                                                                                                               name="quality_tier" id="tier_${tier.id}" 
+                                                                                                                                               value="${tier.id}" data-price="${tier.price_modifier}"
+                                                                                                                                               ${shouldBeChecked ? 'checked' : ''}>
+                                                                                                                                        <label class="form-check-label w-100 cursor-pointer ps-2" for="tier_${tier.id}">
+                                                                                                                                            <div class="d-flex justify-content-between align-items-center">
+                                                                                                                                                <strong class="fs-16">${tier.name}</strong>
+                                                                                                                                                <span class="badge bg-light text-dark border">${priceText}</span>
+                                                                                                                                            </div>
+                                                                                                                                            ${tier.description ? `<small class="text-muted d-block mt-1">${tier.description}</small>` : ''}
+                                                                                                                                        </label>
+                                                                                                                                    </div>
+                                                                                                                                                       `;
                                 });
 
                                 qualityTierOptions.innerHTML = tiersHtml;
@@ -1025,6 +1108,35 @@
                     confirmQualityTierRow.style.display = 'none';
                 }
 
+                // Show/hide and populate appointment information
+                const confirmAppointmentRow = document.getElementById('confirm_appointment_row');
+                const confirmAppointmentEl = document.getElementById('confirm_appointment');
+                const deliveryMethod = document.getElementById('delivery_method');
+
+                if (deliveryMethod && deliveryMethod.value === 'visit') {
+                    const appointmentDate = document.getElementById('appointment_date');
+                    const appointmentTime = document.getElementById('appointment_time');
+
+                    if (appointmentDate && appointmentTime && appointmentDate.value && appointmentTime.value) {
+                        const dateObj = new Date(appointmentDate.value);
+                        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                        const formattedDate = dateObj.toLocaleDateString('en-GB', options);
+
+                        const timeSlotText = appointmentTime.options[appointmentTime.selectedIndex].text;
+
+                        if (confirmAppointmentEl) {
+                            confirmAppointmentEl.textContent = `${formattedDate} at ${timeSlotText}`;
+                        }
+                        if (confirmAppointmentRow) {
+                            confirmAppointmentRow.style.display = 'block';
+                        }
+                    } else {
+                        if (confirmAppointmentRow) confirmAppointmentRow.style.display = 'none';
+                    }
+                } else {
+                    if (confirmAppointmentRow) confirmAppointmentRow.style.display = 'none';
+                }
+
                 // Update pricing display
                 const confirmSubtotalRow = document.getElementById('confirm_subtotal_row');
                 const confirmSubtotal = document.getElementById('confirm_subtotal');
@@ -1161,6 +1273,17 @@
                 selectedIssues.forEach(issueId => orderData.append('issues[]', issueId));
                 orderData.append('issue_description', formDataObj.get('issue_description') || '');
                 orderData.append('delivery_method', deliveryMethodValue);
+
+                // Add appointment fields if Visit Us is selected
+                const appointmentDate = document.getElementById('appointment_date');
+                const appointmentTime = document.getElementById('appointment_time');
+                if (appointmentDate && appointmentDate.value) {
+                    orderData.append('appointment_date', appointmentDate.value);
+                }
+                if (appointmentTime && appointmentTime.value) {
+                    orderData.append('appointment_time', appointmentTime.value);
+                }
+
                 orderData.append('payment_method', finalPaymentMethod);
                 // orderData.append('address', addressEl ? addressEl.value.trim() : ''); // REMOVED
                 orderData.append('subtotal', formData.subtotal || 0);

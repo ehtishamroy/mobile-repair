@@ -2,6 +2,12 @@
 
 @section('title', isset($repairQualityTier) ? 'Edit Quality Tier' : 'Create Quality Tier')
 
+@push('styles')
+    <!-- Select2 -->
+    <link rel="stylesheet" href="{{ asset('admin-panel/plugins/select2/css/select2.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('admin-panel/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css') }}">
+@endpush
+
 @section('content')
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -47,9 +53,10 @@
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label for="repair_issue_id" class="form-label">Repair Issue (Optional)</label>
-                            <select class="form-select @error('repair_issue_id') is-invalid @enderror" id="repair_issue_id"
-                                name="repair_issue_id">
+                            <label for="repair_issue_id" class="form-label">Repair Issue <span
+                                    class="text-muted font-weight-light">(Optional)</span></label>
+                            <select class="form-control select2 @error('repair_issue_id') is-invalid @enderror"
+                                id="repair_issue_id" name="repair_issue_id" style="width: 100%;">
                                 <option value="">All Issues</option>
                                 @foreach($issues as $issue)
                                     <option value="{{ $issue->id }}" {{ (old('repair_issue_id', $repairQualityTier->repair_issue_id ?? '') == $issue->id) ? 'selected' : '' }}>
@@ -64,9 +71,10 @@
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label for="repair_device_type_id" class="form-label">Device Type (Optional)</label>
-                            <select class="form-select @error('repair_device_type_id') is-invalid @enderror"
-                                id="repair_device_type_id" name="repair_device_type_id">
+                            <label for="repair_device_type_id" class="form-label">Device Type <span
+                                    class="text-muted font-weight-light">(Optional)</span></label>
+                            <select class="form-control select2 @error('repair_device_type_id') is-invalid @enderror"
+                                id="repair_device_type_id" name="repair_device_type_id" style="width: 100%;">
                                 <option value="">All Device Types</option>
                                 @foreach($deviceTypes as $deviceType)
                                     <option value="{{ $deviceType->id }}" {{ (old('repair_device_type_id', $repairQualityTier->repair_device_type_id ?? '') == $deviceType->id) ? 'selected' : '' }}>
@@ -126,3 +134,20 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <!-- Select2 -->
+    <script src="{{ asset('admin-panel/plugins/select2/js/select2.full.min.js') }}"></script>
+    <script>
+        $(document).ready(function () {
+            // Initialize Select2 Elements
+            $('.select2').select2({
+                theme: 'bootstrap4',
+                placeholder: function () {
+                    $(this).data('placeholder');
+                },
+                allowClear: true
+            });
+        });
+    </script>
+@endpush
