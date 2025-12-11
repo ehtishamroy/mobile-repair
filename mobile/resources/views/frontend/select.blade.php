@@ -86,8 +86,10 @@
                                 <div class="">
                                     <label class="form-label" for="customer_phone">Your phone number <span
                                             class="text-danger">*</span></label>
-                                    <input id="customer_phone" name="customer_phone" type="tel" placeholder="Phone number"
-                                        class="custom-input" required>
+                                    <input id="customer_phone" name="customer_phone" type="tel"
+                                        placeholder="07XXX XXXXXX or +44 7XXX XXXXXX" class="custom-input" required>
+                                    <small id="phone-error" class="text-danger" style="display: none;">Please enter a valid UK
+                                        phone number.</small>
                                 </div>
                             </div>
                             <div class="col-md-6 col-12">
@@ -855,423 +857,479 @@
             }
 
             // Email validation on blur/input
-                    const emailInput = document.getElementById('customer_email');
-                    const emailError = document.getElementById('email-error');
-                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const emailInput = document.getElementById('customer_email');
+            const emailError = document.getElementById('email-error');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-                    if (emailInput && emailError) {
-                        emailInput.addEventListener('blur', function() {
-                            const email = this.value.trim();
-                            if (email && !emailRegex.test(email)) {
-                                emailError.style.display = 'block';
-                                this.style.borderColor = '#dc3545';
-                            } else {
-                                emailError.style.display = 'none';
-                                this.style.borderColor = '';
-                            }
-                        });
-
-                        emailInput.addEventListener('input', function() {
-                            const email = this.value.trim();
-                            if (emailRegex.test(email)) {
-                                emailError.style.display = 'none';
-                                this.style.borderColor = '';
-                            }
-                        });
+            if (emailInput && emailError) {
+                emailInput.addEventListener('blur', function () {
+                    const email = this.value.trim();
+                    if (email && !emailRegex.test(email)) {
+                        emailError.style.display = 'block';
+                        this.style.borderColor = '#dc3545';
+                    } else {
+                        emailError.style.display = 'none';
+                        this.style.borderColor = '';
                     }
+                });
 
-                    // Issue checkbox handler
-                    const issueUnknown = document.getElementById('issue_unknown');
-                    const issueCheckboxes = document.querySelectorAll('.issue-checkbox');
+                emailInput.addEventListener('input', function () {
+                    const email = this.value.trim();
+                    if (emailRegex.test(email)) {
+                        emailError.style.display = 'none';
+                        this.style.borderColor = '';
+                    }
+                });
+            }
 
-                    issueUnknown.addEventListener('change', function () {
-                        if (this.checked) {
-                            issueCheckboxes.forEach(cb => cb.checked = false);
-                            calculatePricing();
-                        }
-                    });
+            // UK Phone validation on blur/input
+            const phoneInput = document.getElementById('customer_phone');
+            const phoneError = document.getElementById('phone-error');
+            // UK phone regex: accepts formats like 07XXX XXXXXX, +44 7XXX XXXXXX, 0044 7XXX XXXXXX
+            // Also accepts landlines starting with 01, 02, 03
+            const ukPhoneRegex = /^(?:(?:\+44\s?|0044\s?)?(?:7\d{3}|\(?0\d{2,4}\)?)\s?\d{3}\s?\d{3,4}|(?:\+44\s?|0044\s?|0)(?:1\d{2,3}|2\d{2,3}|3\d{2,3})\s?\d{3}\s?\d{3,4})$/;
 
-                    issueCheckboxes.forEach(checkbox => {
-                        checkbox.addEventListener('change', function () {
-                            if (this.checked && issueUnknown) {
-                                issueUnknown.checked = false;
-                            }
-                            calculatePricing();
-                            loadQualityTiersForSelectedIssues();
-                        });
-                    });
+            // Helper function to validate UK phone
+            function isValidUKPhone(phone) {
+                // Remove all spaces and dashes for validation
+                const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
 
-                    // Load quality tiers when issues are selected
-                    function loadQualityTiersForSelectedIssues() {
-                        const selectedIssues = Array.from(document.querySelectorAll('.issue-checkbox:checked')).map(cb => cb.value);
-                        const qualityTierSection = document.getElementById('quality-tier-selection');
-                        const qualityTierOptions = document.getElementById('quality-tier-options');
+                // Check for valid UK formats
+                // Mobile: starts with 07, +447, 00447 (10-11 digits after prefix)
+                // Landline: starts with 01, 02, 03, +441, +442, +443, etc.
 
-                        // Hide tier selection if no issues or unknown issue is selected
-                        if (selectedIssues.length === 0 || (issueUnknown && issueUnknown.checked)) {
-                            qualityTierSection.style.display = 'none';
-                            qualityTierOptions.innerHTML = ''; // Clear tier radio buttons
-                            document.getElementById('selected_tier_id').value = '';
-                            calculatePricing(); // Recalculate pricing without tier modifier
-                            return;
-                        }
+                // Mobile pattern
+                const mobilePattern = /^(?:\+44|0044|0)7\d{9}$/;
 
-                        // For simplicity, check only the first selected issue for tiers
-                        // You can modify this to handle multiple issues differently
-                        const firstIssueId = selectedIssues[0];
-                        const deviceTypeId = document.getElementById('device_type_id').value;
+                // Landline pattern (various area codes)
+                const landlinePattern = /^(?:\+44|0044|0)(?:1\d{8,9}|2\d{8,9}|3\d{8,9})$/;
 
-                        fetch(`/api/quality-tiers/${firstIssueId}?device_type_id=${deviceTypeId}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    // Check if quality tier selection is required
-                                    if (data.requires_quality_tier === false) {
-                                        // No quality tier needed - hide the section
-                                        qualityTierSection.style.display = 'none';
-                                        qualityTierOptions.innerHTML = '';
-                                        document.getElementById('selected_tier_id').value = '';
+                return mobilePattern.test(cleanPhone) || landlinePattern.test(cleanPhone);
+            }
 
-                                        // Store base price for pricing calculation
-                                        window.issueBasePrice = data.base_price || 0;
+            if (phoneInput && phoneError) {
+                phoneInput.addEventListener('blur', function () {
+                    const phone = this.value.trim();
+                    if (phone && !isValidUKPhone(phone)) {
+                        phoneError.style.display = 'block';
+                        this.style.borderColor = '#dc3545';
+                    } else {
+                        phoneError.style.display = 'none';
+                        this.style.borderColor = '';
+                    }
+                });
 
-                                        calculatePricing();
-                                    } else if (data.tiers && data.tiers.length > 0) {
-                                        // Quality tier required and tiers available - show tier selection
-                                        window.issueBasePrice = null; // Clear base price
-                                        qualityTierSection.style.display = 'block';
+                phoneInput.addEventListener('input', function () {
+                    const phone = this.value.trim();
+                    if (isValidUKPhone(phone)) {
+                        phoneError.style.display = 'none';
+                        this.style.borderColor = '';
+                    }
+                });
+            }
 
-                                        // Get currently selected tier ID (if any)
-                                        const currentlySelectedTierId = document.getElementById('selected_tier_id').value;
 
-                                        // Build tier options
-                                        let tiersHtml = '';
-                                        let currentTierStillExists = false;
+            const issueUnknown = document.getElementById('issue_unknown');
+            const issueCheckboxes = document.querySelectorAll('.issue-checkbox');
 
-                                        data.tiers.forEach(tier => {
-                                            const isCurrentlySelected = currentlySelectedTierId && tier.id == currentlySelectedTierId;
-                                            const isDefault = tier.is_default;
+            issueUnknown.addEventListener('change', function () {
+                if (this.checked) {
+                    issueCheckboxes.forEach(cb => cb.checked = false);
+                    calculatePricing();
+                }
+            });
 
-                                            // Check if currently selected tier exists in new tier list
-                                            if (isCurrentlySelected) {
-                                                currentTierStillExists = true;
-                                            }
+            issueCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function () {
+                    if (this.checked && issueUnknown) {
+                        issueUnknown.checked = false;
+                    }
+                    calculatePricing();
+                    loadQualityTiersForSelectedIssues();
+                });
+            });
 
-                                            // Only check as default if no tier is currently selected
-                                            const shouldBeChecked = currentlySelectedTierId
-                                                ? isCurrentlySelected
-                                                : isDefault;
+            // Load quality tiers when issues are selected
+            function loadQualityTiersForSelectedIssues() {
+                const selectedIssues = Array.from(document.querySelectorAll('.issue-checkbox:checked')).map(cb => cb.value);
+                const qualityTierSection = document.getElementById('quality-tier-selection');
+                const qualityTierOptions = document.getElementById('quality-tier-options');
 
-                                            const priceText = tier.price_modifier > 0
-                                                ? ` (+{{ $currencySymbol }}${parseFloat(tier.price_modifier).toFixed(2)})`
-                                                : '';
+                // Hide tier selection if no issues or unknown issue is selected
+                if (selectedIssues.length === 0 || (issueUnknown && issueUnknown.checked)) {
+                    qualityTierSection.style.display = 'none';
+                    qualityTierOptions.innerHTML = ''; // Clear tier radio buttons
+                    document.getElementById('selected_tier_id').value = '';
+                    calculatePricing(); // Recalculate pricing without tier modifier
+                    return;
+                }
 
-                                            tiersHtml += `
-                                                                                                                                                                                    <div class="form-check custom-check p-3 border rounded bg-white">
-                                                                                                                                                                                        <input class="form-check-input tier-radio mt-1" type="radio" 
-                                                                                                                                                                                               name="quality_tier" id="tier_${tier.id}" 
-                                                                                                                                                                                               value="${tier.id}" data-price="${tier.price_modifier}"
-                                                                                                                                                                                               ${shouldBeChecked ? 'checked' : ''}>
-                                                                                                                                                                                        <label class="form-check-label w-100 cursor-pointer ps-2" for="tier_${tier.id}">
-                                                                                                                                                                                            <div class="d-flex justify-content-between align-items-center">
-                                                                                                                                                                                                <strong class="fs-16">${tier.name}</strong>
-                                                                                                                                                                                                <span class="badge bg-light text-dark border">${priceText}</span>
-                                                                                                                                                                                            </div>
-                                                                                                                                                                                            ${tier.description ? `<small class="text-muted d-block mt-1">${tier.description}</small>` : ''}
-                                                                                                                                                                                        </label>
-                                                                                                                                                                                    </div>
-                                                                                                                                                                                                                                                                                        `;
-                                        });
+                // For simplicity, check only the first selected issue for tiers
+                // You can modify this to handle multiple issues differently
+                const firstIssueId = selectedIssues[0];
+                const deviceTypeId = document.getElementById('device_type_id').value;
 
-                                        qualityTierOptions.innerHTML = tiersHtml;
+                fetch(`/api/quality-tiers/${firstIssueId}?device_type_id=${deviceTypeId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Check if quality tier selection is required
+                            if (data.requires_quality_tier === false) {
+                                // No quality tier needed - hide the section
+                                qualityTierSection.style.display = 'none';
+                                qualityTierOptions.innerHTML = '';
+                                document.getElementById('selected_tier_id').value = '';
 
-                                        // Update selected_tier_id based on what's checked
-                                        if (currentlySelectedTierId && currentTierStillExists) {
-                                            // Keep the current selection
-                                            document.getElementById('selected_tier_id').value = currentlySelectedTierId;
-                                        } else {
-                                            // Set default tier if exists and no previous selection
-                                            const defaultTier = data.tiers.find(t => t.is_default);
-                                            if (defaultTier) {
-                                                document.getElementById('selected_tier_id').value = defaultTier.id;
-                                            }
-                                        }
+                                // Store base price for pricing calculation
+                                window.issueBasePrice = data.base_price || 0;
 
-                                        // Add event listeners to tier radios
-                                        document.querySelectorAll('.tier-radio').forEach(radio => {
-                                            radio.addEventListener('change', function () {
-                                                document.getElementById('selected_tier_id').value = this.value;
-                                                calculatePricing();
-                                            });
-                                        });
+                                calculatePricing();
+                            } else if (data.tiers && data.tiers.length > 0) {
+                                // Quality tier required and tiers available - show tier selection
+                                window.issueBasePrice = null; // Clear base price
+                                qualityTierSection.style.display = 'block';
 
-                                        // Recalculate pricing with the selected tier
-                                        calculatePricing();
-                                    } else {
-                                        // No tiers available and quality tier is required - hide section
-                                        window.issueBasePrice = null;
-                                        qualityTierSection.style.display = 'none';
-                                        qualityTierOptions.innerHTML = '';
-                                        document.getElementById('selected_tier_id').value = '';
-                                        calculatePricing();
+                                // Get currently selected tier ID (if any)
+                                const currentlySelectedTierId = document.getElementById('selected_tier_id').value;
+
+                                // Build tier options
+                                let tiersHtml = '';
+                                let currentTierStillExists = false;
+
+                                data.tiers.forEach(tier => {
+                                    const isCurrentlySelected = currentlySelectedTierId && tier.id == currentlySelectedTierId;
+                                    const isDefault = tier.is_default;
+
+                                    // Check if currently selected tier exists in new tier list
+                                    if (isCurrentlySelected) {
+                                        currentTierStillExists = true;
+                                    }
+
+                                    // Only check as default if no tier is currently selected
+                                    const shouldBeChecked = currentlySelectedTierId
+                                        ? isCurrentlySelected
+                                        : isDefault;
+
+                                    const priceText = tier.price_modifier > 0
+                                        ? ` (+{{ $currencySymbol }}${parseFloat(tier.price_modifier).toFixed(2)})`
+                                        : '';
+
+                                    tiersHtml += `
+                                                                                                                                                                                                <div class="form-check custom-check p-3 border rounded bg-white">
+                                                                                                                                                                                                    <input class="form-check-input tier-radio mt-1" type="radio" 
+                                                                                                                                                                                                           name="quality_tier" id="tier_${tier.id}" 
+                                                                                                                                                                                                           value="${tier.id}" data-price="${tier.price_modifier}"
+                                                                                                                                                                                                           ${shouldBeChecked ? 'checked' : ''}>
+                                                                                                                                                                                                    <label class="form-check-label w-100 cursor-pointer ps-2" for="tier_${tier.id}">
+                                                                                                                                                                                                        <div class="d-flex justify-content-between align-items-center">
+                                                                                                                                                                                                            <strong class="fs-16">${tier.name}</strong>
+                                                                                                                                                                                                            <span class="badge bg-light text-dark border">${priceText}</span>
+                                                                                                                                                                                                        </div>
+                                                                                                                                                                                                        ${tier.description ? `<small class="text-muted d-block mt-1">${tier.description}</small>` : ''}
+                                                                                                                                                                                                    </label>
+                                                                                                                                                                                                </div>
+                                                                                                                                                                                                                                                                                                    `;
+                                });
+
+                                qualityTierOptions.innerHTML = tiersHtml;
+
+                                // Update selected_tier_id based on what's checked
+                                if (currentlySelectedTierId && currentTierStillExists) {
+                                    // Keep the current selection
+                                    document.getElementById('selected_tier_id').value = currentlySelectedTierId;
+                                } else {
+                                    // Set default tier if exists and no previous selection
+                                    const defaultTier = data.tiers.find(t => t.is_default);
+                                    if (defaultTier) {
+                                        document.getElementById('selected_tier_id').value = defaultTier.id;
                                     }
                                 }
-                            })
-                            .catch(error => {
-                                console.error('Error loading quality tiers:', error);
+
+                                // Add event listeners to tier radios
+                                document.querySelectorAll('.tier-radio').forEach(radio => {
+                                    radio.addEventListener('change', function () {
+                                        document.getElementById('selected_tier_id').value = this.value;
+                                        calculatePricing();
+                                    });
+                                });
+
+                                // Recalculate pricing with the selected tier
+                                calculatePricing();
+                            } else {
+                                // No tiers available and quality tier is required - hide section
                                 window.issueBasePrice = null;
                                 qualityTierSection.style.display = 'none';
-                                qualityTierOptions.innerHTML = ''; // Clear tier radio buttons
+                                qualityTierOptions.innerHTML = '';
                                 document.getElementById('selected_tier_id').value = '';
-                                calculatePricing(); // Recalculate pricing without tier modifier
-                            });
-                    }
-
-                    function calculatePricing() {
-                        const selectedIssues = Array.from(document.querySelectorAll('.issue-checkbox:checked')).map(cb => cb.value);
-                        const isUnknown = issueUnknown && issueUnknown.checked;
-                        const deviceTypeId = document.getElementById('device_type_id') ? document.getElementById('device_type_id').value : null;
-
-                        const selectedTier = document.querySelector('.tier-radio:checked');
-                        // Use tier modifier if tier is selected, otherwise use base price if available
-                        let tierModifier = 0;
-                        if (selectedTier) {
-                            tierModifier = parseFloat(selectedTier.dataset.price) || 0;
-                        } else if (window.issueBasePrice !== undefined && window.issueBasePrice !== null) {
-                            // Add base price as modifier when no tier selection is required
-                            tierModifier = parseFloat(window.issueBasePrice) || 0;
-                        }
-
-                        if (selectedIssues.length === 0 && !isUnknown) {
-                            document.getElementById('pricing-preview').style.display = 'none';
-                            formData.subtotal = 0;
-                            formData.inspection_fee = 0;
-                            formData.total = 0;
-                            return;
-                        }
-
-                        return fetch('{{ route('frontend.repair.process') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                service_id: {{ $service->id }},
-                                device_type_id: deviceTypeId && deviceTypeId !== 'other' ? deviceTypeId : null,
-                                issues: selectedIssues,
-                                issue_unknown: isUnknown,
-                                tier_modifier: tierModifier
-                            })
-                        })
-                            .then(response => {
-                                if (!response.ok) {
-                                    throw new Error('Network response was not ok');
-                                }
-                                return response.json();
-                            })
-                            .then(data => {
-                                if (data.success) {
-                                    formData.subtotal = parseFloat(data.subtotal) || 0;
-                                    formData.inspection_fee = parseFloat(data.inspection_fee) || 0;
-                                    formData.total = parseFloat(data.total) || 0;
-
-                                    let breakdown = '';
-                                    if (formData.subtotal > 0) {
-                                        breakdown += `<div>Repair Cost: ${data.currency_symbol || '{{ $currencySymbol }}'}${formData.subtotal.toFixed(2)}</div>`;
-                                    }
-                                    if (formData.inspection_fee > 0) {
-                                        breakdown += `<div>Inspection Fee: ${data.currency_symbol || '{{ $currencySymbol }}'}${formData.inspection_fee.toFixed(2)}</div>`;
-                                    }
-                                    breakdown += `<div><strong>Total: ${data.currency_symbol || '{{ $currencySymbol }}'}${formData.total.toFixed(2)}</strong></div>`;
-
-                                    document.getElementById('pricing-breakdown').innerHTML = breakdown;
-                                    document.getElementById('pricing-preview').style.display = 'block';
-                                } else {
-                                    console.error('Pricing calculation failed:', data);
-                                    alert('Failed to calculate pricing. Please try again.');
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error calculating pricing:', error);
-                                alert('Failed to calculate pricing. Please check your selections and try again.');
-                            });
-                    }
-
-                    function updateConfirmStep() {
-                        const nameEl = document.getElementById('customer_name');
-                        const emailEl = document.getElementById('customer_email');
-                        const phoneEl = document.getElementById('customer_phone');
-                        const deviceModelEl = document.getElementById('device_model');
-                        const deviceModelSelectEl = document.getElementById('device_model_select');
-                        const deviceModelCustomEl = document.getElementById('device_model_custom');
-                        const issueDescriptionEl = document.getElementById('issue_description');
-                        const deliveryMethodEl = document.querySelector('input[name="delivery_method"]:checked');
-                        const paymentMethodEl = document.querySelector('input[name="payment_method"]');
-
-                        formData.name = nameEl ? nameEl.value.trim() : '';
-                        formData.email = emailEl ? emailEl.value.trim() : '';
-                        formData.phone = phoneEl ? phoneEl.value.trim() : '';
-
-                        // Get device model from whichever field exists
-                        if (deviceModelEl && deviceModelEl.value) {
-                            formData.device = deviceModelEl.value.trim();
-                        } else if (deviceModelSelectEl && deviceModelSelectEl.value) {
-                            if (deviceModelSelectEl.value === 'other' && deviceModelCustomEl && deviceModelCustomEl.value) {
-                                formData.device = deviceModelCustomEl.value.trim();
-                            } else {
-                                formData.device = deviceModelSelectEl.value.trim();
+                                calculatePricing();
                             }
-                        } else if (deviceModelCustomEl && deviceModelCustomEl.value) {
-                            formData.device = deviceModelCustomEl.value.trim();
-                        } else {
-                            formData.device = 'Not specified';
                         }
+                    })
+                    .catch(error => {
+                        console.error('Error loading quality tiers:', error);
+                        window.issueBasePrice = null;
+                        qualityTierSection.style.display = 'none';
+                        qualityTierOptions.innerHTML = ''; // Clear tier radio buttons
+                        document.getElementById('selected_tier_id').value = '';
+                        calculatePricing(); // Recalculate pricing without tier modifier
+                    });
+            }
 
-                        // Get delivery method
-                        formData.deliveryMethod = deliveryMethodEl ? deliveryMethodEl.value : 'Not selected';
-                        formData.deliveryMethodText = deliveryMethodEl && deliveryMethodEl.value === 'visit' ? 'Visit Us' : (deliveryMethodEl && deliveryMethodEl.value === 'online' ? 'Online Delivery' : 'Not selected');
+            function calculatePricing() {
+                const selectedIssues = Array.from(document.querySelectorAll('.issue-checkbox:checked')).map(cb => cb.value);
+                const isUnknown = issueUnknown && issueUnknown.checked;
+                const deviceTypeId = document.getElementById('device_type_id') ? document.getElementById('device_type_id').value : null;
 
-                        // Get payment method - always Stripe (Card)
-                        formData.paymentMethod = 'stripe';
-                        formData.paymentMethodText = 'Card';
+                const selectedTier = document.querySelector('.tier-radio:checked');
+                // Use tier modifier if tier is selected, otherwise use base price if available
+                let tierModifier = 0;
+                if (selectedTier) {
+                    tierModifier = parseFloat(selectedTier.dataset.price) || 0;
+                } else if (window.issueBasePrice !== undefined && window.issueBasePrice !== null) {
+                    // Add base price as modifier when no tier selection is required
+                    tierModifier = parseFloat(window.issueBasePrice) || 0;
+                }
 
-                        // Get selected issues
-                        const checkedIssues = document.querySelectorAll('.issue-checkbox:checked');
-                        formData.issues = Array.from(checkedIssues).map(cb => {
-                            const label = document.querySelector(`label[for="${cb.id}"]`);
-                            return label ? label.textContent.trim() : '';
-                        }).filter(issue => issue !== '');
+                if (selectedIssues.length === 0 && !isUnknown) {
+                    document.getElementById('pricing-preview').style.display = 'none';
+                    formData.subtotal = 0;
+                    formData.inspection_fee = 0;
+                    formData.total = 0;
+                    return;
+                }
 
-                        if (issueUnknown && issueUnknown.checked) {
-                            formData.issues = ["I don't know the issue"];
+                return fetch('{{ route('frontend.repair.process') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        service_id: {{ $service->id }},
+                        device_type_id: deviceTypeId && deviceTypeId !== 'other' ? deviceTypeId : null,
+                        issues: selectedIssues,
+                        issue_unknown: isUnknown,
+                        tier_modifier: tierModifier
+                    })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
                         }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            formData.subtotal = parseFloat(data.subtotal) || 0;
+                            formData.inspection_fee = parseFloat(data.inspection_fee) || 0;
+                            formData.total = parseFloat(data.total) || 0;
 
-                        formData.comments = issueDescriptionEl ? issueDescriptionEl.value.trim() : '';
-                        if (!formData.comments) {
-                            formData.comments = 'None';
-                        }
-
-                        // Get selected quality tier
-                        const selectedTierRadio = document.querySelector('.tier-radio:checked');
-                        if (selectedTierRadio) {
-                            const tierLabel = document.querySelector(`label[for="${selectedTierRadio.id}"]`);
-                            formData.qualityTier = tierLabel ? tierLabel.textContent.trim() : 'Not selected';
-                        } else {
-                            formData.qualityTier = null;
-                        }
-
-                        // Update confirmation display
-                        const confirmNameEl = document.getElementById('confirm_name');
-                        const confirmEmailEl = document.getElementById('confirm_email');
-                        const confirmPhoneEl = document.getElementById('confirm_phone');
-                        const confirmDeviceEl = document.getElementById('confirm_device');
-                        const confirmIssuesEl = document.getElementById('confirm_issues');
-                        const confirmCommentsEl = document.getElementById('confirm_comments');
-                        const confirmDeliveryEl = document.getElementById('confirm_delivery');
-                        const confirmPaymentMethodEl = document.getElementById('confirm_payment_method');
-                        const confirmQualityTierRow = document.getElementById('confirm_quality_tier_row');
-                        const confirmQualityTierEl = document.getElementById('confirm_quality_tier');
-
-                        if (confirmNameEl) confirmNameEl.textContent = formData.name || 'Not provided';
-                        if (confirmEmailEl) confirmEmailEl.textContent = formData.email || 'Not provided';
-                        if (confirmPhoneEl) confirmPhoneEl.textContent = formData.phone || 'Not provided';
-                        if (confirmDeviceEl) confirmDeviceEl.textContent = formData.device || 'Not specified';
-                        if (confirmIssuesEl) confirmIssuesEl.textContent = formData.issues.length > 0 ? formData.issues.join(', ') : 'None';
-                        if (confirmCommentsEl) confirmCommentsEl.textContent = formData.comments || 'None';
-                        if (confirmDeliveryEl) confirmDeliveryEl.textContent = formData.deliveryMethodText || 'Not selected';
-                        if (confirmPaymentMethodEl) confirmPaymentMethodEl.textContent = formData.paymentMethodText || 'Not selected';
-
-                        // Show/hide quality tier row based on selection
-                        if (formData.qualityTier && confirmQualityTierRow && confirmQualityTierEl) {
-                            confirmQualityTierRow.style.display = 'block';
-                            confirmQualityTierEl.textContent = formData.qualityTier;
-                        } else if (confirmQualityTierRow) {
-                            confirmQualityTierRow.style.display = 'none';
-                        }
-
-                        // Show/hide and populate appointment information
-                        const confirmAppointmentRow = document.getElementById('confirm_appointment_row');
-                        const confirmAppointmentEl = document.getElementById('confirm_appointment');
-                        const deliveryMethod = document.getElementById('delivery_method');
-
-                        if (deliveryMethod && deliveryMethod.value === 'visit') {
-                            const appointmentDate = document.getElementById('appointment_date') || document.getElementById('appointment_date_zero');
-                            const appointmentTime = document.getElementById('appointment_time') || document.getElementById('appointment_time_zero');
-
-                            if (appointmentDate && appointmentTime && appointmentDate.value && appointmentTime.value) {
-                                const dateObj = new Date(appointmentDate.value);
-                                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-                                const formattedDate = dateObj.toLocaleDateString('en-GB', options);
-
-                                const timeSlotText = appointmentTime.options[appointmentTime.selectedIndex].text;
-
-                                if (confirmAppointmentEl) {
-                                    confirmAppointmentEl.textContent = `${formattedDate} at ${timeSlotText}`;
-                                }
-                                if (confirmAppointmentRow) {
-                                    confirmAppointmentRow.style.display = 'block';
-                                }
-                            } else {
-                                if (confirmAppointmentRow) confirmAppointmentRow.style.display = 'none';
+                            let breakdown = '';
+                            if (formData.subtotal > 0) {
+                                breakdown += `<div>Repair Cost: ${data.currency_symbol || '{{ $currencySymbol }}'}${formData.subtotal.toFixed(2)}</div>`;
                             }
+                            if (formData.inspection_fee > 0) {
+                                breakdown += `<div>Inspection Fee: ${data.currency_symbol || '{{ $currencySymbol }}'}${formData.inspection_fee.toFixed(2)}</div>`;
+                            }
+                            breakdown += `<div><strong>Total: ${data.currency_symbol || '{{ $currencySymbol }}'}${formData.total.toFixed(2)}</strong></div>`;
+
+                            document.getElementById('pricing-breakdown').innerHTML = breakdown;
+                            document.getElementById('pricing-preview').style.display = 'block';
                         } else {
-                            if (confirmAppointmentRow) confirmAppointmentRow.style.display = 'none';
+                            console.error('Pricing calculation failed:', data);
+                            alert('Failed to calculate pricing. Please try again.');
                         }
+                    })
+                    .catch(error => {
+                        console.error('Error calculating pricing:', error);
+                        alert('Failed to calculate pricing. Please check your selections and try again.');
+                    });
+            }
 
-                        // Update pricing display
-                        const confirmSubtotalRow = document.getElementById('confirm_subtotal_row');
-                        const confirmSubtotal = document.getElementById('confirm_subtotal');
-                        const confirmInspectionRow = document.getElementById('confirm_inspection_row');
-                        const confirmInspection = document.getElementById('confirm_inspection');
-                        const confirmTotal = document.getElementById('confirm_total');
+            function updateConfirmStep() {
+                const nameEl = document.getElementById('customer_name');
+                const emailEl = document.getElementById('customer_email');
+                const phoneEl = document.getElementById('customer_phone');
+                const deviceModelEl = document.getElementById('device_model');
+                const deviceModelSelectEl = document.getElementById('device_model_select');
+                const deviceModelCustomEl = document.getElementById('device_model_custom');
+                const issueDescriptionEl = document.getElementById('issue_description');
+                const deliveryMethodEl = document.querySelector('input[name="delivery_method"]:checked');
+                const paymentMethodEl = document.querySelector('input[name="payment_method"]');
 
-                        if (formData.subtotal > 0) {
-                            if (confirmSubtotalRow) confirmSubtotalRow.style.display = 'flex';
-                            if (confirmSubtotal) confirmSubtotal.textContent = '{{ $currencySymbol }}' + (formData.subtotal || 0).toFixed(2);
-                        } else {
-                            if (confirmSubtotalRow) confirmSubtotalRow.style.display = 'none';
+                formData.name = nameEl ? nameEl.value.trim() : '';
+                formData.email = emailEl ? emailEl.value.trim() : '';
+                formData.phone = phoneEl ? phoneEl.value.trim() : '';
+
+                // Get device model from whichever field exists
+                if (deviceModelEl && deviceModelEl.value) {
+                    formData.device = deviceModelEl.value.trim();
+                } else if (deviceModelSelectEl && deviceModelSelectEl.value) {
+                    if (deviceModelSelectEl.value === 'other' && deviceModelCustomEl && deviceModelCustomEl.value) {
+                        formData.device = deviceModelCustomEl.value.trim();
+                    } else {
+                        formData.device = deviceModelSelectEl.value.trim();
+                    }
+                } else if (deviceModelCustomEl && deviceModelCustomEl.value) {
+                    formData.device = deviceModelCustomEl.value.trim();
+                } else {
+                    formData.device = 'Not specified';
+                }
+
+                // Get delivery method
+                formData.deliveryMethod = deliveryMethodEl ? deliveryMethodEl.value : 'Not selected';
+                formData.deliveryMethodText = deliveryMethodEl && deliveryMethodEl.value === 'visit' ? 'Visit Us' : (deliveryMethodEl && deliveryMethodEl.value === 'online' ? 'Online Delivery' : 'Not selected');
+
+                // Get payment method - always Stripe (Card)
+                formData.paymentMethod = 'stripe';
+                formData.paymentMethodText = 'Card';
+
+                // Get selected issues
+                const checkedIssues = document.querySelectorAll('.issue-checkbox:checked');
+                formData.issues = Array.from(checkedIssues).map(cb => {
+                    const label = document.querySelector(`label[for="${cb.id}"]`);
+                    return label ? label.textContent.trim() : '';
+                }).filter(issue => issue !== '');
+
+                if (issueUnknown && issueUnknown.checked) {
+                    formData.issues = ["I don't know the issue"];
+                }
+
+                formData.comments = issueDescriptionEl ? issueDescriptionEl.value.trim() : '';
+                if (!formData.comments) {
+                    formData.comments = 'None';
+                }
+
+                // Get selected quality tier
+                const selectedTierRadio = document.querySelector('.tier-radio:checked');
+                if (selectedTierRadio) {
+                    const tierLabel = document.querySelector(`label[for="${selectedTierRadio.id}"]`);
+                    formData.qualityTier = tierLabel ? tierLabel.textContent.trim() : 'Not selected';
+                } else {
+                    formData.qualityTier = null;
+                }
+
+                // Update confirmation display
+                const confirmNameEl = document.getElementById('confirm_name');
+                const confirmEmailEl = document.getElementById('confirm_email');
+                const confirmPhoneEl = document.getElementById('confirm_phone');
+                const confirmDeviceEl = document.getElementById('confirm_device');
+                const confirmIssuesEl = document.getElementById('confirm_issues');
+                const confirmCommentsEl = document.getElementById('confirm_comments');
+                const confirmDeliveryEl = document.getElementById('confirm_delivery');
+                const confirmPaymentMethodEl = document.getElementById('confirm_payment_method');
+                const confirmQualityTierRow = document.getElementById('confirm_quality_tier_row');
+                const confirmQualityTierEl = document.getElementById('confirm_quality_tier');
+
+                if (confirmNameEl) confirmNameEl.textContent = formData.name || 'Not provided';
+                if (confirmEmailEl) confirmEmailEl.textContent = formData.email || 'Not provided';
+                if (confirmPhoneEl) confirmPhoneEl.textContent = formData.phone || 'Not provided';
+                if (confirmDeviceEl) confirmDeviceEl.textContent = formData.device || 'Not specified';
+                if (confirmIssuesEl) confirmIssuesEl.textContent = formData.issues.length > 0 ? formData.issues.join(', ') : 'None';
+                if (confirmCommentsEl) confirmCommentsEl.textContent = formData.comments || 'None';
+                if (confirmDeliveryEl) confirmDeliveryEl.textContent = formData.deliveryMethodText || 'Not selected';
+                if (confirmPaymentMethodEl) confirmPaymentMethodEl.textContent = formData.paymentMethodText || 'Not selected';
+
+                // Show/hide quality tier row based on selection
+                if (formData.qualityTier && confirmQualityTierRow && confirmQualityTierEl) {
+                    confirmQualityTierRow.style.display = 'block';
+                    confirmQualityTierEl.textContent = formData.qualityTier;
+                } else if (confirmQualityTierRow) {
+                    confirmQualityTierRow.style.display = 'none';
+                }
+
+                // Show/hide and populate appointment information
+                const confirmAppointmentRow = document.getElementById('confirm_appointment_row');
+                const confirmAppointmentEl = document.getElementById('confirm_appointment');
+                const deliveryMethod = document.getElementById('delivery_method');
+
+                if (deliveryMethod && deliveryMethod.value === 'visit') {
+                    const appointmentDate = document.getElementById('appointment_date') || document.getElementById('appointment_date_zero');
+                    const appointmentTime = document.getElementById('appointment_time') || document.getElementById('appointment_time_zero');
+
+                    if (appointmentDate && appointmentTime && appointmentDate.value && appointmentTime.value) {
+                        const dateObj = new Date(appointmentDate.value);
+                        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                        const formattedDate = dateObj.toLocaleDateString('en-GB', options);
+
+                        const timeSlotText = appointmentTime.options[appointmentTime.selectedIndex].text;
+
+                        if (confirmAppointmentEl) {
+                            confirmAppointmentEl.textContent = `${formattedDate} at ${timeSlotText}`;
                         }
-
-                        if (formData.inspection_fee > 0) {
-                            if (confirmInspectionRow) confirmInspectionRow.style.display = 'flex';
-                            if (confirmInspection) confirmInspection.textContent = '{{ $currencySymbol }}' + (formData.inspection_fee || 0).toFixed(2);
-                        } else {
-                            if (confirmInspectionRow) confirmInspectionRow.style.display = 'none';
+                        if (confirmAppointmentRow) {
+                            confirmAppointmentRow.style.display = 'block';
                         }
+                    } else {
+                        if (confirmAppointmentRow) confirmAppointmentRow.style.display = 'none';
+                    }
+                } else {
+                    if (confirmAppointmentRow) confirmAppointmentRow.style.display = 'none';
+                }
 
-                        if (confirmTotal) {
-                            const total = (formData.total || 0).toFixed(2);
-                            confirmTotal.innerHTML = '<strong>{{ $currencySymbol }}' + total + '</strong>';
-                        }
+                // Update pricing display
+                const confirmSubtotalRow = document.getElementById('confirm_subtotal_row');
+                const confirmSubtotal = document.getElementById('confirm_subtotal');
+                const confirmInspectionRow = document.getElementById('confirm_inspection_row');
+                const confirmInspection = document.getElementById('confirm_inspection');
+                const confirmTotal = document.getElementById('confirm_total');
+
+                if (formData.subtotal > 0) {
+                    if (confirmSubtotalRow) confirmSubtotalRow.style.display = 'flex';
+                    if (confirmSubtotal) confirmSubtotal.textContent = '{{ $currencySymbol }}' + (formData.subtotal || 0).toFixed(2);
+                } else {
+                    if (confirmSubtotalRow) confirmSubtotalRow.style.display = 'none';
+                }
+
+                if (formData.inspection_fee > 0) {
+                    if (confirmInspectionRow) confirmInspectionRow.style.display = 'flex';
+                    if (confirmInspection) confirmInspection.textContent = '{{ $currencySymbol }}' + (formData.inspection_fee || 0).toFixed(2);
+                } else {
+                    if (confirmInspectionRow) confirmInspectionRow.style.display = 'none';
+                }
+
+                if (confirmTotal) {
+                    const total = (formData.total || 0).toFixed(2);
+                    confirmTotal.innerHTML = '<strong>{{ $currencySymbol }}' + total + '</strong>';
+                }
+            }
+
+            function validateStep(step) {
+                if (step === 0) {
+                    const name = document.getElementById('customer_name').value.trim();
+                    const email = document.getElementById('customer_email').value.trim();
+                    const phone = document.getElementById('customer_phone').value.trim();
+                    const deviceModel = document.getElementById('device_model');
+                    const deviceModelSelect = document.getElementById('device_model_select');
+                    const deviceModelCustom = document.getElementById('device_model_custom');
+                    const device = (deviceModel && deviceModel.value) || (deviceModelSelect && deviceModelSelect.value) || (deviceModelCustom && deviceModelCustom.value);
+                    const hasIssues = document.querySelectorAll('.issue-checkbox:checked').length > 0 || (issueUnknown && issueUnknown.checked);
+
+                    if (!name || !email || !phone || !device || !hasIssues) {
+                        alert('Please fill in all required fields.');
+                        return false;
                     }
 
-                    function validateStep(step) {
-                        if (step === 0) {
-                            const name = document.getElementById('customer_name').value.trim();
-                            const email = document.getElementById('customer_email').value.trim();
-                            const phone = document.getElementById('customer_phone').value.trim();
-                            const deviceModel = document.getElementById('device_model');
-                            const deviceModelSelect = document.getElementById('device_model_select');
-                            const deviceModelCustom = document.getElementById('device_model_custom');
-                            const device = (deviceModel && deviceModel.value) || (deviceModelSelect && deviceModelSelect.value) || (deviceModelCustom && deviceModelCustom.value);
-                            const hasIssues = document.querySelectorAll('.issue-checkbox:checked').length > 0 || (issueUnknown && issueUnknown.checked);
+                    // Validate email format
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(email)) {
+                        alert('Please enter a valid email address.');
+                        document.getElementById('customer_email').focus();
+                        return false;
+                    }
 
-                            if (!name || !email || !phone || !device || !hasIssues) {
-                                alert('Please fill in all required fields.');
+                    // Validate UK phone format
+                            const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+                            const mobilePattern = /^(?:\+44|0044|0)7\d{9}$/;
+                            const landlinePattern = /^(?:\+44|0044|0)(?:1\d{8,9}|2\d{8,9}|3\d{8,9})$/;
+                            if (!mobilePattern.test(cleanPhone) && !landlinePattern.test(cleanPhone)) {
+                                alert('Please enter a valid UK phone number (e.g., 07XXX XXXXXX or +44 7XXX XXXXXX).');
+                                document.getElementById('customer_phone').focus();
                                 return false;
                             }
 
-                            // Validate email format
-                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                            if (!emailRegex.test(email)) {
-                                alert('Please enter a valid email address.');
-                                document.getElementById('customer_email').focus();
-                                return false;
-                            }
 
-                            // Calculate pricing if not already done
                             // Check if pricing has been calculated (formData.total should be defined, even if 0)
                             if (formData.total === undefined) {
                                 const pricingPromise = calculatePricing();
