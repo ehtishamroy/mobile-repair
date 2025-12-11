@@ -293,7 +293,7 @@
                           src="{{ $product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg') }}"
                           alt="{{ $product->name }}" class="w-100 h-100 p-2 rounded" />
                       </a>
-                      <div class="product-actions" style="z-index: 3; position: relative;">
+                      <div class="product-actions" style="z-index: 3; position: absolute;">
                         @php
                           $isInWishlist = in_array($product->id, $wishlist ?? []);
                         @endphp
@@ -467,7 +467,7 @@
                               src="{{ $product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg') }}"
                               alt="{{ $product->name }}" class="w-100 h-100 p-2 rounded" />
                           </a>
-                          <div class="product-actions" style="z-index: 3; position: relative;">
+                          <div class="product-actions" style="z-index: 3; position: absolute;">
                             @php
                               $isInWishlist = in_array($product->id, $wishlist ?? []);
                             @endphp
@@ -580,21 +580,21 @@
         notification.className = `cart-notification cart-notification-${type}`;
         notification.textContent = message;
         notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 1rem 1.5rem;
-                border-radius: 5px;
-                color: #fff;
-                font-weight: 500;
-                z-index: 9999;
-                opacity: 0;
-                transform: translateX(400px);
-                transition: all 0.3s ease;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                max-width: 400px;
-                ${type === 'success' ? 'background: #28a745;' : 'background: #dc3545;'}
-              `;
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 1rem 1.5rem;
+                    border-radius: 5px;
+                    color: #fff;
+                    font-weight: 500;
+                    z-index: 9999;
+                    opacity: 0;
+                    transform: translateX(400px);
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                    max-width: 400px;
+                    ${type === 'success' ? 'background: #28a745;' : 'background: #dc3545;'}
+                  `;
         document.body.appendChild(notification);
 
         // Show notification

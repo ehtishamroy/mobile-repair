@@ -558,7 +558,7 @@ class HomeController extends Controller
                 $productsHtml .= '<div class="card-body">';
                 $productsHtml .= '<div class="ratio ratio-1x1 thumb">';
                 $productsHtml .= '<a href="' . $productUrl . '" class="d-block h-100"><img src="' . ($product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg')) . '" alt="' . htmlspecialchars($product->name) . '" class="w-100 h-100 p-2 rounded" /></a>';
-                $productsHtml .= '<div class="product-actions" style="z-index: 3; position: relative;">';
+                $productsHtml .= '<div class="product-actions" style="z-index: 3; position: absolute;">';
                 $productsHtml .= '<div class="action-btn ' . $wishlistClass . '" data-product-id="' . $product->id . '" title="' . ($isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist') . '"><i class="bi ' . $wishlistIcon . '"></i></div>';
                 $productsHtml .= '<div class="action-btn add-to-cart-btn" data-product-id="' . $product->id . '" title="Add to Cart"><i class="bi bi-cart"></i></div>';
                 $productsHtml .= '<a href="' . $productUrl . '" class="action-btn" title="View Product"><i class="bi bi-eye"></i></a>';

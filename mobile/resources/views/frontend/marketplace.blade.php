@@ -505,7 +505,7 @@
                             src="{{ $product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg') }}"
                             alt="{{ $product->name }}" class="w-100 h-100 p-2 rounded" />
                         </a>
-                        <div class="product-actions" style="z-index: 3; position: relative;">
+                        <div class="product-actions" style="z-index: 3; position: absolute;">
                           @php
                             $isInWishlist = in_array($product->id, $wishlist ?? []);
                           @endphp
@@ -1140,590 +1140,590 @@
 
 @push('scripts')
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-       const featuredProducts = document.querySelectorAll('.featured-product-item');
-        if(featuredProducts.length > 1)         {
-          let currentIndex = 0;
-          setInterval(function () {
-            featuredProducts[currentIndex].classList.remove('active');
-            currentIndex = (currentIndex + 1) % featuredProducts.length;
-            featuredProducts[currentIndex].classList.add('active');
-          }, 7000); // Rotate every 7 seconds
+    document.addEventListener('DOMContentLoaded', function () {
+      const featuredProducts = document.querySelectorAll('.featured-product-item');
+      if (featuredProducts.length > 1) {
+        let currentIndex = 0;
+        setInterval(function () {
+          featuredProducts[currentIndex].classList.remove('active');
+          currentIndex = (currentIndex + 1) % featuredProducts.length;
+          featuredProducts[currentIndex].classList.add('active');
+        }, 7000); // Rotate every 7 seconds
+      }
+
+      // Loading state
+      let isLoading = false;
+      let searchTimeout = null;
+
+      // Unified AJAX filter function
+      function applyFilters() {
+        if (isLoading) return;
+
+        isLoading = true;
+        const productGrid = document.getElementById('productGrid');
+        const paginationContainer = document.getElementById('paginationContainer');
+        const activeFiltersContainer = document.getElementById('activeFiltersContainer');
+        const totalResults = document.getElementById('totalResults');
+
+        // Show loading state
+        if (productGrid) {
+          productGrid.style.opacity = '0.5';
+          productGrid.style.pointerEvents = 'none';
         }
 
-        // Loading state
-        let isLoading = false;
-        let searchTimeout = null;
+        // Collect all filter values
+        const formData = new FormData();
 
-        // Unified AJAX filter function
-        function applyFilters() {
-          if (isLoading) return;
+        // Search
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput && searchInput.value.trim()) {
+          formData.append('search', searchInput.value.trim());
+        }
 
-          isLoading = true;
-          const productGrid = document.getElementById('productGrid');
-          const paginationContainer = document.getElementById('paginationContainer');
-          const activeFiltersContainer = document.getElementById('activeFiltersContainer');
-          const totalResults = document.getElementById('totalResults');
+        // Category
+        const categoryInput = document.querySelector('#categoryFilter input[type="radio"]:checked');
+        if (categoryInput && categoryInput.value) {
+          formData.append('category', categoryInput.value);
+        }
 
-          // Show loading state
-          if (productGrid) {
-            productGrid.style.opacity = '0.5';
-            productGrid.style.pointerEvents = 'none';
-          }
+        // Brand
+        const brandCheckbox = document.querySelector('.brand-checkbox:checked');
+        if (brandCheckbox) {
+          formData.append('brand', brandCheckbox.value);
+        }
 
-          // Collect all filter values
-          const formData = new FormData();
+        // Price range
+        const minInput = document.getElementById('minInput');
+        const maxInput = document.getElementById('maxInput');
+        if (minInput && minInput.value.trim()) {
+          formData.append('min_price', minInput.value.trim());
+        }
+        if (maxInput && maxInput.value.trim()) {
+          formData.append('max_price', maxInput.value.trim());
+        }
 
-          // Search
-          const searchInput = document.getElementById('searchInput');
-          if (searchInput && searchInput.value.trim()) {
-            formData.append('search', searchInput.value.trim());
-          }
+        // Sort
+        const urlParams = new URLSearchParams(window.location.search);
+        const sortParam = urlParams.get('sort');
+        if (sortParam) {
+          formData.append('sort', sortParam);
+        }
 
-          // Category
-          const categoryInput = document.querySelector('#categoryFilter input[type="radio"]:checked');
-          if (categoryInput && categoryInput.value) {
-            formData.append('category', categoryInput.value);
-          }
+        // Tag
+        const tagParam = urlParams.get('tag');
+        if (tagParam) {
+          formData.append('tag', tagParam);
+        }
 
-          // Brand
-          const brandCheckbox = document.querySelector('.brand-checkbox:checked');
-          if (brandCheckbox) {
-            formData.append('brand', brandCheckbox.value);
-          }
+        // Page
+        const pageParam = urlParams.get('page');
+        if (pageParam) {
+          formData.append('page', pageParam);
+        }
 
-          // Price range
-          const minInput = document.getElementById('minInput');
-          const maxInput = document.getElementById('maxInput');
-          if (minInput && minInput.value.trim()) {
-            formData.append('min_price', minInput.value.trim());
-          }
-          if (maxInput && maxInput.value.trim()) {
-            formData.append('max_price', maxInput.value.trim());
-          }
+        // Update URL without reload
+        const newUrl = new URL(window.location.pathname, window.location.origin);
+        if (searchInput && searchInput.value.trim()) {
+          newUrl.searchParams.set('search', searchInput.value.trim());
+        } else {
+          newUrl.searchParams.delete('search');
+        }
+        if (categoryInput && categoryInput.value) {
+          newUrl.searchParams.set('category', categoryInput.value);
+        } else {
+          newUrl.searchParams.delete('category');
+        }
+        if (brandCheckbox) {
+          newUrl.searchParams.set('brand', brandCheckbox.value);
+        } else {
+          newUrl.searchParams.delete('brand');
+        }
+        if (minInput && minInput.value.trim()) {
+          newUrl.searchParams.set('min_price', minInput.value.trim());
+        } else {
+          newUrl.searchParams.delete('min_price');
+        }
+        if (maxInput && maxInput.value.trim()) {
+          newUrl.searchParams.set('max_price', maxInput.value.trim());
+        } else {
+          newUrl.searchParams.delete('max_price');
+        }
+        if (sortParam) {
+          newUrl.searchParams.set('sort', sortParam);
+        }
+        if (tagParam) {
+          newUrl.searchParams.set('tag', tagParam);
+        }
+        if (pageParam) {
+          newUrl.searchParams.set('page', pageParam);
+        } else {
+          newUrl.searchParams.delete('page');
+        }
 
-          // Sort
-          const urlParams = new URLSearchParams(window.location.search);
-          const sortParam = urlParams.get('sort');
-          if (sortParam) {
-            formData.append('sort', sortParam);
-          }
+        window.history.pushState({}, '', newUrl.toString());
 
-          // Tag
-          const tagParam = urlParams.get('tag');
-          if (tagParam) {
-            formData.append('tag', tagParam);
+        // Make AJAX request
+        fetch('{{ route("frontend.marketplace.filter") }}', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
           }
-
-          // Page
-          const pageParam = urlParams.get('page');
-          if (pageParam) {
-            formData.append('page', pageParam);
-          }
-
-          // Update URL without reload
-          const newUrl = new URL(window.location.pathname, window.location.origin);
-          if (searchInput && searchInput.value.trim()) {
-            newUrl.searchParams.set('search', searchInput.value.trim());
-          } else {
-            newUrl.searchParams.delete('search');
-          }
-          if (categoryInput && categoryInput.value) {
-            newUrl.searchParams.set('category', categoryInput.value);
-          } else {
-            newUrl.searchParams.delete('category');
-          }
-          if (brandCheckbox) {
-            newUrl.searchParams.set('brand', brandCheckbox.value);
-          } else {
-            newUrl.searchParams.delete('brand');
-          }
-          if (minInput && minInput.value.trim()) {
-            newUrl.searchParams.set('min_price', minInput.value.trim());
-          } else {
-            newUrl.searchParams.delete('min_price');
-          }
-          if (maxInput && maxInput.value.trim()) {
-            newUrl.searchParams.set('max_price', maxInput.value.trim());
-          } else {
-            newUrl.searchParams.delete('max_price');
-          }
-          if (sortParam) {
-            newUrl.searchParams.set('sort', sortParam);
-          }
-          if (tagParam) {
-            newUrl.searchParams.set('tag', tagParam);
-          }
-          if (pageParam) {
-            newUrl.searchParams.set('page', pageParam);
-          } else {
-            newUrl.searchParams.delete('page');
-          }
-
-          window.history.pushState({}, '', newUrl.toString());
-
-          // Make AJAX request
-          fetch('{{ route("frontend.marketplace.filter") }}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest',
-              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            }
-          })
-            .then(response => response.json())
-            .then(data => {
-              if (data.success) {
-                // Update product grid
-                if (productGrid) {
-                  productGrid.innerHTML = data.products_html;
-                  productGrid.style.opacity = '1';
-                  productGrid.style.pointerEvents = 'auto';
-                }
-
-                // Update pagination
-                if (paginationContainer) {
-                  paginationContainer.innerHTML = data.pagination_html;
-                }
-
-                // Update active filters
-                if (activeFiltersContainer) {
-                  if (data.has_filters) {
-                    activeFiltersContainer.innerHTML = '<span class="text-secondary me-1 fs-14 fw-400">Active Filters:</span>' + data.active_filters_html + '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllFilters()">Clear All</button>';
-                  } else {
-                    activeFiltersContainer.innerHTML = '<span class="text-secondary fs-14 fw-400">No active filters</span>';
-                  }
-                }
-
-                // Update total results
-                if (totalResults) {
-                  totalResults.textContent = new Intl.NumberFormat().format(data.total_results);
-                }
-              }
-              isLoading = false;
-            })
-            .catch(error => {
-              console.error('Error:', error);
-              isLoading = false;
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              // Update product grid
               if (productGrid) {
+                productGrid.innerHTML = data.products_html;
                 productGrid.style.opacity = '1';
                 productGrid.style.pointerEvents = 'auto';
               }
-            });
-        }
 
-        // Make applyFilters globally accessible
-        window.applyFilters = applyFilters;
+              // Update pagination
+              if (paginationContainer) {
+                paginationContainer.innerHTML = data.pagination_html;
+              }
 
-        // Search input with debouncing
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-          searchInput.addEventListener('input', function () {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(function () {
-              applyFilters();
-            }, 500); // 500ms debounce
-          });
-        }
+              // Update active filters
+              if (activeFiltersContainer) {
+                if (data.has_filters) {
+                  activeFiltersContainer.innerHTML = '<span class="text-secondary me-1 fs-14 fw-400">Active Filters:</span>' + data.active_filters_html + '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllFilters()">Clear All</button>';
+                } else {
+                  activeFiltersContainer.innerHTML = '<span class="text-secondary fs-14 fw-400">No active filters</span>';
+                }
+              }
 
-        // Category filter
-        const categoryInputs = document.querySelectorAll('#categoryFilter input[type="radio"]');
-        categoryInputs.forEach(input => {
-          input.addEventListener('change', function () {
-            applyFilters();
-          });
-        });
-
-        // Brand filter
-        const brandCheckboxes = document.querySelectorAll('.brand-checkbox');
-        brandCheckboxes.forEach(checkbox => {
-          checkbox.addEventListener('change', function () {
-            applyFilters();
-          });
-        });
-
-        // Price range filter
-        const minInput = document.getElementById('minInput');
-        const maxInput = document.getElementById('maxInput');
-        const minRange = document.querySelector('.min_range');
-        const maxRange = document.querySelector('.max_range');
-
-        // Apply filter on Enter key or when input loses focus
-        if (minInput && maxInput) {
-          minInput.addEventListener('blur', applyFilters);
-          maxInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              applyFilters();
-            }
-          });
-          maxInput.addEventListener('blur', applyFilters);
-        }
-
-        // Update range sliders
-        if (minRange && maxRange && minInput && maxInput) {
-          minRange.addEventListener('input', function () {
-            minInput.value = this.value;
-          });
-          maxRange.addEventListener('input', function () {
-            maxInput.value = this.value;
-          });
-          minRange.addEventListener('change', applyFilters);
-          maxRange.addEventListener('change', applyFilters);
-        }
-
-        // Price radio buttons
-        const priceRadios = document.querySelectorAll('.price-radio');
-        priceRadios.forEach(radio => {
-          radio.addEventListener('change', function () {
-            const minPrice = this.getAttribute('data-min');
-            const maxPrice = this.getAttribute('data-max');
-
-            // Update the manual price inputs to match
-            if (minInput && maxInput) {
-              if (this.value === 'all') {
-                minInput.value = '';
-                maxInput.value = '';
-              } else {
-                minInput.value = minPrice;
-                maxInput.value = maxPrice;
+              // Update total results
+              if (totalResults) {
+                totalResults.textContent = new Intl.NumberFormat().format(data.total_results);
               }
             }
-
-            // Update range sliders if they exist
-            if (minRange && maxRange) {
-              if (this.value === 'all') {
-                minRange.value = 0;
-                maxRange.value = 10000;
-              } else {
-                minRange.value = minPrice;
-                maxRange.value = maxPrice;
-              }
+            isLoading = false;
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            isLoading = false;
+            if (productGrid) {
+              productGrid.style.opacity = '1';
+              productGrid.style.pointerEvents = 'auto';
             }
-
-            applyFilters();
           });
-        });
+      }
 
-        // Tag links - convert to AJAX
-        const tagLinks = document.querySelectorAll('.popular-tags a.tag-btn');
-        tagLinks.forEach(link => {
-          link.addEventListener('click', function (e) {
+      // Make applyFilters globally accessible
+      window.applyFilters = applyFilters;
+
+      // Search input with debouncing
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) {
+        searchInput.addEventListener('input', function () {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(function () {
+            applyFilters();
+          }, 500); // 500ms debounce
+        });
+      }
+
+      // Category filter
+      const categoryInputs = document.querySelectorAll('#categoryFilter input[type="radio"]');
+      categoryInputs.forEach(input => {
+        input.addEventListener('change', function () {
+          applyFilters();
+        });
+      });
+
+      // Brand filter
+      const brandCheckboxes = document.querySelectorAll('.brand-checkbox');
+      brandCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function () {
+          applyFilters();
+        });
+      });
+
+      // Price range filter
+      const minInput = document.getElementById('minInput');
+      const maxInput = document.getElementById('maxInput');
+      const minRange = document.querySelector('.min_range');
+      const maxRange = document.querySelector('.max_range');
+
+      // Apply filter on Enter key or when input loses focus
+      if (minInput && maxInput) {
+        minInput.addEventListener('blur', applyFilters);
+        maxInput.addEventListener('keypress', function (e) {
+          if (e.key === 'Enter') {
             e.preventDefault();
-            const tagId = this.getAttribute('href').split('tag=')[1];
-            const url = new URL(window.location.href);
-            if (tagId && tagId !== '') {
-              url.searchParams.set('tag', tagId);
-            } else {
-              url.searchParams.delete('tag');
-            }
-            window.history.pushState({}, '', url.toString());
             applyFilters();
-          });
+          }
         });
+        maxInput.addEventListener('blur', applyFilters);
+      }
 
-        // Category dropdown - ensure it works on both click and hover
-        const categoryDropdown = document.querySelector('.show-on-hover');
-        const categoryDropdownMenu = categoryDropdown?.querySelector('.dropdown-menu');
+      // Update range sliders
+      if (minRange && maxRange && minInput && maxInput) {
+        minRange.addEventListener('input', function () {
+          minInput.value = this.value;
+        });
+        maxRange.addEventListener('input', function () {
+          maxInput.value = this.value;
+        });
+        minRange.addEventListener('change', applyFilters);
+        maxRange.addEventListener('change', applyFilters);
+      }
 
-        if (categoryDropdown && categoryDropdownMenu) {
-          let hoverTimeout;
+      // Price radio buttons
+      const priceRadios = document.querySelectorAll('.price-radio');
+      priceRadios.forEach(radio => {
+        radio.addEventListener('change', function () {
+          const minPrice = this.getAttribute('data-min');
+          const maxPrice = this.getAttribute('data-max');
 
-          // Show dropdown on hover
-          categoryDropdown.addEventListener('mouseenter', function () {
-            clearTimeout(hoverTimeout);
-            this.classList.add('show');
-            categoryDropdownMenu.classList.add('show');
-          });
-
-          // Hide dropdown when mouse leaves (with small delay to allow moving to menu)
-          categoryDropdown.addEventListener('mouseleave', function () {
-            const self = this;
-            hoverTimeout = setTimeout(function () {
-              self.classList.remove('show');
-              categoryDropdownMenu.classList.remove('show');
-            }, 200); // 200ms delay
-          });
-
-          // Keep dropdown open when hovering over menu
-          categoryDropdownMenu.addEventListener('mouseenter', function () {
-            clearTimeout(hoverTimeout);
-            categoryDropdown.classList.add('show');
-            this.classList.add('show');
-          });
-
-          // Handle click to toggle (for mobile/touch devices)
-          const categoryButton = categoryDropdown.querySelector('[data-bs-toggle="dropdown"]');
-          if (categoryButton) {
-            categoryButton.addEventListener('click', function (e) {
-              e.preventDefault();
-              e.stopPropagation();
-              const isOpen = categoryDropdown.classList.contains('show');
-              if (isOpen) {
-                categoryDropdown.classList.remove('show');
-                categoryDropdownMenu.classList.remove('show');
-              } else {
-                categoryDropdown.classList.add('show');
-                categoryDropdownMenu.classList.add('show');
-              }
-            });
+          // Update the manual price inputs to match
+          if (minInput && maxInput) {
+            if (this.value === 'all') {
+              minInput.value = '';
+              maxInput.value = '';
+            } else {
+              minInput.value = minPrice;
+              maxInput.value = maxPrice;
+            }
           }
 
-          // Close dropdown when clicking outside
-          document.addEventListener('click', function (e) {
-            if (!categoryDropdown.contains(e.target)) {
+          // Update range sliders if they exist
+          if (minRange && maxRange) {
+            if (this.value === 'all') {
+              minRange.value = 0;
+              maxRange.value = 10000;
+            } else {
+              minRange.value = minPrice;
+              maxRange.value = maxPrice;
+            }
+          }
+
+          applyFilters();
+        });
+      });
+
+      // Tag links - convert to AJAX
+      const tagLinks = document.querySelectorAll('.popular-tags a.tag-btn');
+      tagLinks.forEach(link => {
+        link.addEventListener('click', function (e) {
+          e.preventDefault();
+          const tagId = this.getAttribute('href').split('tag=')[1];
+          const url = new URL(window.location.href);
+          if (tagId && tagId !== '') {
+            url.searchParams.set('tag', tagId);
+          } else {
+            url.searchParams.delete('tag');
+          }
+          window.history.pushState({}, '', url.toString());
+          applyFilters();
+        });
+      });
+
+      // Category dropdown - ensure it works on both click and hover
+      const categoryDropdown = document.querySelector('.show-on-hover');
+      const categoryDropdownMenu = categoryDropdown?.querySelector('.dropdown-menu');
+
+      if (categoryDropdown && categoryDropdownMenu) {
+        let hoverTimeout;
+
+        // Show dropdown on hover
+        categoryDropdown.addEventListener('mouseenter', function () {
+          clearTimeout(hoverTimeout);
+          this.classList.add('show');
+          categoryDropdownMenu.classList.add('show');
+        });
+
+        // Hide dropdown when mouse leaves (with small delay to allow moving to menu)
+        categoryDropdown.addEventListener('mouseleave', function () {
+          const self = this;
+          hoverTimeout = setTimeout(function () {
+            self.classList.remove('show');
+            categoryDropdownMenu.classList.remove('show');
+          }, 200); // 200ms delay
+        });
+
+        // Keep dropdown open when hovering over menu
+        categoryDropdownMenu.addEventListener('mouseenter', function () {
+          clearTimeout(hoverTimeout);
+          categoryDropdown.classList.add('show');
+          this.classList.add('show');
+        });
+
+        // Handle click to toggle (for mobile/touch devices)
+        const categoryButton = categoryDropdown.querySelector('[data-bs-toggle="dropdown"]');
+        if (categoryButton) {
+          categoryButton.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const isOpen = categoryDropdown.classList.contains('show');
+            if (isOpen) {
               categoryDropdown.classList.remove('show');
               categoryDropdownMenu.classList.remove('show');
+            } else {
+              categoryDropdown.classList.add('show');
+              categoryDropdownMenu.classList.add('show');
             }
           });
         }
 
-        // Handle pagination links with AJAX (delegated event listener)
+        // Close dropdown when clicking outside
         document.addEventListener('click', function (e) {
-          const paginationLink = e.target.closest('.pagination a, .pagination-nav a');
-          if (paginationLink) {
-            e.preventDefault();
-            const url = new URL(paginationLink.href);
-            const page = url.searchParams.get('page');
-            if (page) {
-              const currentUrl = new URL(window.location.href);
-              currentUrl.searchParams.set('page', page);
-              window.history.pushState({}, '', currentUrl.toString());
-              if (typeof window.applyFilters === 'function') {
-                window.applyFilters();
-              }
-            }
+          if (!categoryDropdown.contains(e.target)) {
+            categoryDropdown.classList.remove('show');
+            categoryDropdownMenu.classList.remove('show');
           }
         });
-                        });
+      }
 
-        // Cart functionality
-        function addToCart(productId) {
-          fetch(`{{ url('/cart/add') }}/${productId}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-              'X-Requested-With': 'XMLHttpRequest'
+      // Handle pagination links with AJAX (delegated event listener)
+      document.addEventListener('click', function (e) {
+        const paginationLink = e.target.closest('.pagination a, .pagination-nav a');
+        if (paginationLink) {
+          e.preventDefault();
+          const url = new URL(paginationLink.href);
+          const page = url.searchParams.get('page');
+          if (page) {
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('page', page);
+            window.history.pushState({}, '', currentUrl.toString());
+            if (typeof window.applyFilters === 'function') {
+              window.applyFilters();
             }
-          })
-            .then(response => response.json())
-            .then(data => {
-              if (data.success) {
-                updateCartBar();
-                // Show success notification
-                showCartNotification('Product added to cart!', 'success');
-              } else {
-                showCartNotification(data.message || 'Failed to add product to cart', 'error');
-              }
-            })
-            .catch(error => {
-              console.error('Error:', error);
-              showCartNotification('An error occurred. Please try again.', 'error');
-            });
+          }
         }
+      });
+    });
 
-        function updateCartBar() {
-          fetch('{{ route("frontend.cart.get") }}', {
-            method: 'GET',
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          })
-            .then(response => response.json())
-            .then(data => {
-              if (data.success) {
-                const cartBar = document.getElementById('cartBar');
-                const cartCountBadge = document.getElementById('cartCountBadge');
-                const cartItemsText = document.getElementById('cartItemsText');
-                const cartTotalText = document.getElementById('cartTotalText');
-
-                if (data.cart_count > 0) {
-                  cartBar.style.display = 'block';
-                  cartCountBadge.textContent = data.cart_count;
-                  cartItemsText.textContent = data.cart_count === 1 ? '1 item' : `${data.cart_count} items`;
-                  cartTotalText.textContent = data.cart_total_formatted;
-                  // Add padding to body to prevent content from being hidden
-                  document.body.style.paddingBottom = window.innerWidth <= 768 ? '140px' : '100px';
-                } else {
-                  cartBar.style.display = 'none';
-                  // Remove padding when cart is empty
-                  document.body.style.paddingBottom = '0';
-                }
-              }
-            })
-            .catch(error => {
-              console.error('Error:', error);
-            });
+    // Cart functionality
+    function addToCart(productId) {
+      fetch(`{{ url('/cart/add') }}/${productId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+          'X-Requested-With': 'XMLHttpRequest'
         }
-
-        function showCartNotification(message, type) {
-          // Create notification element
-          const notification = document.createElement('div');
-          notification.className = `cart-notification cart-notification-${type}`;
-          notification.textContent = message;
-          document.body.appendChild(notification);
-
-          // Show notification
-          setTimeout(() => {
-            notification.classList.add('show');
-          }, 10);
-
-          // Hide and remove notification after 3 seconds
-          setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => {
-              notification.remove();
-            }, 300);
-          }, 3000);
-        }
-
-        // Wishlist functionality
-        function toggleWishlist(wishlistBtn) {
-          if (!wishlistBtn) return;
-
-          const productId = wishlistBtn.getAttribute('data-product-id');
-          if (!productId) return;
-
-          const isCurrentlyActive = wishlistBtn.classList.contains('active');
-          const action = isCurrentlyActive ? 'remove' : 'add';
-          const endpoint = `{{ url('/wishlist') }}/${action}/${productId}`;
-
-          fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          })
-            .then(response => response.json())
-            .then(data => {
-              if (data.success) {
-                const icon = wishlistBtn.querySelector('i');
-                if (action === 'add') {
-                  wishlistBtn.classList.add('active');
-                  icon.classList.remove('bi-heart');
-                  icon.classList.add('bi-heart-fill');
-                  wishlistBtn.setAttribute('title', 'Remove from Wishlist');
-                  showCartNotification('Product added to wishlist!', 'success');
-                } else {
-                  wishlistBtn.classList.remove('active');
-                  icon.classList.remove('bi-heart-fill');
-                  icon.classList.add('bi-heart');
-                  wishlistBtn.setAttribute('title', 'Add to Wishlist');
-                  showCartNotification('Product removed from wishlist!', 'success');
-                }
-                // Update wishlist count badge
-                const wishlistBadge = document.getElementById('wishlistCountBadge');
-                if (wishlistBadge && data.wishlist_count !== undefined) {
-                  wishlistBadge.textContent = data.wishlist_count;
-                  wishlistBadge.style.display = data.wishlist_count > 0 ? '' : 'none';
-                }
-              } else {
-                showCartNotification('Unable to update wishlist. Please try again.', 'error');
-              }
-            })
-            .catch(error => {
-              console.error('Error:', error);
-              showCartNotification('Unable to update wishlist. Please try again.', 'error');
-            });
-        }
-
-        // Initialize cart bar on page load
-        document.addEventListener('DOMContentLoaded', function () {
-          updateCartBar();
-
-          // Add click handlers to all cart icons (including dynamically loaded ones)
-          document.addEventListener('click', function (e) {
-            const cartBtn = e.target.closest('.add-to-cart-btn');
-            if (cartBtn) {
-              e.preventDefault();
-              e.stopPropagation();
-              const productId = cartBtn.getAttribute('data-product-id');
-              if (productId) {
-                addToCart(productId);
-              }
-            }
-
-            // Handle wishlist toggle
-            const wishlistBtn = e.target.closest('.wishlist-btn');
-            if (wishlistBtn) {
-              e.preventDefault();
-              e.stopPropagation();
-              toggleWishlist(wishlistBtn);
-            }
-          });
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            updateCartBar();
+            // Show success notification
+            showCartNotification('Product added to cart!', 'success');
+          } else {
+            showCartNotification(data.message || 'Failed to add product to cart', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showCartNotification('An error occurred. Please try again.', 'error');
         });
+    }
 
-        function removeFilter(filterType) {
-          const url = new URL(window.location.href);
-          url.searchParams.delete(filterType);
+    function updateCartBar() {
+      fetch('{{ route("frontend.cart.get") }}', {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const cartBar = document.getElementById('cartBar');
+            const cartCountBadge = document.getElementById('cartCountBadge');
+            const cartItemsText = document.getElementById('cartItemsText');
+            const cartTotalText = document.getElementById('cartTotalText');
 
-          // Also uncheck the corresponding filter
-          if (filterType === 'category') {
-            const categoryInput = document.querySelector('#categoryFilter input[value=""]');
-            if (categoryInput) categoryInput.checked = true;
-          } else if (filterType === 'brand') {
-            const brandCheckbox = document.querySelector('.brand-checkbox:checked');
-            if (brandCheckbox) brandCheckbox.checked = false;
-          } else if (filterType === 'min_price' || filterType === 'max_price') {
-            const minInput = document.getElementById('minInput');
-            const maxInput = document.getElementById('maxInput');
-            if (filterType === 'min_price' && minInput) minInput.value = '';
-            if (filterType === 'max_price' && maxInput) maxInput.value = '';
-            const allPriceRadio = document.querySelector('.price-radio[value="all"]');
-            if (allPriceRadio) allPriceRadio.checked = true;
-          } else if (filterType === 'tag') {
-            url.searchParams.delete('tag');
-          } else if (filterType === 'search') {
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) searchInput.value = '';
+            if (data.cart_count > 0) {
+              cartBar.style.display = 'block';
+              cartCountBadge.textContent = data.cart_count;
+              cartItemsText.textContent = data.cart_count === 1 ? '1 item' : `${data.cart_count} items`;
+              cartTotalText.textContent = data.cart_total_formatted;
+              // Add padding to body to prevent content from being hidden
+              document.body.style.paddingBottom = window.innerWidth <= 768 ? '140px' : '100px';
+            } else {
+              cartBar.style.display = 'none';
+              // Remove padding when cart is empty
+              document.body.style.paddingBottom = '0';
+            }
           }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
 
-          window.history.pushState({}, '', url.toString());
+    function showCartNotification(message, type) {
+      // Create notification element
+      const notification = document.createElement('div');
+      notification.className = `cart-notification cart-notification-${type}`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
 
-          // Trigger filter update
-          if (typeof window.applyFilters === 'function') {
-            window.applyFilters();
+      // Show notification
+      setTimeout(() => {
+        notification.classList.add('show');
+      }, 10);
+
+      // Hide and remove notification after 3 seconds
+      setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+          notification.remove();
+        }, 300);
+      }, 3000);
+    }
+
+    // Wishlist functionality
+    function toggleWishlist(wishlistBtn) {
+      if (!wishlistBtn) return;
+
+      const productId = wishlistBtn.getAttribute('data-product-id');
+      if (!productId) return;
+
+      const isCurrentlyActive = wishlistBtn.classList.contains('active');
+      const action = isCurrentlyActive ? 'remove' : 'add';
+      const endpoint = `{{ url('/wishlist') }}/${action}/${productId}`;
+
+      fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const icon = wishlistBtn.querySelector('i');
+            if (action === 'add') {
+              wishlistBtn.classList.add('active');
+              icon.classList.remove('bi-heart');
+              icon.classList.add('bi-heart-fill');
+              wishlistBtn.setAttribute('title', 'Remove from Wishlist');
+              showCartNotification('Product added to wishlist!', 'success');
+            } else {
+              wishlistBtn.classList.remove('active');
+              icon.classList.remove('bi-heart-fill');
+              icon.classList.add('bi-heart');
+              wishlistBtn.setAttribute('title', 'Add to Wishlist');
+              showCartNotification('Product removed from wishlist!', 'success');
+            }
+            // Update wishlist count badge
+            const wishlistBadge = document.getElementById('wishlistCountBadge');
+            if (wishlistBadge && data.wishlist_count !== undefined) {
+              wishlistBadge.textContent = data.wishlist_count;
+              wishlistBadge.style.display = data.wishlist_count > 0 ? '' : 'none';
+            }
+          } else {
+            showCartNotification('Unable to update wishlist. Please try again.', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showCartNotification('Unable to update wishlist. Please try again.', 'error');
+        });
+    }
+
+    // Initialize cart bar on page load
+    document.addEventListener('DOMContentLoaded', function () {
+      updateCartBar();
+
+      // Add click handlers to all cart icons (including dynamically loaded ones)
+      document.addEventListener('click', function (e) {
+        const cartBtn = e.target.closest('.add-to-cart-btn');
+        if (cartBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const productId = cartBtn.getAttribute('data-product-id');
+          if (productId) {
+            addToCart(productId);
           }
         }
 
-        function clearAllFilters() {
-          const url = new URL(window.location.href);
-          // Remove all filter parameters
-          url.searchParams.delete('category');
-          url.searchParams.delete('brand');
-          url.searchParams.delete('tag');
-          url.searchParams.delete('min_price');
-          url.searchParams.delete('max_price');
-          url.searchParams.delete('search');
-          url.searchParams.delete('page');
-
-          // Reset form elements
-          const categoryInput = document.querySelector('#categoryFilter input[value=""]');
-          if (categoryInput) categoryInput.checked = true;
-
-          const brandCheckboxes = document.querySelectorAll('.brand-checkbox');
-          brandCheckboxes.forEach(cb => cb.checked = false);
-
-          const searchInput = document.getElementById('searchInput');
-          if (searchInput) searchInput.value = '';
-
-          const minInput = document.getElementById('minInput');
-          const maxInput = document.getElementById('maxInput');
-          if (minInput) minInput.value = '';
-          if (maxInput) maxInput.value = '';
-
-          const allPriceRadio = document.querySelector('.price-radio[value="all"]');
-          if (allPriceRadio) allPriceRadio.checked = true;
-
-          window.history.pushState({}, '', url.toString());
-
-          // Trigger filter update
-          if (typeof window.applyFilters === 'function') {
-            window.applyFilters();
-          }
+        // Handle wishlist toggle
+        const wishlistBtn = e.target.closest('.wishlist-btn');
+        if (wishlistBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleWishlist(wishlistBtn);
         }
-      </script>
+      });
+    });
+
+    function removeFilter(filterType) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete(filterType);
+
+      // Also uncheck the corresponding filter
+      if (filterType === 'category') {
+        const categoryInput = document.querySelector('#categoryFilter input[value=""]');
+        if (categoryInput) categoryInput.checked = true;
+      } else if (filterType === 'brand') {
+        const brandCheckbox = document.querySelector('.brand-checkbox:checked');
+        if (brandCheckbox) brandCheckbox.checked = false;
+      } else if (filterType === 'min_price' || filterType === 'max_price') {
+        const minInput = document.getElementById('minInput');
+        const maxInput = document.getElementById('maxInput');
+        if (filterType === 'min_price' && minInput) minInput.value = '';
+        if (filterType === 'max_price' && maxInput) maxInput.value = '';
+        const allPriceRadio = document.querySelector('.price-radio[value="all"]');
+        if (allPriceRadio) allPriceRadio.checked = true;
+      } else if (filterType === 'tag') {
+        url.searchParams.delete('tag');
+      } else if (filterType === 'search') {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.value = '';
+      }
+
+      window.history.pushState({}, '', url.toString());
+
+      // Trigger filter update
+      if (typeof window.applyFilters === 'function') {
+        window.applyFilters();
+      }
+    }
+
+    function clearAllFilters() {
+      const url = new URL(window.location.href);
+      // Remove all filter parameters
+      url.searchParams.delete('category');
+      url.searchParams.delete('brand');
+      url.searchParams.delete('tag');
+      url.searchParams.delete('min_price');
+      url.searchParams.delete('max_price');
+      url.searchParams.delete('search');
+      url.searchParams.delete('page');
+
+      // Reset form elements
+      const categoryInput = document.querySelector('#categoryFilter input[value=""]');
+      if (categoryInput) categoryInput.checked = true;
+
+      const brandCheckboxes = document.querySelectorAll('.brand-checkbox');
+      brandCheckboxes.forEach(cb => cb.checked = false);
+
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) searchInput.value = '';
+
+      const minInput = document.getElementById('minInput');
+      const maxInput = document.getElementById('maxInput');
+      if (minInput) minInput.value = '';
+      if (maxInput) maxInput.value = '';
+
+      const allPriceRadio = document.querySelector('.price-radio[value="all"]');
+      if (allPriceRadio) allPriceRadio.checked = true;
+
+      window.history.pushState({}, '', url.toString());
+
+      // Trigger filter update
+      if (typeof window.applyFilters === 'function') {
+        window.applyFilters();
+      }
+    }
+  </script>
 @endpush
