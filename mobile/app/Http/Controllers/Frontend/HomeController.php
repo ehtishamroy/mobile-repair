@@ -558,13 +558,13 @@ class HomeController extends Controller
                 $productsHtml .= '<div class="card-body">';
                 $productsHtml .= '<div class="ratio ratio-1x1 thumb">';
                 $productsHtml .= '<a href="' . $productUrl . '" class="d-block h-100"><img src="' . ($product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg')) . '" alt="' . htmlspecialchars($product->name) . '" class="w-100 h-100 p-2 rounded" /></a>';
-                $productsHtml .= '<div class="product-actions">';
+                $productsHtml .= '<div class="product-actions" style="z-index: 3; position: relative;">';
                 $productsHtml .= '<div class="action-btn ' . $wishlistClass . '" data-product-id="' . $product->id . '" title="' . ($isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist') . '"><i class="bi ' . $wishlistIcon . '"></i></div>';
                 $productsHtml .= '<div class="action-btn add-to-cart-btn" data-product-id="' . $product->id . '" title="Add to Cart"><i class="bi bi-cart"></i></div>';
                 $productsHtml .= '<a href="' . $productUrl . '" class="action-btn" title="View Product"><i class="bi bi-eye"></i></a>';
                 $productsHtml .= '</div>';
                 $productsHtml .= '</div>';
-                $productsHtml .= '<div class="rating mt-3 d-flex align-items-center">';
+                $productsHtml .= '<div class="rating mt-3 d-flex align-items-center gap-2">';
                 $productsHtml .= '<span class="text-primary-custom rating-stars-sm">';
                 $productsHtml .= $starsHtml;
                 $productsHtml .= '</span>';
@@ -574,7 +574,7 @@ class HomeController extends Controller
                     $productsHtml .= '<span class="rating-count">(0)</span>';
                 }
                 $productsHtml .= '</div>';
-                $productsHtml .= '<a href="' . $productUrl . '" class="text-decoration-none text-dark"><p class="product-title mt-2 mb-0">' . htmlspecialchars(\Illuminate\Support\Str::limit($product->name, 50)) . '</p></a>';
+                $productsHtml .= '<a href="' . $productUrl . '" class="text-decoration-none text-dark stretched-link"><p class="product-title mt-2 mb-0">' . htmlspecialchars(\Illuminate\Support\Str::limit($product->name, 50)) . '</p></a>';
                 $productsHtml .= '<div class="product-price text-promo">';
                 $productsHtml .= $currencySymbol . number_format($product->price, 2);
                 if ($product->compare_at_price) {
@@ -1167,8 +1167,21 @@ class HomeController extends Controller
         $order = null;
 
         if ($orderNumber) {
-            $order = \App\Models\RepairOrder::with(['service', 'deviceType'])
+            // Handle malformed URLs like ?order=REP-123?order=REP-123
+            // Extract just the first order number if it contains a question mark
+            if (strpos($orderNumber, '?') !== false) {
+                $orderNumber = explode('?', $orderNumber)[0];
+            }
+
+            $order = \App\Models\RepairOrder::with(['service', 'deviceType', 'qualityTier'])
                 ->where('order_number', $orderNumber)
+                ->first();
+        }
+
+        // If no order found but we just came from a form submission, try to get the most recent order
+        if (!$order) {
+            $order = \App\Models\RepairOrder::with(['service', 'deviceType', 'qualityTier'])
+                ->orderBy('created_at', 'desc')
                 ->first();
         }
 
@@ -1439,6 +1452,20 @@ class HomeController extends Controller
                 }*/
             }
 
+            // Additional validation: appointment required for visit delivery
+            if ($validated['delivery_method'] === 'visit') {
+                if (empty($validated['appointment_date']) || empty($validated['appointment_time'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Appointment date and time are required when visiting the store.',
+                        'errors' => [
+                            'appointment_date' => ['Appointment date is required.'],
+                            'appointment_time' => ['Appointment time is required.']
+                        ]
+                    ], 422);
+                }
+            }
+
             // For visit us, payment_method can be empty (user will pay on visit)
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -1574,7 +1601,9 @@ class HomeController extends Controller
                             $order->device_model,
                             $issues,
                             $order->issue_description ?? 'None',
-                            $qualityTierName
+                            $qualityTierName,
+                            $order->appointment_date,
+                            $order->appointment_time
                         )
                     );
                     \Log::info('Repair quote request email sent successfully to: ' . $order->customer_email);

@@ -47,10 +47,10 @@
                         @foreach($brands as $brand)
                             <div class="device-item" data-search="{{ strtolower($brand->name) }}">
                                 <a href="{{ route('frontend.mobile-repair', ['service' => $service->id, 'brand' => $brand->id]) }}"
-                                    class="device-card flex-center  text-decoration-none"
-                                    style="padding: 10px; font-size: 15pt;">
+                                    class="device-card flex-center  text-decoration-none" style="padding: 10px; font-size: 15pt;">
                                     @if($brand->logo)
-                                        <img src="{{ asset('storage/' . $brand->logo) }}" alt="{{ $brand->name }}" style="padding:10px; height: 100px;">
+                                        <img src="{{ asset('storage/' . $brand->logo) }}" alt="{{ $brand->name }}"
+                                            style="padding:10px; height: 100px;">
                                     @elseif(strtolower($brand->name) === 'apple' || strtolower($brand->name) === 'iphone')
                                         <i class="bi bi-apple"></i>
                                     @elseif(strtolower($brand->name) === 'samsung')
@@ -72,7 +72,7 @@
                                         <img src="{{ asset('front-assets/img/brand-logo/lenovo.svg') }}" alt="{{ $brand->name }}"
                                             style="height: 80px;">
                                     @endif
-                                    <!-- {{ $brand->name }} -->
+                                    {{ $brand->name }}
                                     <span class="check-icon">
                                         <img src="{{ asset('front-assets/img/select-check.svg') }}" alt="" />
                                     </span>
@@ -186,7 +186,7 @@
                                     autocomplete="off" />
                                 <label class="device-card" for="device_other" style="padding: 10px 10px; font-size: 15px;">
                                     Others
-                                  
+
                                 </label>
                             </div>
                         </div>
@@ -238,26 +238,19 @@
 
             .device-card {
                 color: #000000;
-<<<<<<< HEAD
-                min-height: 80px; /* Balanced height */
+                min-height: 80px;
                 display: flex;
-                flex-direction: row; /* Side by side */
+                flex-direction: row;
                 justify-content: center;
                 align-items: center;
                 text-align: center;
                 gap: 10px;
                 padding: 10px 15px;
-=======
                 border: 1px solid #e0e0e0;
                 border-radius: 8px;
                 background-color: #f8f8f8;
                 transition: all 0.3s ease;
-                display: flex;
-                align-items: center;
-                justify-content: center;
                 flex-wrap: wrap;
-                min-height: 80px;
-                gap: 8px;
             }
 
             .device-card i {
@@ -284,7 +277,6 @@
             .device-card:hover img,
             .device-card:hover i {
                 filter: brightness(0) invert(1);
->>>>>>> c05f138f1b5b7a88f5efaedf0ed8941e3e536bde
             }
 
             #deviceSearch:focus,
@@ -308,23 +300,14 @@
 
             @media (max-width: 768px) {
                 .device-grid {
-<<<<<<< HEAD
                     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
                     gap: 12px;
-                }
-                
-                .device-card {
-                    min-height: 70px;
-                    font-size: 14px;
-=======
-                    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-                    gap: 8px;
                 }
 
                 .device-card {
                     min-height: 70px;
+                    font-size: 14px;
                     padding: 8px !important;
-                    font-size: 11px !important;
                     gap: 6px !important;
                 }
 
@@ -334,24 +317,19 @@
 
                 .device-card img {
                     max-height: 30px;
->>>>>>> c05f138f1b5b7a88f5efaedf0ed8941e3e536bde
                 }
             }
 
             @media (max-width: 576px) {
                 .device-grid {
-<<<<<<< HEAD
                     grid-template-columns: repeat(auto-fit, minmax(100%, 1fr));
                     gap: 10px;
-=======
-                    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-                    gap: 6px;
                 }
 
                 .device-card {
                     min-height: 60px;
                     padding: 6px !important;
-                    font-size: 10px !important;
+                    font-size: 14px !important;
                     gap: 4px !important;
                 }
 
@@ -361,7 +339,6 @@
 
                 .device-card img {
                     max-height: 25px;
->>>>>>> c05f138f1b5b7a88f5efaedf0ed8941e3e536bde
                 }
             }
 
@@ -404,7 +381,8 @@
 
             /* Logo sizing */
             .device-card img {
-                height: 24px !important; /* Balanced icon size */
+                height: 24px !important;
+                /* Balanced icon size */
                 margin-bottom: 0;
                 object-fit: contain;
             }

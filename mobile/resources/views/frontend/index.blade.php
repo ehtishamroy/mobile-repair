@@ -8,107 +8,107 @@
 
 @section('content')
   <!-- Swiper Hero Section -->
-<div class="swiper mySwiper swiper-hero-section mb-custom">
+  <div class="swiper mySwiper swiper-hero-section mb-custom">
     <div class="swiper-wrapper">
 
-        <!-- Slide 1 -->
-        <div class="swiper-slide">
-            <div class="slide-bg">
-                <img src="{{ asset('front-assets/img/hero-slider/mobile-hero.webp') }}" alt="Hero Slide 1" />
-            </div>
-
-            <div class="hero-content container text-center text-md-start">
-                <span class="badge rounded-pill bg-light fw-semibold px-3 py-2 mb-3 text-primary-custom text-uppercase">
-                    {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
-                </span>
-
-                <h1 class="display-2 fw-700 font-satoshi text-white mb-3">
-                    {!! $content->hero_title ?? 'Diagnose Free &<br /> Quick Repairs' !!}
-                </h1>
-
-                <p class="text-white fs-18 mb-4">
-                    {!! nl2br(e($content->hero_description ?? 'A fast, no-cost device checkup that leads straight to a quick and reliable repair.')) !!}
-                </p>
-
-                <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
-                    {{ $content->hero_button_text ?? 'Book a repair!' }}
-                </a>
-            </div>
+      <!-- Slide 1 -->
+      <div class="swiper-slide">
+        <div class="slide-bg">
+          <img src="{{ asset('front-assets/img/hero-slider/mobile-hero.webp') }}" alt="Hero Slide 1" />
         </div>
 
-        <!-- Slide 2 -->
-        <div class="swiper-slide">
-            <div class="slide-bg">
-                <img src="{{ asset('front-assets/img/hero-slider/laptop-hero.webp') }}" alt="Hero Slide 2" />
-            </div>
+        <div class="hero-content container text-center text-md-start">
+          <span class="badge rounded-pill bg-light fw-semibold px-3 py-2 mb-3 text-primary-custom text-uppercase">
+            {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
+          </span>
 
-            <div class="hero-content container text-center text-md-start">
-                <span class="badge rounded-pill bg-light fw-semibold px-3 py-2 mb-3 text-primary-custom text-uppercase">
-                    {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
-                </span>
+          <h1 class="display-2 fw-700 font-satoshi text-white mb-3">
+            {!! $content->hero_title ?? 'Diagnose Free &<br /> Quick Repairs' !!}
+          </h1>
 
-                <h1 class="display-2 fw-700 font-satoshi text-white mb-3">
-                    {!! $content->hero_title ?? 'Expert Laptop Repairs &<br /> with Quick Turnaround' !!}
-                </h1>
+          <p class="text-white fs-18 mb-4">
+            {!! nl2br(e($content->hero_description ?? 'A fast, no-cost device checkup that leads straight to a quick and reliable repair.')) !!}
+          </p>
 
-                <p class="text-white fs-18 mb-4">
-                    {!! nl2br(e($content->hero_description ?? 'Skilled technicians, premium parts, and a hassle-free repair process designed to save your time.')) !!}
-                </p>
+          <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
+            {{ $content->hero_button_text ?? 'Book a repair!' }}
+          </a>
+        </div>
+      </div>
 
-                <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
-                    {{ $content->hero_button_text ?? 'Book a repair!' }}
-                </a>
-            </div>
+      <!-- Slide 2 -->
+      <div class="swiper-slide">
+        <div class="slide-bg">
+          <img src="{{ asset('front-assets/img/hero-slider/laptop-hero.webp') }}" alt="Hero Slide 2" />
         </div>
 
-        <!-- Slide 3 -->
-        <div class="swiper-slide">
-            <div class="slide-bg">
-                <img src="{{ asset('front-assets/img/hero-slider/tablet-hero.webp') }}" alt="Hero Slide 3" />
-            </div>
+        <div class="hero-content container text-center text-md-start">
+          <span class="badge rounded-pill bg-light fw-semibold px-3 py-2 mb-3 text-primary-custom text-uppercase">
+            {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
+          </span>
 
-            <div class="hero-content container text-center text-md-start">
-                <span class="badge rounded-pill bg-light fw-semibold px-3 py-2 mb-3 text-primary-custom text-uppercase">
-                    {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
-                </span>
+          <h1 class="display-2 fw-700 font-satoshi text-white mb-3">
+            {!! $content->hero_title ?? 'Expert Laptop Repairs &<br /> with Quick Turnaround' !!}
+          </h1>
 
-                <h1 class="display-2 fw-700 font-satoshi text-white mb-3">
-                    {!! $content->hero_title ?? 'Restor Your Tablet <br /> Performance - Fast & Reliable' !!}
-                </h1>
+          <p class="text-white fs-18 mb-4">
+            {!! nl2br(e($content->hero_description ?? 'Skilled technicians, premium parts, and a hassle-free repair process designed to save your time.')) !!}
+          </p>
 
-                <p class="text-white fs-18 mb-4">
-                    {!! nl2br(e($content->hero_description ?? 'Hassle-free repairs that make your tablet feel brand new—done with precision and care.')) !!}
-                </p>
-
-                <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
-                    {{ $content->hero_button_text ?? 'Book a repair!' }}
-                </a>
-            </div>
+          <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
+            {{ $content->hero_button_text ?? 'Book a repair!' }}
+          </a>
         </div>
-         <!-- Slide 4 -->
-        <div class="swiper-slide">
-            <div class="slide-bg">
-                <img src="{{ asset('front-assets/img/hero-slider/cpu-hero.webp') }}" alt="Hero Slide 3" />
-            </div>
+      </div>
 
-            <div class="hero-content container text-center text-md-start">
-                <span class="badge rounded-pill bg-light fw-semibold px-3 py-2 mb-3 text-primary-custom text-uppercase">
-                    {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
-                </span>
-
-                <h1 class="display-2 fw-700 font-satoshi text-white mb-3">
-                    {!! $content->hero_title ?? 'Expert CPU Troubleshooting &<br /> Repairs' !!}
-                </h1>
-
-                <p class="text-white fs-18 mb-4">
-                    {!! nl2br(e($content->hero_description ?? 'From heating issues to performance drops, our experts fix CPU problems with accuracy and speed.')) !!}
-                </p>
-
-                <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
-                    {{ $content->hero_button_text ?? 'Book a repair!' }}
-                </a>
-            </div>
+      <!-- Slide 3 -->
+      <div class="swiper-slide">
+        <div class="slide-bg">
+          <img src="{{ asset('front-assets/img/hero-slider/tablet-hero.webp') }}" alt="Hero Slide 3" />
         </div>
+
+        <div class="hero-content container text-center text-md-start">
+          <span class="badge rounded-pill bg-light fw-semibold px-3 py-2 mb-3 text-primary-custom text-uppercase">
+            {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
+          </span>
+
+          <h1 class="display-2 fw-700 font-satoshi text-white mb-3">
+            {!! $content->hero_title ?? 'Restor Your Tablet <br /> Performance - Fast & Reliable' !!}
+          </h1>
+
+          <p class="text-white fs-18 mb-4">
+            {!! nl2br(e($content->hero_description ?? 'Hassle-free repairs that make your tablet feel brand new—done with precision and care.')) !!}
+          </p>
+
+          <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
+            {{ $content->hero_button_text ?? 'Book a repair!' }}
+          </a>
+        </div>
+      </div>
+      <!-- Slide 4 -->
+      <div class="swiper-slide">
+        <div class="slide-bg">
+          <img src="{{ asset('front-assets/img/hero-slider/cpu-hero.webp') }}" alt="Hero Slide 3" />
+        </div>
+
+        <div class="hero-content container text-center text-md-start">
+          <span class="badge rounded-pill bg-light fw-semibold px-3 py-2 mb-3 text-primary-custom text-uppercase">
+            {{ $content->hero_badge ?? '100% Satisfaction Guaranteed!' }}
+          </span>
+
+          <h1 class="display-2 fw-700 font-satoshi text-white mb-3">
+            {!! $content->hero_title ?? 'Expert CPU Troubleshooting &<br /> Repairs' !!}
+          </h1>
+
+          <p class="text-white fs-18 mb-4">
+            {!! nl2br(e($content->hero_description ?? 'From heating issues to performance drops, our experts fix CPU problems with accuracy and speed.')) !!}
+          </p>
+
+          <a href="{{ route('frontend.book-repair') }}" class="btn btn-gradient">
+            {{ $content->hero_button_text ?? 'Book a repair!' }}
+          </a>
+        </div>
+      </div>
 
     </div>
 
@@ -118,7 +118,7 @@
 
     <!-- Swiper Pagination -->
     <div class="swiper-pagination"></div>
-</div>
+  </div>
   <section id="animated-section-2" class="mb-custom overflow-hidden">
     <div class="container">
       <div class="row g-5">
@@ -293,7 +293,7 @@
                           src="{{ $product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg') }}"
                           alt="{{ $product->name }}" class="w-100 h-100 p-2 rounded" />
                       </a>
-                      <div class="product-actions">
+                      <div class="product-actions" style="z-index: 3; position: relative;">
                         @php
                           $isInWishlist = in_array($product->id, $wishlist ?? []);
                         @endphp
@@ -339,7 +339,8 @@
                         @endif
                       </span>
                     </div>
-                    <a href="{{ route('frontend.product-detail', $product->slug) }}" class="text-decoration-none text-dark">
+                    <a href="{{ route('frontend.product-detail', $product->slug) }}"
+                      class="text-decoration-none text-dark stretched-link">
                       <p class="product-title mt-2 mb-0">{{ Str::limit($product->name, 50) }}</p>
                     </a>
                     <div class="product-price {{ $product->compare_at_price ? 'text-promo' : '' }}">
@@ -466,7 +467,7 @@
                               src="{{ $product->featured_image ? asset('storage/' . $product->featured_image) : asset('front-assets/img/phone-1.svg') }}"
                               alt="{{ $product->name }}" class="w-100 h-100 p-2 rounded" />
                           </a>
-                          <div class="product-actions">
+                          <div class="product-actions" style="z-index: 3; position: relative;">
                             @php
                               $isInWishlist = in_array($product->id, $wishlist ?? []);
                             @endphp
@@ -512,7 +513,8 @@
                             @endif
                           </span>
                         </div>
-                        <a href="{{ route('frontend.product-detail', $product->slug) }}" class="text-decoration-none text-dark">
+                        <a href="{{ route('frontend.product-detail', $product->slug) }}"
+                          class="text-decoration-none text-dark stretched-link">
                           <p class="product-title mt-2 mb-0">{{ Str::limit($product->name, 50) }}</p>
                         </a>
                         <div class="product-price {{ $product->compare_at_price ? 'text-promo' : '' }}">
@@ -578,21 +580,21 @@
         notification.className = `cart-notification cart-notification-${type}`;
         notification.textContent = message;
         notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        border-radius: 5px;
-        color: #fff;
-        font-weight: 500;
-        z-index: 9999;
-        opacity: 0;
-        transform: translateX(400px);
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        max-width: 400px;
-        ${type === 'success' ? 'background: #28a745;' : 'background: #dc3545;'}
-      `;
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 5px;
+                color: #fff;
+                font-weight: 500;
+                z-index: 9999;
+                opacity: 0;
+                transform: translateX(400px);
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                max-width: 400px;
+                ${type === 'success' ? 'background: #28a745;' : 'background: #dc3545;'}
+              `;
         document.body.appendChild(notification);
 
         // Show notification

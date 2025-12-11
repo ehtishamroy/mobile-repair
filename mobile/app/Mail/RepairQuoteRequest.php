@@ -18,13 +18,15 @@ class RepairQuoteRequest extends Mailable
     public $issues;
     public $comments;
     public $qualityTierName;
+    public $appointmentDate;
+    public $appointmentTime;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct($orderNumber, $customerName, $customerEmail, $customerPhone, $deviceModel, $issues, $comments, $qualityTierName = null)
+    public function __construct($orderNumber, $customerName, $customerEmail, $customerPhone, $deviceModel, $issues, $comments, $qualityTierName = null, $appointmentDate = null, $appointmentTime = null)
     {
         $this->orderNumber = $orderNumber;
         $this->customerName = $customerName;
@@ -34,6 +36,8 @@ class RepairQuoteRequest extends Mailable
         $this->issues = $issues;
         $this->comments = $comments;
         $this->qualityTierName = $qualityTierName;
+        $this->appointmentDate = $appointmentDate;
+        $this->appointmentTime = $appointmentTime;
     }
 
     /**

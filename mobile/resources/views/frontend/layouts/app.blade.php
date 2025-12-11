@@ -138,10 +138,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
 
   <!-- Link Swiper's CSS -->
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
-    />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
   <link rel="stylesheet" href="{{ asset('front-assets/css/style.css') }}" />
   <style>
@@ -640,16 +637,17 @@
                       </div>
 
                       <div class="nested-dropdown">
-                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">iPhone</span><span
-                            class="dropdown-desc">Latest iPhones</span></a>
-                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Samsung</span><span
-                            class="dropdown-desc">Galaxy series</span></a>
-                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Google Pixel</span><span
-                            class="dropdown-desc">Pixel phones</span></a>
-                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">OnePlus</span><span
-                            class="dropdown-desc">OnePlus phones</span></a>
-                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Xiaomi</span><span
-                            class="dropdown-desc">Xiaomi phones</span></a>
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span
+                            class="dropdown-title">iPhone</span><span class="dropdown-desc">Latest iPhones</span></a>
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span
+                            class="dropdown-title">Samsung</span><span class="dropdown-desc">Galaxy series</span></a>
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span
+                            class="dropdown-title">Google Pixel</span><span class="dropdown-desc">Pixel
+                            phones</span></a>
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span
+                            class="dropdown-title">OnePlus</span><span class="dropdown-desc">OnePlus phones</span></a>
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span
+                            class="dropdown-title">Xiaomi</span><span class="dropdown-desc">Xiaomi phones</span></a>
                       </div>
                     </div>
 
@@ -661,18 +659,23 @@
                       </div>
 
                       <div class="nested-dropdown">
-                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Phone Cases</span></a>
-                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Chargers</span></a>
-                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Screen Protectors</span></a>
-                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Headphones</span></a>
-                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Power Banks</span></a>
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span
+                            class="dropdown-title">Phone Cases</span></a>
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span
+                            class="dropdown-title">Chargers</span></a>
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span
+                            class="dropdown-title">Screen Protectors</span></a>
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span
+                            class="dropdown-title">Headphones</span></a>
+                        <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span
+                            class="dropdown-title">Power Banks</span></a>
                       </div>
                     </div>
                   </div>
 
                   <div class="dropdown-column">
-                    <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span class="dropdown-title">Watches</span><span
-                        class="dropdown-desc">Smartwatches & bands</span></a>
+                    <a href="{{ route('frontend.marketplace') }}" class="dropdown-item"><span
+                        class="dropdown-title">Watches</span><span class="dropdown-desc">Smartwatches & bands</span></a>
 
                   </div>
                 </div>
@@ -681,6 +684,11 @@
               <!-- <span class="nav-separator">></span> -->
 
               <a href="{{ route('frontend.join') }}" class="nav-link">Join Us</a>
+              <a href="{{ route('frontend.wishlist') }}" class="nav-link d-flex align-items-center">
+                Wishlist
+                <span class="badge bg-danger rounded-pill ms-2" id="wishlistCountBadge"
+                  style="{{ count(session('wishlist', [])) > 0 ? '' : 'display: none;' }}">{{ count(session('wishlist', [])) }}</span>
+              </a>
             </nav>
           </div>
 
@@ -1030,142 +1038,111 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <!-- Swiper JS -->
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
 
   <script>
-  gsap.registerPlugin(ScrollTrigger);
+    gsap.registerPlugin(ScrollTrigger);
 
-  window.addEventListener("load", () => {
-    const tl = gsap.timeline();
+    window.addEventListener("load", () => {
+      const tl = gsap.timeline();
 
-    /* ------------------------------
-        HERO SECTION ANIMATION
-    ------------------------------ */
-    tl.to(".swiper-hero-section .container, .hero-section .container", {
-      opacity: 1,
-      y: 0,
-      duration: 1,
-      delay: 1.3,
-      ease: "power2.out",
-    });
-
-    tl.to(
-      ".header-section",
-      {
+      /* ------------------------------
+          HERO SECTION ANIMATION
+      ------------------------------ */
+      tl.to(".swiper-hero-section .container, .hero-section .container", {
         opacity: 1,
-        height: "auto",
         y: 0,
-        delay: 1,
-        duration: 0.6,
+        duration: 1,
+        delay: 1.3,
         ease: "power2.out",
+      });
 
-        onComplete: function () {
-          // Remove GSAP transform to fix offcanvas positioning issues
-          const headerSection = document.querySelector(".header-section");
-          if (headerSection) headerSection.style.transform = "none";
-
-          /* ------------------------------
-              INITIALIZE SWIPER
-          ------------------------------ */
-          var swiper = new Swiper(".mySwiper", {
-            effect: "fade",
-            fadeEffect: { crossFade: true },
-            loop: true,
-            spaceBetween: 0,
-            autoplay: { delay: 3000, disableOnInteraction: false },
-            navigation: {
-              nextEl: ".swiper-button-next",
-              prevEl: ".swiper-button-prev",
-            },
-            pagination: {
-              el: ".swiper-pagination",
-              clickable: true,
-            },
-          });
-
-          // Animate Swiper buttons properly using GSAP fromTo
-gsap.fromTo(".swiper-button-prev",
-  { opacity: 0, x: -100 },
-  { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }
-);
-
-gsap.fromTo(".swiper-button-next",
-  { opacity: 0, x: 100 },
-  { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }
-);
-        },
-      },
-      "-=1.5"
-    );
-
-    /* -----------------------------------
-        DESKTOP ONLY – HEADER TOP EFFECT
-    ----------------------------------- */
-    if (window.innerWidth >= 768) {
       tl.to(
-        ".header-top",
+        ".header-section",
         {
           opacity: 1,
+          height: "auto",
           y: 0,
-          paddingTop: 12,
-          paddingBottom: 12,
-          visibility: "visible",
-          delay: 0.5,
-          duration: 0.5,
+          delay: 1,
+          duration: 0.6,
           ease: "power2.out",
+
+          onComplete: function () {
+            // Remove GSAP transform to fix offcanvas positioning issues
+            const headerSection = document.querySelector(".header-section");
+            if (headerSection) headerSection.style.transform = "none";
+
+            /* ------------------------------
+                INITIALIZE SWIPER
+            ------------------------------ */
+            var swiper = new Swiper(".mySwiper", {
+              effect: "fade",
+              fadeEffect: { crossFade: true },
+              loop: true,
+              spaceBetween: 0,
+              autoplay: { delay: 3000, disableOnInteraction: false },
+              navigation: {
+                nextEl: ".swiper-button-next",
+                prevEl: ".swiper-button-prev",
+              },
+              pagination: {
+                el: ".swiper-pagination",
+                clickable: true,
+              },
+            });
+
+            // Animate Swiper buttons properly using GSAP fromTo
+            gsap.fromTo(".swiper-button-prev",
+              { opacity: 0, x: -100 },
+              { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }
+            );
+
+            gsap.fromTo(".swiper-button-next",
+              { opacity: 0, x: 100 },
+              { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }
+            );
+          },
         },
-        "-=0.1"
+        "-=1.5"
       );
 
-      // Header divider flicker effect (restored ease: "power4.inOut")
-      tl.to(".header-divider", { opacity: 0.2, duration: 0.05, ease: "power4.inOut" })
-        .to(".header-divider", { opacity: 1, duration: 0.07, ease: "power4.inOut" })
-        .to(".header-divider", { opacity: 0.3, duration: 0.04, ease: "power4.inOut" })
-        .to(".header-divider", { opacity: 1, duration: 0.05, ease: "power4.inOut" })
-        .to(".header-divider", { opacity: 0.5, duration: 0.05, ease: "power4.inOut" })
-        .to(".header-divider", { opacity: 1, duration: 0.1, ease: "power4.inOut" });
-    }
+      /* -----------------------------------
+          DESKTOP ONLY – HEADER TOP EFFECT
+      ----------------------------------- */
+      if (window.innerWidth >= 768) {
+        tl.to(
+          ".header-top",
+          {
+            opacity: 1,
+            y: 0,
+            paddingTop: 12,
+            paddingBottom: 12,
+            visibility: "visible",
+            delay: 0.5,
+            duration: 0.5,
+            ease: "power2.out",
+          },
+          "-=0.1"
+        );
 
-    /* -----------------------------------
-        SCROLLTRIGGER ANIMATIONS
-    ----------------------------------- */
+        // Header divider flicker effect (restored ease: "power4.inOut")
+        tl.to(".header-divider", { opacity: 0.2, duration: 0.05, ease: "power4.inOut" })
+          .to(".header-divider", { opacity: 1, duration: 0.07, ease: "power4.inOut" })
+          .to(".header-divider", { opacity: 0.3, duration: 0.04, ease: "power4.inOut" })
+          .to(".header-divider", { opacity: 1, duration: 0.05, ease: "power4.inOut" })
+          .to(".header-divider", { opacity: 0.5, duration: 0.05, ease: "power4.inOut" })
+          .to(".header-divider", { opacity: 1, duration: 0.1, ease: "power4.inOut" });
+      }
 
-    // Section 2 fade up
-    gsap.from("#animated-section-2", {
-      opacity: 0,
-      y: 200,
-      ease: "power2.out",
-      scrollTrigger: {
-        trigger: "#animated-section-2",
-        start: "top 90%",
-        end: "top 50%",
-        scrub: 0.6,
-      },
-    });
+      /* -----------------------------------
+          SCROLLTRIGGER ANIMATIONS
+      ----------------------------------- */
 
-    // Section 3 fade up
-    gsap.from("#animated-section-3", {
-      opacity: 0,
-      y: 200,
-      ease: "power2.out",
-      scrollTrigger: {
-        trigger: "#animated-section-3",
-        start: "top 80%",
-        end: "top 60%",
-        scrub: 0.6,
-      },
-    });
-
-    /* -----------------------------------
-        LEFT COLUMN (Slide From Left + Up)
-    ----------------------------------- */
-    gsap.from(
-      "#animated-section-2 .col-lg-5, #animated-section-2 .col-xl-6:first-child",
-      {
+      // Section 2 fade up
+      gsap.from("#animated-section-2", {
         opacity: 0,
-        x: "-100%",
-        y: "100%",
+        y: 200,
         ease: "power2.out",
         scrollTrigger: {
           trigger: "#animated-section-2",
@@ -1173,47 +1150,78 @@ gsap.fromTo(".swiper-button-next",
           end: "top 50%",
           scrub: 0.6,
         },
-      }
-    );
+      });
 
-    /* -----------------------------------
-        RIGHT COLUMN (Slide From Right + Up)
-    ----------------------------------- */
-    gsap.from(
-      "#animated-section-2 .col-lg-7, #animated-section-2 .col-xl-6:last-child",
-      {
+      // Section 3 fade up
+      gsap.from("#animated-section-3", {
         opacity: 0,
-        x: "100%",
-        y: "100%",
+        y: 200,
         ease: "power2.out",
         scrollTrigger: {
-          trigger: "#animated-section-2",
-          start: "top 90%",
-          end: "top 50%",
-          scrub: 0.6,
-        },
-      }
-    );
-
-    /* -----------------------------------
-        REPAIR SERVICE CARDS (STAGGER)
-    ----------------------------------- */
-    gsap.utils.toArray(".repair-service-card").forEach((card, index) => {
-      gsap.from(card, {
-        scrollTrigger: {
-          trigger: card,
+          trigger: "#animated-section-3",
           start: "top 80%",
-          toggleActions: "play none none reverse",
+          end: "top 60%",
+          scrub: 0.6,
         },
-        y: 30,
-        opacity: 0,
-        duration: 0.6,
-        ease: "power3.out",
-        delay: index * 0.3, // stagger
+      });
+
+      /* -----------------------------------
+          LEFT COLUMN (Slide From Left + Up)
+      ----------------------------------- */
+      gsap.from(
+        "#animated-section-2 .col-lg-5, #animated-section-2 .col-xl-6:first-child",
+        {
+          opacity: 0,
+          x: "-100%",
+          y: "100%",
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: "#animated-section-2",
+            start: "top 90%",
+            end: "top 50%",
+            scrub: 0.6,
+          },
+        }
+      );
+
+      /* -----------------------------------
+          RIGHT COLUMN (Slide From Right + Up)
+      ----------------------------------- */
+      gsap.from(
+        "#animated-section-2 .col-lg-7, #animated-section-2 .col-xl-6:last-child",
+        {
+          opacity: 0,
+          x: "100%",
+          y: "100%",
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: "#animated-section-2",
+            start: "top 90%",
+            end: "top 50%",
+            scrub: 0.6,
+          },
+        }
+      );
+
+      /* -----------------------------------
+          REPAIR SERVICE CARDS (STAGGER)
+      ----------------------------------- */
+      gsap.utils.toArray(".repair-service-card").forEach((card, index) => {
+        gsap.from(card, {
+          scrollTrigger: {
+            trigger: card,
+            start: "top 80%",
+            toggleActions: "play none none reverse",
+          },
+          y: 30,
+          opacity: 0,
+          duration: 0.6,
+          ease: "power3.out",
+          delay: index * 0.3, // stagger
+        });
       });
     });
-  });
-</script>
+  </script>
 
 
   <!-- Global Cart Bar Script -->

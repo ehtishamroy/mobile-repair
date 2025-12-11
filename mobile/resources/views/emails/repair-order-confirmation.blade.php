@@ -137,6 +137,33 @@
                 <span class="info-value">{{ $order->created_at->format('d M, Y g:i A') }}</span>
             </div>
             <div class="info-row">
+                <span class="info-label">Delivery Method:</span>
+                <span class="info-value"
+                    style="text-transform: capitalize;">{{ $order->delivery_method === 'visit' ? 'Visit Us' : 'Online Delivery' }}</span>
+            </div>
+            @if($order->delivery_method === 'visit' && ($order->appointment_date || $order->appointment_time))
+                <div class="info-row"
+                    style="background-color: #e3f2fd; padding: 10px; border-radius: 5px; margin-top: 5px;">
+                    <span class="info-label">📅 Appointment:</span>
+                    <span class="info-value" style="font-weight: bold;">
+                        @if($order->appointment_date)
+                            {{ \Carbon\Carbon::parse($order->appointment_date)->format('l, d F Y') }}
+                        @endif
+                        @if($order->appointment_time)
+                            @php
+                                $timeSlots = [
+                                    '09:00:00' => '9:00 AM - 12:00 PM',
+                                    '12:00:00' => '12:00 PM - 3:00 PM',
+                                    '15:00:00' => '3:00 PM - 6:00 PM',
+                                ];
+                                $timeDisplay = $timeSlots[$order->appointment_time] ?? $order->appointment_time;
+                            @endphp
+                            @ {{ $timeDisplay }}
+                        @endif
+                    </span>
+                </div>
+            @endif
+            <div class="info-row">
                 <span class="info-label">Status:</span>
                 <span class="info-value" style="text-transform: capitalize;">{{ $order->status }}</span>
             </div>

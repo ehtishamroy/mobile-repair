@@ -149,6 +149,27 @@
                     <td>{{ $qualityTierName }}</td>
                 </tr>
             @endif
+            @if($appointmentDate || $appointmentTime)
+                <tr style="background-color: #e3f2fd;">
+                    <th>📅 Appointment</th>
+                    <td style="font-weight: bold;">
+                        @if($appointmentDate)
+                            {{ \Carbon\Carbon::parse($appointmentDate)->format('l, d F Y') }}
+                        @endif
+                        @if($appointmentTime)
+                            @php
+                                $timeSlots = [
+                                    '09:00:00' => '9:00 AM - 12:00 PM',
+                                    '12:00:00' => '12:00 PM - 3:00 PM',
+                                    '15:00:00' => '3:00 PM - 6:00 PM',
+                                ];
+                                $timeDisplay = $timeSlots[$appointmentTime] ?? $appointmentTime;
+                            @endphp
+                            @ {{ $timeDisplay }}
+                        @endif
+                    </td>
+                </tr>
+            @endif
         </table>
 
         <div class="contact-box">
