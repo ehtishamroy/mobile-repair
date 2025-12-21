@@ -1747,23 +1747,60 @@ class HomeController extends Controller
             ]);
         }
 
-        // Otherwise, fetch quality tiers as before
+        // Otherwise, fetch quality tiers
         $query = \App\Models\RepairQualityTier::where('repair_issue_id', $issueId)
             ->where('is_active', true);
 
-        // Filter by device type if provided
+        // Filter by device type (specific OR generic)
         if ($deviceTypeId && $deviceTypeId !== 'other') {
-            $query->where('repair_device_type_id', $deviceTypeId);
+            $query->where(function ($q) use ($deviceTypeId) {
+                $q->where('repair_device_type_id', $deviceTypeId)
+                    ->orWhereNull('repair_device_type_id');
+            });
+        } else {
+            // If no specific device type, just get generic ones
+            $query->whereNull('repair_device_type_id');
         }
 
-        $tiers = $query->orderBy('order')
-            ->get(['id', 'name', 'price_modifier', 'description', 'is_default']);
+        $allTiers = $query->orderBy('order')
+            ->get(['id', 'name', 'price_modifier', 'description', 'is_default', 'repair_device_type_id', 'order']);
+
+        // Implement override logic: Specific tiers override generic tiers with the same name
+        $finalTiers = collect();
+
+        if ($deviceTypeId && $deviceTypeId !== 'other') {
+            $specificTiers = $allTiers->whereNotNull('repair_device_type_id');
+            $genericTiers = $allTiers->whereNull('repair_device_type_id');
+
+            // Key specific tiers by name for easy lookup
+            $specificTiersMap = $specificTiers->keyBy('name');
+
+            // Combine: Use specific tier if available, otherwise generic
+            // We iterate through available names to preserve order or logical grouping?
+            // Actually, we can just merge them.
+            // Requirement: "specify device should override the all devices"
+
+            // Allow all specific tiers
+            $mergedTiers = $specificTiersMap; // Start with specific
+
+            // Add generic tiers that don't have a specific override
+            foreach ($genericTiers as $tier) {
+                if (!$mergedTiers->has($tier->name)) {
+                    $mergedTiers->put($tier->name, $tier);
+                }
+            }
+
+            // Sort by original order
+            $finalTiers = $mergedTiers->sortBy('order')->values();
+        } else {
+            $finalTiers = $allTiers;
+        }
 
         return response()->json([
             'success' => true,
             'requires_quality_tier' => true,
             'base_price' => null,
-            'tiers' => $tiers
+            'tiers' => $finalTiers
         ]);
     }
 }
