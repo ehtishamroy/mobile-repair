@@ -946,13 +946,20 @@
                 }
             });
 
+            // Track the most recently selected issue for tier ordering
+            let lastSelectedIssueId = null;
+
             issueCheckboxes.forEach(checkbox => {
                 checkbox.addEventListener('change', function () {
                     if (this.checked && issueUnknown) {
                         issueUnknown.checked = false;
                     }
+                    // Track the last selected issue (only when checked, not unchecked)
+                    if (this.checked) {
+                        lastSelectedIssueId = this.value;
+                    }
                     calculatePricing();
-                    loadQualityTiersForSelectedIssues();
+                    loadQualityTiersForSelectedIssues(lastSelectedIssueId);
                 });
             });
 
@@ -960,7 +967,7 @@
             // Store issue tier data globally for pricing calculations
             window.issueTierData = {};
 
-            async function loadQualityTiersForSelectedIssues() {
+            async function loadQualityTiersForSelectedIssues(lastSelectedId = null) {
                 const selectedIssues = Array.from(document.querySelectorAll('.issue-checkbox:checked'));
                 const qualityTierSection = document.getElementById('quality-tier-selection');
                 const qualityTierOptions = document.getElementById('quality-tier-options');
@@ -1017,8 +1024,17 @@
                 const results = await Promise.all(tierPromises);
 
                 // Filter to only issues that have tiers
-                const issuesWithTiers = results.filter(r => r.success && r.requiresTier && r.tiers.length > 0);
+                let issuesWithTiers = results.filter(r => r.success && r.requiresTier && r.tiers.length > 0);
                 const issuesWithBasePrice = results.filter(r => r.success && !r.requiresTier);
+
+                // Reorder: put the most recently selected issue first so its tiers appear at the top
+                if (lastSelectedId) {
+                    const lastSelectedIndex = issuesWithTiers.findIndex(issue => issue.issueId == lastSelectedId);
+                    if (lastSelectedIndex > 0) {
+                        const [lastSelectedIssue] = issuesWithTiers.splice(lastSelectedIndex, 1);
+                        issuesWithTiers.unshift(lastSelectedIssue);
+                    }
+                }
 
                 // Store base prices for issues without tiers
                 window.issueTierData = {};
@@ -1070,23 +1086,23 @@
                             : '';
 
                         tierOptionsHtml += `
-                                <div class="form-check custom-check p-3 border rounded bg-white mb-2">
-                                    <input class="form-check-input tier-checkbox mt-1" type="checkbox" 
-                                           name="quality_tier_${issue.issueId}[]" 
-                                           id="tier_${issue.issueId}_${tier.id}" 
-                                           value="${tier.id}" 
-                                           data-issue-id="${issue.issueId}"
-                                           data-price="${tier.price_modifier}"
-                                           ${shouldBeChecked ? 'checked' : ''}>
-                                    <label class="form-check-label w-100 cursor-pointer ps-2" for="tier_${issue.issueId}_${tier.id}">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <strong class="fs-16">${tier.name}</strong>
-                                            <span class="badge bg-light text-dark border">${priceText}</span>
-                                        </div>
-                                        ${tier.description ? `<small class="text-muted d-block mt-1">${tier.description}</small>` : ''}
-                                    </label>
-                                </div>
-                            `;
+                                    <div class="form-check custom-check p-3 border rounded bg-white mb-2">
+                                        <input class="form-check-input tier-checkbox mt-1" type="checkbox" 
+                                               name="quality_tier_${issue.issueId}[]" 
+                                               id="tier_${issue.issueId}_${tier.id}" 
+                                               value="${tier.id}" 
+                                               data-issue-id="${issue.issueId}"
+                                               data-price="${tier.price_modifier}"
+                                               ${shouldBeChecked ? 'checked' : ''}>
+                                        <label class="form-check-label w-100 cursor-pointer ps-2" for="tier_${issue.issueId}_${tier.id}">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <strong class="fs-16">${tier.name}</strong>
+                                                <span class="badge bg-light text-dark border">${priceText}</span>
+                                            </div>
+                                            ${tier.description ? `<small class="text-muted d-block mt-1">${tier.description}</small>` : ''}
+                                        </label>
+                                    </div>
+                                `;
                     });
 
                     // Determine selected tiers for this issue (support multiple)
@@ -1108,15 +1124,15 @@
 
                     // Create card for this issue
                     allCardsHtml += `
-                                                        <div class="issue-tier-card p-4 rounded border mb-3" style="background-color: #f8f9fa; border-color: #e9ecef !important;">
-                                                            <h6 class="fw-bold mb-3 text-primary-custom">
-                                                                <i class="fas fa-wrench me-2"></i>${issue.issueName}
-                                                            </h6>
-                                                            <div class="tier-options">
-                                                                ${tierOptionsHtml}
+                                                            <div class="issue-tier-card p-4 rounded border mb-3" style="background-color: #f8f9fa; border-color: #e9ecef !important;">
+                                                                <h6 class="fw-bold mb-3 text-primary-custom">
+                                                                    <i class="fas fa-wrench me-2"></i>${issue.issueName}
+                                                                </h6>
+                                                                <div class="tier-options">
+                                                                    ${tierOptionsHtml}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    `;
+                                                        `;
                 });
 
                 qualityTierOptions.innerHTML = allCardsHtml;
