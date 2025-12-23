@@ -139,16 +139,15 @@
                                         inspection fee.</small>
                                 </div>
 
-                                <!-- Quality Tier Selection (shown dynamically) -->
-                                <!-- Quality Tier Selection (shown dynamically) -->
-                                <div id="quality-tier-selection" class="mt-4 p-4 rounded border"
-                                    style="display: none; background-color: #f8f9fa; border-color: #e9ecef !important;">
+                                <!-- Quality Tier Selection (shown dynamically for each issue) -->
+                                <div id="quality-tier-selection" class="mt-4" style="display: none;">
                                     <label class="form-label fs-18 fw-bold mb-3">Select Quality/Part Type <span
                                             class="text-danger">*</span></label>
-                                    <div id="quality-tier-options" class="d-flex flex-column gap-3">
-                                        <!-- Tiers will be loaded dynamically -->
+                                    <div id="quality-tier-options" class="d-flex flex-column gap-4">
+                                        <!-- Issue-specific tier cards will be loaded dynamically -->
                                     </div>
-                                    <input type="hidden" name="quality_tier_id" id="selected_tier_id">
+                                    <!-- Store tier selections as JSON: {issueId: tierId, ...} -->
+                                    <input type="hidden" name="quality_tier_ids" id="selected_tier_ids" value="{}">
                                 </div>
                             </div>
                             <div class="col-12">
@@ -935,6 +934,14 @@
             issueUnknown.addEventListener('change', function () {
                 if (this.checked) {
                     issueCheckboxes.forEach(cb => cb.checked = false);
+                    // Clear quality tier selections (Issue 2 fix)
+                    const qualityTierSection = document.getElementById('quality-tier-selection');
+                    const qualityTierOptions = document.getElementById('quality-tier-options');
+                    if (qualityTierSection) qualityTierSection.style.display = 'none';
+                    if (qualityTierOptions) qualityTierOptions.innerHTML = '';
+                    document.getElementById('selected_tier_ids').value = '{}';
+                    window.issueTierData = {}; // Clear cached tier data
+
                     calculatePricing();
                 }
             });
@@ -950,129 +957,194 @@
             });
 
             // Load quality tiers when issues are selected
-            function loadQualityTiersForSelectedIssues() {
-                const selectedIssues = Array.from(document.querySelectorAll('.issue-checkbox:checked')).map(cb => cb.value);
+            // Store issue tier data globally for pricing calculations
+            window.issueTierData = {};
+
+            async function loadQualityTiersForSelectedIssues() {
+                const selectedIssues = Array.from(document.querySelectorAll('.issue-checkbox:checked'));
                 const qualityTierSection = document.getElementById('quality-tier-selection');
                 const qualityTierOptions = document.getElementById('quality-tier-options');
+                const deviceTypeId = document.getElementById('device_type_id').value;
 
                 // Hide tier selection if no issues or unknown issue is selected
                 if (selectedIssues.length === 0 || (issueUnknown && issueUnknown.checked)) {
                     qualityTierSection.style.display = 'none';
-                    qualityTierOptions.innerHTML = ''; // Clear tier radio buttons
-                    document.getElementById('selected_tier_id').value = '';
-                    calculatePricing(); // Recalculate pricing without tier modifier
+                    qualityTierOptions.innerHTML = '';
+                    document.getElementById('selected_tier_ids').value = '{}';
+                    window.issueTierData = {};
+                    calculatePricing();
                     return;
                 }
 
-                // For simplicity, check only the first selected issue for tiers
-                // You can modify this to handle multiple issues differently
-                const firstIssueId = selectedIssues[0];
-                const deviceTypeId = document.getElementById('device_type_id').value;
+                // Get current tier selections to preserve them
+                let currentSelections = {};
+                try {
+                    currentSelections = JSON.parse(document.getElementById('selected_tier_ids').value || '{}');
+                } catch (e) {
+                    currentSelections = {};
+                }
 
-                fetch(`/api/quality-tiers/${firstIssueId}?device_type_id=${deviceTypeId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Check if quality tier selection is required
-                            if (data.requires_quality_tier === false) {
-                                // No quality tier needed - hide the section
-                                qualityTierSection.style.display = 'none';
-                                qualityTierOptions.innerHTML = '';
-                                document.getElementById('selected_tier_id').value = '';
+                // Fetch tiers for ALL selected issues
+                const tierPromises = selectedIssues.map(async (checkbox) => {
+                    const issueId = checkbox.value;
+                    const issueLabel = document.querySelector(`label[for="${checkbox.id}"]`);
+                    const issueName = issueLabel ? issueLabel.textContent.trim() : `Issue #${issueId}`;
 
-                                // Store base price for pricing calculation
-                                window.issueBasePrice = data.base_price || 0;
+                    try {
+                        const response = await fetch(`/api/quality-tiers/${issueId}?device_type_id=${deviceTypeId}`);
+                        const data = await response.json();
+                        return {
+                            issueId,
+                            issueName,
+                            success: data.success,
+                            requiresTier: data.requires_quality_tier,
+                            basePrice: data.base_price,
+                            tiers: data.tiers || []
+                        };
+                    } catch (error) {
+                        console.error(`Error loading tiers for issue ${issueId}:`, error);
+                        return {
+                            issueId,
+                            issueName,
+                            success: false,
+                            requiresTier: false,
+                            basePrice: 0,
+                            tiers: []
+                        };
+                    }
+                });
 
-                                calculatePricing();
-                            } else if (data.tiers && data.tiers.length > 0) {
-                                // Quality tier required and tiers available - show tier selection
-                                window.issueBasePrice = null; // Clear base price
-                                qualityTierSection.style.display = 'block';
+                const results = await Promise.all(tierPromises);
 
-                                // Get currently selected tier ID (if any)
-                                const currentlySelectedTierId = document.getElementById('selected_tier_id').value;
+                // Filter to only issues that have tiers
+                const issuesWithTiers = results.filter(r => r.success && r.requiresTier && r.tiers.length > 0);
+                const issuesWithBasePrice = results.filter(r => r.success && !r.requiresTier);
 
-                                // Build tier options
-                                let tiersHtml = '';
-                                let currentTierStillExists = false;
+                // Store base prices for issues without tiers
+                window.issueTierData = {};
+                issuesWithBasePrice.forEach(issue => {
+                    window.issueTierData[issue.issueId] = {
+                        requiresTier: false,
+                        basePrice: issue.basePrice || 0
+                    };
+                });
 
-                                data.tiers.forEach(tier => {
-                                    const isCurrentlySelected = currentlySelectedTierId && tier.id == currentlySelectedTierId;
-                                    const isDefault = tier.is_default;
+                // If no issues have quality tiers, hide the section
+                if (issuesWithTiers.length === 0) {
+                    qualityTierSection.style.display = 'none';
+                    qualityTierOptions.innerHTML = '';
+                    document.getElementById('selected_tier_ids').value = '{}';
+                    calculatePricing();
+                    return;
+                }
 
-                                    // Check if currently selected tier exists in new tier list
-                                    if (isCurrentlySelected) {
-                                        currentTierStillExists = true;
-                                    }
+                // Show the quality tier section
+                qualityTierSection.style.display = 'block';
 
-                                    // Only check as default if no tier is currently selected
-                                    const shouldBeChecked = currentlySelectedTierId
-                                        ? isCurrentlySelected
-                                        : isDefault;
+                // Build HTML for each issue's tier card
+                let allCardsHtml = '';
+                let newSelections = {};
 
-                                    const priceText = tier.price_modifier > 0
-                                        ? ` (+{{ $currencySymbol }}${parseFloat(tier.price_modifier).toFixed(2)})`
-                                        : '';
+                issuesWithTiers.forEach(issue => {
+                    // Support array of selected tier IDs for multi-select
+                    const currentlySelectedTierIds = currentSelections[issue.issueId] || [];
+                    const selectedTierIdsArray = Array.isArray(currentlySelectedTierIds)
+                        ? currentlySelectedTierIds
+                        : (currentlySelectedTierIds ? [currentlySelectedTierIds] : []);
 
-                                    tiersHtml += `
-                                                                                                                                                                                                <div class="form-check custom-check p-3 border rounded bg-white">
-                                                                                                                                                                                                    <input class="form-check-input tier-radio mt-1" type="radio" 
-                                                                                                                                                                                                           name="quality_tier" id="tier_${tier.id}" 
-                                                                                                                                                                                                           value="${tier.id}" data-price="${tier.price_modifier}"
-                                                                                                                                                                                                           ${shouldBeChecked ? 'checked' : ''}>
-                                                                                                                                                                                                    <label class="form-check-label w-100 cursor-pointer ps-2" for="tier_${tier.id}">
-                                                                                                                                                                                                        <div class="d-flex justify-content-between align-items-center">
-                                                                                                                                                                                                            <strong class="fs-16">${tier.name}</strong>
-                                                                                                                                                                                                            <span class="badge bg-light text-dark border">${priceText}</span>
-                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                        ${tier.description ? `<small class="text-muted d-block mt-1">${tier.description}</small>` : ''}
-                                                                                                                                                                                                    </label>
-                                                                                                                                                                                                </div>
-                                                                                                                                                                                                                                                                                                    `;
-                                });
+                    let tierOptionsHtml = '';
+                    let defaultTierId = null;
 
-                                qualityTierOptions.innerHTML = tiersHtml;
+                    issue.tiers.forEach(tier => {
+                        // Check if this tier is in the selected array
+                        const isCurrentlySelected = selectedTierIdsArray.some(id => id == tier.id);
+                        if (tier.is_default) defaultTierId = tier.id;
 
-                                // Update selected_tier_id based on what's checked
-                                if (currentlySelectedTierId && currentTierStillExists) {
-                                    // Keep the current selection
-                                    document.getElementById('selected_tier_id').value = currentlySelectedTierId;
-                                } else {
-                                    // Set default tier if exists and no previous selection
-                                    const defaultTier = data.tiers.find(t => t.is_default);
-                                    if (defaultTier) {
-                                        document.getElementById('selected_tier_id').value = defaultTier.id;
-                                    }
-                                }
+                        // Check as selected if in the array, otherwise check default
+                        const shouldBeChecked = selectedTierIdsArray.length > 0
+                            ? isCurrentlySelected
+                            : tier.is_default;
 
-                                // Add event listeners to tier radios
-                                document.querySelectorAll('.tier-radio').forEach(radio => {
-                                    radio.addEventListener('change', function () {
-                                        document.getElementById('selected_tier_id').value = this.value;
-                                        calculatePricing();
-                                    });
-                                });
+                        const priceText = tier.price_modifier > 0
+                            ? ` (+{{ $currencySymbol }}${parseFloat(tier.price_modifier).toFixed(2)})`
+                            : '';
 
-                                // Recalculate pricing with the selected tier
-                                calculatePricing();
-                            } else {
-                                // No tiers available and quality tier is required - hide section
-                                window.issueBasePrice = null;
-                                qualityTierSection.style.display = 'none';
-                                qualityTierOptions.innerHTML = '';
-                                document.getElementById('selected_tier_id').value = '';
-                                calculatePricing();
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error loading quality tiers:', error);
-                        window.issueBasePrice = null;
-                        qualityTierSection.style.display = 'none';
-                        qualityTierOptions.innerHTML = ''; // Clear tier radio buttons
-                        document.getElementById('selected_tier_id').value = '';
-                        calculatePricing(); // Recalculate pricing without tier modifier
+                        tierOptionsHtml += `
+                                <div class="form-check custom-check p-3 border rounded bg-white mb-2">
+                                    <input class="form-check-input tier-checkbox mt-1" type="checkbox" 
+                                           name="quality_tier_${issue.issueId}[]" 
+                                           id="tier_${issue.issueId}_${tier.id}" 
+                                           value="${tier.id}" 
+                                           data-issue-id="${issue.issueId}"
+                                           data-price="${tier.price_modifier}"
+                                           ${shouldBeChecked ? 'checked' : ''}>
+                                    <label class="form-check-label w-100 cursor-pointer ps-2" for="tier_${issue.issueId}_${tier.id}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <strong class="fs-16">${tier.name}</strong>
+                                            <span class="badge bg-light text-dark border">${priceText}</span>
+                                        </div>
+                                        ${tier.description ? `<small class="text-muted d-block mt-1">${tier.description}</small>` : ''}
+                                    </label>
+                                </div>
+                            `;
                     });
+
+                    // Determine selected tiers for this issue (support multiple)
+                    const validTierIds = selectedTierIdsArray.filter(id => issue.tiers.some(t => t.id == id));
+
+                    if (validTierIds.length > 0) {
+                        newSelections[issue.issueId] = validTierIds;
+                    } else if (defaultTierId) {
+                        newSelections[issue.issueId] = [defaultTierId];
+                    } else {
+                        newSelections[issue.issueId] = [];
+                    }
+
+                    // Store tier data for pricing
+                    window.issueTierData[issue.issueId] = {
+                        requiresTier: true,
+                        tiers: issue.tiers
+                    };
+
+                    // Create card for this issue
+                    allCardsHtml += `
+                                                        <div class="issue-tier-card p-4 rounded border mb-3" style="background-color: #f8f9fa; border-color: #e9ecef !important;">
+                                                            <h6 class="fw-bold mb-3 text-primary-custom">
+                                                                <i class="fas fa-wrench me-2"></i>${issue.issueName}
+                                                            </h6>
+                                                            <div class="tier-options">
+                                                                ${tierOptionsHtml}
+                                                            </div>
+                                                        </div>
+                                                    `;
+                });
+
+                qualityTierOptions.innerHTML = allCardsHtml;
+                document.getElementById('selected_tier_ids').value = JSON.stringify(newSelections);
+
+                // Add event listeners to tier checkboxes (multi-select)
+                document.querySelectorAll('.tier-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', function () {
+                        const issueId = this.dataset.issueId;
+                        let selections = {};
+                        try {
+                            selections = JSON.parse(document.getElementById('selected_tier_ids').value || '{}');
+                        } catch (e) {
+                            selections = {};
+                        }
+
+                        // Get all checked tiers for this issue
+                        const checkedTiers = Array.from(document.querySelectorAll(`.tier-checkbox[data-issue-id="${issueId}"]:checked`))
+                            .map(cb => cb.value);
+                        selections[issueId] = checkedTiers;
+
+                        document.getElementById('selected_tier_ids').value = JSON.stringify(selections);
+                        calculatePricing();
+                    });
+                });
+
+                // Recalculate pricing with selected tiers
+                calculatePricing();
             }
 
             function calculatePricing() {
@@ -1080,14 +1152,23 @@
                 const isUnknown = issueUnknown && issueUnknown.checked;
                 const deviceTypeId = document.getElementById('device_type_id') ? document.getElementById('device_type_id').value : null;
 
-                const selectedTier = document.querySelector('.tier-radio:checked');
-                // Use tier modifier if tier is selected, otherwise use base price if available
+                // Calculate total tier modifier from ALL selected issues
                 let tierModifier = 0;
-                if (selectedTier) {
-                    tierModifier = parseFloat(selectedTier.dataset.price) || 0;
-                } else if (window.issueBasePrice !== undefined && window.issueBasePrice !== null) {
-                    // Add base price as modifier when no tier selection is required
-                    tierModifier = parseFloat(window.issueBasePrice) || 0;
+
+                // Get all selected tier checkboxes and sum their price modifiers
+                const selectedTierCheckboxes = document.querySelectorAll('.tier-checkbox:checked');
+                selectedTierCheckboxes.forEach(checkbox => {
+                    tierModifier += parseFloat(checkbox.dataset.price) || 0;
+                });
+
+                // Also add base prices for issues that don't require tier selection
+                if (window.issueTierData) {
+                    Object.keys(window.issueTierData).forEach(issueId => {
+                        const issueData = window.issueTierData[issueId];
+                        if (!issueData.requiresTier && issueData.basePrice) {
+                            tierModifier += parseFloat(issueData.basePrice) || 0;
+                        }
+                    });
                 }
 
                 if (selectedIssues.length === 0 && !isUnknown) {
@@ -1201,14 +1282,22 @@
                     formData.comments = 'None';
                 }
 
-                // Get selected quality tier
-                const selectedTierRadio = document.querySelector('.tier-radio:checked');
-                if (selectedTierRadio) {
-                    const tierLabel = document.querySelector(`label[for="${selectedTierRadio.id}"]`);
-                    formData.qualityTier = tierLabel ? tierLabel.textContent.trim() : 'Not selected';
-                } else {
-                    formData.qualityTier = null;
-                }
+                // Get selected quality tiers for ALL issues
+                const selectedTierCheckboxes = document.querySelectorAll('.tier-checkbox:checked');
+                let qualityTierTexts = [];
+                selectedTierCheckboxes.forEach(checkbox => {
+                    const tierLabel = document.querySelector(`label[for="${checkbox.id}"]`);
+                    if (tierLabel) {
+                        // Get the issue name from the parent card
+                        const issueCard = checkbox.closest('.issue-tier-card');
+                        const issueHeader = issueCard ? issueCard.querySelector('h6') : null;
+                        const issueName = issueHeader ? issueHeader.textContent.trim() : '';
+                        const tierName = tierLabel.querySelector('strong') ? tierLabel.querySelector('strong').textContent.trim() : tierLabel.textContent.trim();
+                        qualityTierTexts.push(issueName ? `${issueName}: ${tierName}` : tierName);
+                    }
+                });
+                formData.qualityTiers = qualityTierTexts;
+                formData.qualityTier = qualityTierTexts.length > 0 ? qualityTierTexts.join('; ') : null;
 
                 // Update confirmation display
                 const confirmNameEl = document.getElementById('confirm_name');
@@ -1320,402 +1409,402 @@
                     }
 
                     // Validate UK phone format
-                            const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
-                            const mobilePattern = /^(?:\+44|0044|0)7\d{9}$/;
-                            const landlinePattern = /^(?:\+44|0044|0)(?:1\d{8,9}|2\d{8,9}|3\d{8,9})$/;
-                            if (!mobilePattern.test(cleanPhone) && !landlinePattern.test(cleanPhone)) {
-                                alert('Please enter a valid UK phone number (e.g., 07XXX XXXXXX or +44 7XXX XXXXXX).');
-                                document.getElementById('customer_phone').focus();
-                                return false;
-                            }
-
-
-                            // Check if pricing has been calculated (formData.total should be defined, even if 0)
-                            if (formData.total === undefined) {
-                                const pricingPromise = calculatePricing();
-                                if (pricingPromise) {
-                                    pricingPromise.then(() => {
-                                        // Pricing calculated, user can proceed
-                                    }).catch(() => {
-                                        // Error already handled in calculatePricing
-                                    });
-                                }
-                                return false; // Prevent moving to next step until pricing is calculated
-                            }
-                        }
-                        if (step === 1) {
-                            // Delivery method selection - must select one
-                            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
-                            if (!deliveryMethod) {
-                                alert('Please select a delivery method.');
-                                return false;
-                            }
-                            if (deliveryMethodHidden) {
-                                deliveryMethodHidden.value = deliveryMethod.value;
-                            }
-
-                            // For Visit Us delivery, validate appointment fields
-                            if (deliveryMethod.value === 'visit') {
-                                // Helper function to check if element is visible
-                                const isVisible = (element) => {
-                                    if (!element) return false;
-                                    return element.offsetParent !== null;
-                                };
-
-                                // Check which appointment fields are visible
-                                const regularDateField = document.getElementById('appointment_date');
-                                const regularTimeField = document.getElementById('appointment_time');
-                                const zeroDateField = document.getElementById('appointment_date_zero');
-                                const zeroTimeField = document.getElementById('appointment_time_zero');
-
-                                // Determine which set of fields to validate based on visibility
-                                let dateField = null;
-                                let timeField = null;
-
-                                if (isVisible(zeroDateField)) {
-                                    // Zero-cost fields are visible
-                                    dateField = zeroDateField;
-                                    timeField = zeroTimeField;
-                                } else if (isVisible(regularDateField)) {
-                                    // Regular fields are visible
-                                    dateField = regularDateField;
-                                    timeField = regularTimeField;
-                                }
-
-                                // Validate the visible fields
-                                if (dateField && !dateField.value) {
-                                    alert('Please select an appointment date for your visit.');
-                                    dateField.focus();
-                                    return false;
-                                }
-
-                                if (timeField && !timeField.value) {
-                                    alert('Please select an appointment time slot for your visit.');
-                                    timeField.focus();
-                                    return false;
-                                }
-                            }
-                        }
-                        if (step === 2) {
-                            // Process info step - no validation needed, just informational
-                            // Payment method is always Stripe, no need to validate
-                        }
-                        if (step === 5) {
-                            // Validation for step 5 if needed
-                        }
-                        return true;
+                    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+                    const mobilePattern = /^(?:\+44|0044|0)7\d{9}$/;
+                    const landlinePattern = /^(?:\+44|0044|0)(?:1\d{8,9}|2\d{8,9}|3\d{8,9})$/;
+                    if (!mobilePattern.test(cleanPhone) && !landlinePattern.test(cleanPhone)) {
+                        alert('Please enter a valid UK phone number (e.g., 07XXX XXXXXX or +44 7XXX XXXXXX).');
+                        document.getElementById('customer_phone').focus();
+                        return false;
                     }
 
-                    async function submitForm(paymentMethod, stripeToken, paypalOrderId) {
-                        const form = document.getElementById('repairForm');
-                        const formDataObj = new FormData(form);
 
-                        // Get device model
-                        const deviceModelEl = document.getElementById('device_model');
-                        const deviceModelSelectEl = document.getElementById('device_model_select');
-                        const deviceModelCustomEl = document.getElementById('device_model_custom');
-
-                        let deviceModel = '';
-                        if (deviceModelEl && deviceModelEl.value) {
-                            deviceModel = deviceModelEl.value.trim();
-                        } else if (deviceModelSelectEl && deviceModelSelectEl.value) {
-                            if (deviceModelSelectEl.value === 'other' && deviceModelCustomEl && deviceModelCustomEl.value) {
-                                deviceModel = deviceModelCustomEl.value.trim();
-                            } else {
-                                deviceModel = deviceModelSelectEl.value.trim();
-                            }
-                        } else if (deviceModelCustomEl && deviceModelCustomEl.value) {
-                            deviceModel = deviceModelCustomEl.value.trim();
-                        }
-
-                        // Get selected issues
-                        const selectedIssues = Array.from(document.querySelectorAll('.issue-checkbox:checked')).map(cb => cb.value);
-
-                        // Get delivery method
-                        const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
-                        const deliveryMethodValue = deliveryMethod ? deliveryMethod.value : '';
-
-                        // Get payment method
-                        const paymentMethodEl = document.querySelector('input[name="payment_method"]');
-                        const paymentMethodValue = paymentMethodEl ? paymentMethodEl.value : '';
-
-                        // Get address (required only for online delivery) - REMOVED
-                        // const addressEl = document.getElementById('address');
-                        // if (deliveryMethodValue === 'online' && (!addressEl || !addressEl.value.trim())) {
-                        //     alert('Please enter your shipping address.');
-                        //     return;
-                        // }
-
-                        // If payment method is "visit", set it to empty string for backend
-                        const finalPaymentMethod = paymentMethodValue === 'visit' ? '' : paymentMethodValue;
-
-                        // Prepare complete order data to send in one request
-                        const orderData = new FormData();
-                        orderData.append('service_id', formDataObj.get('service_id'));
-                        const deviceTypeId = formDataObj.get('device_type_id');
-                        if (deviceTypeId && deviceTypeId !== 'other') {
-                            orderData.append('device_type_id', deviceTypeId);
-                        }
-                        orderData.append('device_type', formDataObj.get('device_type') || 'Other');
-                        orderData.append('device_model', deviceModel);
-                        orderData.append('customer_name', formDataObj.get('customer_name'));
-                        orderData.append('customer_email', formDataObj.get('customer_email'));
-                        orderData.append('customer_phone', formDataObj.get('customer_phone'));
-                        selectedIssues.forEach(issueId => orderData.append('issues[]', issueId));
-                        orderData.append('issue_description', formDataObj.get('issue_description') || '');
-                        orderData.append('delivery_method', deliveryMethodValue);
-
-                        // Add appointment fields if Visit Us is selected (check both regular and zero-cost fields)
-                        // Zero-cost fields take priority when visible and filled, otherwise use regular fields
-                        const appointmentDateZero = document.getElementById('appointment_date_zero');
-                        const appointmentTimeZero = document.getElementById('appointment_time_zero');
-                        const appointmentDateRegular = document.getElementById('appointment_date');
-                        const appointmentTimeRegular = document.getElementById('appointment_time');
-
-                        // Use zero-cost fields if they have values, otherwise use regular fields
-                        const appointmentDateValue = (appointmentDateZero && appointmentDateZero.value) ? appointmentDateZero.value :
-                            (appointmentDateRegular && appointmentDateRegular.value) ? appointmentDateRegular.value : '';
-                        const appointmentTimeValue = (appointmentTimeZero && appointmentTimeZero.value) ? appointmentTimeZero.value :
-                            (appointmentTimeRegular && appointmentTimeRegular.value) ? appointmentTimeRegular.value : '';
-
-                        if (appointmentDateValue) {
-                            orderData.append('appointment_date', appointmentDateValue);
-                        }
-                        if (appointmentTimeValue) {
-                            orderData.append('appointment_time', appointmentTimeValue);
-                        }
-
-                        orderData.append('payment_method', finalPaymentMethod);
-                        // orderData.append('address', addressEl ? addressEl.value.trim() : ''); // REMOVED
-                        orderData.append('subtotal', formData.subtotal || 0);
-                        orderData.append('inspection_fee', formData.inspection_fee || 0);
-                        orderData.append('total', formData.total || 0);
-
-                        if (stripeToken) {
-                            orderData.append('stripe_token', stripeToken);
-                        }
-                        if (paypalOrderId) {
-                            orderData.append('paypal_order_id', paypalOrderId);
-                        }
-
-                        try {
-                            // Submit everything in one request
-                            const response = await fetch('{{ route('frontend.repair.payment') }}', {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                    'Accept': 'application/json'
-                                },
-                                credentials: 'same-origin', // Ensure cookies are sent
-                                body: orderData
+                    // Check if pricing has been calculated (formData.total should be defined, even if 0)
+                    if (formData.total === undefined) {
+                        const pricingPromise = calculatePricing();
+                        if (pricingPromise) {
+                            pricingPromise.then(() => {
+                                // Pricing calculated, user can proceed
+                            }).catch(() => {
+                                // Error already handled in calculatePricing
                             });
-
-                            // Check if response is JSON
-                            const contentType = response.headers.get('content-type');
-                            if (!contentType || !contentType.includes('application/json')) {
-                                const text = await response.text();
-                                console.error('Non-JSON response:', text);
-                                throw new Error('Server returned an invalid response. Please try again.');
-                            }
-
-                            const result = await response.json();
-                            if (result.success) {
-                                // Redirect with order number if available
-                                const redirectUrl = result.redirect || '{{ route('frontend.place-order') }}';
-                                if (result.order_number) {
-                                    window.location.href = redirectUrl + '?order=' + result.order_number;
-                                } else {
-                                    window.location.href = redirectUrl;
-                                }
-                            } else {
-                                const errorMsg = result.message || (result.errors ? JSON.stringify(result.errors) : 'Payment failed. Please try again.');
-                                alert(errorMsg);
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            alert('An error occurred: ' + error.message);
                         }
+                        return false; // Prevent moving to next step until pricing is calculated
+                    }
+                }
+                if (step === 1) {
+                    // Delivery method selection - must select one
+                    const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+                    if (!deliveryMethod) {
+                        alert('Please select a delivery method.');
+                        return false;
+                    }
+                    if (deliveryMethodHidden) {
+                        deliveryMethodHidden.value = deliveryMethod.value;
                     }
 
-                    nextBtn.addEventListener("click", async () => {
-                        const isZeroCost = !formData.total || formData.total === 0;
+                    // For Visit Us delivery, validate appointment fields
+                    if (deliveryMethod.value === 'visit') {
+                        // Helper function to check if element is visible
+                        const isVisible = (element) => {
+                            if (!element) return false;
+                            return element.offsetParent !== null;
+                        };
 
-                        if (!validateStep(currentStep)) {
-                            return;
+                        // Check which appointment fields are visible
+                        const regularDateField = document.getElementById('appointment_date');
+                        const regularTimeField = document.getElementById('appointment_time');
+                        const zeroDateField = document.getElementById('appointment_date_zero');
+                        const zeroTimeField = document.getElementById('appointment_time_zero');
+
+                        // Determine which set of fields to validate based on visibility
+                        let dateField = null;
+                        let timeField = null;
+
+                        if (isVisible(zeroDateField)) {
+                            // Zero-cost fields are visible
+                            dateField = zeroDateField;
+                            timeField = zeroTimeField;
+                        } else if (isVisible(regularDateField)) {
+                            // Regular fields are visible
+                            dateField = regularDateField;
+                            timeField = regularTimeField;
                         }
 
-                        // Update confirmation step when moving to step 3
-                        if (currentStep === 1) {
-                            updateConfirmStep();
+                        // Validate the visible fields
+                        if (dateField && !dateField.value) {
+                            alert('Please select an appointment date for your visit.');
+                            dateField.focus();
+                            return false;
                         }
 
-                        // Handle zero-cost submission on step 3 (Confirm Details)
-                        if (currentStep === 3 && isZeroCost) {
-                            // Submit form without payment for zero-cost orders
-                            submitForm('visit', null, null);
-                            return;
+                        if (timeField && !timeField.value) {
+                            alert('Please select an appointment time slot for your visit.');
+                            timeField.focus();
+                            return false;
                         }
+                    }
+                }
+                if (step === 2) {
+                    // Process info step - no validation needed, just informational
+                    // Payment method is always Stripe, no need to validate
+                }
+                if (step === 5) {
+                    // Validation for step 5 if needed
+                }
+                return true;
+            }
 
-                        if (currentStep === 4) {
-                            // Payment step - always use Stripe for both delivery methods
-                            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+            async function submitForm(paymentMethod, stripeToken, paypalOrderId) {
+                const form = document.getElementById('repairForm');
+                const formDataObj = new FormData(form);
 
-                            // For online delivery, validate shipping address - REMOVED
-                            if (deliveryMethod && deliveryMethod.value === 'online') {
-                                // Address validation removed
-                            }
-                            // Always process Stripe payment
-                            if (!stripe || !cardNumberElement) {
-                                alert('Stripe is not configured. Please contact support.');
-                                return;
-                            }
+                // Get device model
+                const deviceModelEl = document.getElementById('device_model');
+                const deviceModelSelectEl = document.getElementById('device_model_select');
+                const deviceModelCustomEl = document.getElementById('device_model_custom');
 
-                            // Validate cardholder name and zip code
-                            const cardholderName = document.getElementById('cardholder-name');
-                            const cardZip = document.getElementById('card-zip');
+                let deviceModel = '';
+                if (deviceModelEl && deviceModelEl.value) {
+                    deviceModel = deviceModelEl.value.trim();
+                } else if (deviceModelSelectEl && deviceModelSelectEl.value) {
+                    if (deviceModelSelectEl.value === 'other' && deviceModelCustomEl && deviceModelCustomEl.value) {
+                        deviceModel = deviceModelCustomEl.value.trim();
+                    } else {
+                        deviceModel = deviceModelSelectEl.value.trim();
+                    }
+                } else if (deviceModelCustomEl && deviceModelCustomEl.value) {
+                    deviceModel = deviceModelCustomEl.value.trim();
+                }
 
-                            if (!cardholderName || !cardholderName.value.trim()) {
-                                alert('Please enter the cardholder name.');
-                                cardholderName.focus();
-                                return;
-                            }
+                // Get selected issues
+                const selectedIssues = Array.from(document.querySelectorAll('.issue-checkbox:checked')).map(cb => cb.value);
 
-                            if (!cardZip || !cardZip.value.trim()) {
-                                alert('Please enter the ZIP code.');
-                                cardZip.focus();
-                                return;
-                            }
+                // Get delivery method
+                const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+                const deliveryMethodValue = deliveryMethod ? deliveryMethod.value : '';
 
-                            try {
-                                const { token, error } = await stripe.createToken(cardNumberElement, {
-                                    name: cardholderName.value.trim(),
-                                    address_zip: cardZip.value.trim()
-                                });
+                // Get payment method
+                const paymentMethodEl = document.querySelector('input[name="payment_method"]');
+                const paymentMethodValue = paymentMethodEl ? paymentMethodEl.value : '';
 
-                                if (error) {
-                                    const cardErrorsEl = document.getElementById('card-errors');
-                                    if (cardErrorsEl) cardErrorsEl.textContent = error.message;
-                                    return;
-                                }
+                // Get address (required only for online delivery) - REMOVED
+                // const addressEl = document.getElementById('address');
+                // if (deliveryMethodValue === 'online' && (!addressEl || !addressEl.value.trim())) {
+                //     alert('Please enter your shipping address.');
+                //     return;
+                // }
 
-                                if (!token || !token.id) {
-                                    alert('Failed to create payment token. Please try again.');
-                                    return;
-                                }
+                // If payment method is "visit", set it to empty string for backend
+                const finalPaymentMethod = paymentMethodValue === 'visit' ? '' : paymentMethodValue;
 
-                                submitForm('stripe', token.id, null);
-                            } catch (error) {
-                                console.error('Stripe error:', error);
-                                alert('An error occurred with Stripe. Please try again.');
-                            }
-                            return;
-                        }
+                // Prepare complete order data to send in one request
+                const orderData = new FormData();
+                orderData.append('service_id', formDataObj.get('service_id'));
+                const deviceTypeId = formDataObj.get('device_type_id');
+                if (deviceTypeId && deviceTypeId !== 'other') {
+                    orderData.append('device_type_id', deviceTypeId);
+                }
+                orderData.append('device_type', formDataObj.get('device_type') || 'Other');
+                orderData.append('device_model', deviceModel);
+                orderData.append('customer_name', formDataObj.get('customer_name'));
+                orderData.append('customer_email', formDataObj.get('customer_email'));
+                orderData.append('customer_phone', formDataObj.get('customer_phone'));
+                selectedIssues.forEach(issueId => orderData.append('issues[]', issueId));
+                orderData.append('issue_description', formDataObj.get('issue_description') || '');
+                orderData.append('delivery_method', deliveryMethodValue);
 
-                        if (currentStep < steps.length - 1) {
-                            currentStep++;
+                // Add appointment fields if Visit Us is selected (check both regular and zero-cost fields)
+                // Zero-cost fields take priority when visible and filled, otherwise use regular fields
+                const appointmentDateZero = document.getElementById('appointment_date_zero');
+                const appointmentTimeZero = document.getElementById('appointment_time_zero');
+                const appointmentDateRegular = document.getElementById('appointment_date');
+                const appointmentTimeRegular = document.getElementById('appointment_time');
 
-                            // Get selected delivery method
-                            const selectedDeliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
-                            const isVisitUs = selectedDeliveryMethod && selectedDeliveryMethod.value === 'visit';
+                // Use zero-cost fields if they have values, otherwise use regular fields
+                const appointmentDateValue = (appointmentDateZero && appointmentDateZero.value) ? appointmentDateZero.value :
+                    (appointmentDateRegular && appointmentDateRegular.value) ? appointmentDateRegular.value : '';
+                const appointmentTimeValue = (appointmentTimeZero && appointmentTimeZero.value) ? appointmentTimeZero.value :
+                    (appointmentTimeRegular && appointmentTimeRegular.value) ? appointmentTimeRegular.value : '';
 
-                            // Skip Process Info step (step 2) if zero cost OR if Visit Us is selected
-                            // Process Info is only relevant for mail-in/online delivery
-                            if (currentStep === 2 && (isZeroCost || isVisitUs)) {
-                                currentStep++; // Skip to step 3 (Confirm Details)
-                            }
+                if (appointmentDateValue) {
+                    orderData.append('appointment_date', appointmentDateValue);
+                }
+                if (appointmentTimeValue) {
+                    orderData.append('appointment_time', appointmentTimeValue);
+                }
 
-                            // Skip Payment step (step 4) if zero cost - should not reach here
-                            if (currentStep === 4 && isZeroCost) {
-                                currentStep++; // This shouldn't happen, but just in case
-                            }
+                orderData.append('payment_method', finalPaymentMethod);
+                // orderData.append('address', addressEl ? addressEl.value.trim() : ''); // REMOVED
+                orderData.append('subtotal', formData.subtotal || 0);
+                orderData.append('inspection_fee', formData.inspection_fee || 0);
+                orderData.append('total', formData.total || 0);
 
-                            updateStepper();
+                if (stripeToken) {
+                    orderData.append('stripe_token', stripeToken);
+                }
+                if (paypalOrderId) {
+                    orderData.append('paypal_order_id', paypalOrderId);
+                }
 
-                            // Update confirmation step when entering step 4
-                            if (currentStep === 4) {
-                                updateConfirmStep();
-                            }
-                        }
+                try {
+                    // Submit everything in one request
+                    const response = await fetch('{{ route('frontend.repair.payment') }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'same-origin', // Ensure cookies are sent
+                        body: orderData
                     });
 
-                    prevBtn.addEventListener("click", () => {
-                        const isZeroCost = !formData.total || formData.total === 0;
+                    // Check if response is JSON
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        const text = await response.text();
+                        console.error('Non-JSON response:', text);
+                        throw new Error('Server returned an invalid response. Please try again.');
+                    }
 
-                        if (currentStep === 0) {
-                            window.history.back();
-                            return;
+                    const result = await response.json();
+                    if (result.success) {
+                        // Redirect with order number if available
+                        const redirectUrl = result.redirect || '{{ route('frontend.place-order') }}';
+                        if (result.order_number) {
+                            window.location.href = redirectUrl + '?order=' + result.order_number;
+                        } else {
+                            window.location.href = redirectUrl;
                         }
-                        if (currentStep > 0) {
-                            currentStep--;
+                    } else {
+                        const errorMsg = result.message || (result.errors ? JSON.stringify(result.errors) : 'Payment failed. Please try again.');
+                        alert(errorMsg);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred: ' + error.message);
+                }
+            }
 
-                            // Get selected delivery method
-                            const selectedDeliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
-                            const isVisitUs = selectedDeliveryMethod && selectedDeliveryMethod.value === 'visit';
+            nextBtn.addEventListener("click", async () => {
+                const isZeroCost = !formData.total || formData.total === 0;
 
-                            // Skip Process Info step (step 2) if zero cost OR Visit Us when going backwards
-                            if (currentStep === 2 && (isZeroCost || isVisitUs)) {
-                                currentStep--; // Skip back to step 1 (Delivery Method)
-                            }
+                if (!validateStep(currentStep)) {
+                    return;
+                }
 
-                            updateStepper();
-                        }
-                    });
+                // Update confirmation step when moving to step 3
+                if (currentStep === 1) {
+                    updateConfirmStep();
+                }
 
-                    // Payment option click handler
-                    document.querySelectorAll('.payment-option-item').forEach(item => {
-                        item.addEventListener('click', function (e) {
-                            // Don't trigger if clicking directly on the radio input
-                            if (e.target.type === 'radio') {
-                                return;
-                            }
-                            const radio = this.querySelector('input[type="radio"]');
-                            if (radio) {
-                                radio.checked = true;
-                                radio.dispatchEvent(new Event('change'));
+                // Handle zero-cost submission on step 3 (Confirm Details)
+                if (currentStep === 3 && isZeroCost) {
+                    // Submit form without payment for zero-cost orders
+                    submitForm('visit', null, null);
+                    return;
+                }
 
-                                // Update visual styling
-                                document.querySelectorAll('.payment-option-item').forEach(opt => {
-                                    opt.style.borderColor = '#dee2e6';
-                                    opt.style.backgroundColor = '';
-                                    opt.style.borderWidth = '1px';
-                                });
-                                this.style.borderColor = '#684471';
-                                this.style.borderWidth = '2px';
-                                this.style.backgroundColor = '#f8f9fa';
-                            }
+                if (currentStep === 4) {
+                    // Payment step - always use Stripe for both delivery methods
+                    const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+
+                    // For online delivery, validate shipping address - REMOVED
+                    if (deliveryMethod && deliveryMethod.value === 'online') {
+                        // Address validation removed
+                    }
+                    // Always process Stripe payment
+                    if (!stripe || !cardNumberElement) {
+                        alert('Stripe is not configured. Please contact support.');
+                        return;
+                    }
+
+                    // Validate cardholder name and zip code
+                    const cardholderName = document.getElementById('cardholder-name');
+                    const cardZip = document.getElementById('card-zip');
+
+                    if (!cardholderName || !cardholderName.value.trim()) {
+                        alert('Please enter the cardholder name.');
+                        cardholderName.focus();
+                        return;
+                    }
+
+                    if (!cardZip || !cardZip.value.trim()) {
+                        alert('Please enter the ZIP code.');
+                        cardZip.focus();
+                        return;
+                    }
+
+                    try {
+                        const { token, error } = await stripe.createToken(cardNumberElement, {
+                            name: cardholderName.value.trim(),
+                            address_zip: cardZip.value.trim()
                         });
-                    });
 
-                    // Payment method is always Stripe - no handler needed
+                        if (error) {
+                            const cardErrorsEl = document.getElementById('card-errors');
+                            if (cardErrorsEl) cardErrorsEl.textContent = error.message;
+                            return;
+                        }
+
+                        if (!token || !token.id) {
+                            alert('Failed to create payment token. Please try again.');
+                            return;
+                        }
+
+                        submitForm('stripe', token.id, null);
+                    } catch (error) {
+                        console.error('Stripe error:', error);
+                        alert('An error occurred with Stripe. Please try again.');
+                    }
+                    return;
+                }
+
+                if (currentStep < steps.length - 1) {
+                    currentStep++;
+
+                    // Get selected delivery method
+                    const selectedDeliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+                    const isVisitUs = selectedDeliveryMethod && selectedDeliveryMethod.value === 'visit';
+
+                    // Skip Process Info step (step 2) if zero cost OR if Visit Us is selected
+                    // Process Info is only relevant for mail-in/online delivery
+                    if (currentStep === 2 && (isZeroCost || isVisitUs)) {
+                        currentStep++; // Skip to step 3 (Confirm Details)
+                    }
+
+                    // Skip Payment step (step 4) if zero cost - should not reach here
+                    if (currentStep === 4 && isZeroCost) {
+                        currentStep++; // This shouldn't happen, but just in case
+                    }
 
                     updateStepper();
+
+                    // Update confirmation step when entering step 4
+                    if (currentStep === 4) {
+                        updateConfirmStep();
+                    }
+                }
+            });
+
+            prevBtn.addEventListener("click", () => {
+                const isZeroCost = !formData.total || formData.total === 0;
+
+                if (currentStep === 0) {
+                    window.history.back();
+                    return;
+                }
+                if (currentStep > 0) {
+                    currentStep--;
+
+                    // Get selected delivery method
+                    const selectedDeliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+                    const isVisitUs = selectedDeliveryMethod && selectedDeliveryMethod.value === 'visit';
+
+                    // Skip Process Info step (step 2) if zero cost OR Visit Us when going backwards
+                    if (currentStep === 2 && (isZeroCost || isVisitUs)) {
+                        currentStep--; // Skip back to step 1 (Delivery Method)
+                    }
+
+                    updateStepper();
+                }
+            });
+
+            // Payment option click handler
+            document.querySelectorAll('.payment-option-item').forEach(item => {
+                item.addEventListener('click', function (e) {
+                    // Don't trigger if clicking directly on the radio input
+                    if (e.target.type === 'radio') {
+                        return;
+                    }
+                    const radio = this.querySelector('input[type="radio"]');
+                    if (radio) {
+                        radio.checked = true;
+                        radio.dispatchEvent(new Event('change'));
+
+                        // Update visual styling
+                        document.querySelectorAll('.payment-option-item').forEach(opt => {
+                            opt.style.borderColor = '#dee2e6';
+                            opt.style.backgroundColor = '';
+                            opt.style.borderWidth = '1px';
+                        });
+                        this.style.borderColor = '#684471';
+                        this.style.borderWidth = '2px';
+                        this.style.backgroundColor = '#f8f9fa';
+                    }
                 });
-            </script>
+            });
 
-            <style>
-                .step-content {
-                    display: none;
-                }
+            // Payment method is always Stripe - no handler needed
 
-                .step-content.active {
-                    display: block;
-                }
+            updateStepper();
+        });
+    </script>
 
-                .delivery-option-item:hover {
-                    border-color: #684471 !important;
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 8px rgba(104, 68, 113, 0.2);
-                }
+    <style>
+        .step-content {
+            display: none;
+        }
 
-                .payment-option-item:hover {
-                    border-color: #684471 !important;
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 8px rgba(104, 68, 113, 0.2);
-                }
+        .step-content.active {
+            display: block;
+        }
 
-                /* Hide Pay on Visit option */
-                #payOnVisitOption {
-                    display: none !important;
-                }
-            </style>
+        .delivery-option-item:hover {
+            border-color: #684471 !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(104, 68, 113, 0.2);
+        }
+
+        .payment-option-item:hover {
+            border-color: #684471 !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(104, 68, 113, 0.2);
+        }
+
+        /* Hide Pay on Visit option */
+        #payOnVisitOption {
+            display: none !important;
+        }
+    </style>
 @endsection
