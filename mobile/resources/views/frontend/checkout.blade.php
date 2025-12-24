@@ -344,9 +344,9 @@
 
     <script>
       document.addEventListener('DOMContentLoaded', function () {
-        const stripeKey = '{{ env('STRIPE_KEY', 'pk_test_...') }}';
-        if (!stripeKey || stripeKey === 'pk_test_...') {
-          console.warn('Stripe key not configured. Please set STRIPE_KEY in your .env file.');
+        const stripeKey = '{{ config('services.stripe.key') }}';
+        if (!stripeKey || stripeKey.includes('pk_test')) {
+          console.warn('Stripe key might be in test mode or missing.');
         }
 
         const stripe = Stripe(stripeKey);

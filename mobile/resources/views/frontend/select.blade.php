@@ -487,8 +487,8 @@
             let formData = {};
 
             // Initialize Stripe
-            const stripeKey = '{{ env('STRIPE_KEY', '') }}';
-            if (stripeKey && stripeKey !== 'pk_test_...') {
+            const stripeKey = '{{ config('services.stripe.key') }}';
+            if (stripeKey && !stripeKey.includes('pk_test')) {
                 stripe = Stripe(stripeKey);
                 const elements = stripe.elements();
 
@@ -1086,23 +1086,23 @@
                             : '';
 
                         tierOptionsHtml += `
-                                    <div class="form-check custom-check p-3 border rounded bg-white mb-2">
-                                        <input class="form-check-input tier-checkbox mt-1" type="checkbox" 
-                                               name="quality_tier_${issue.issueId}[]" 
-                                               id="tier_${issue.issueId}_${tier.id}" 
-                                               value="${tier.id}" 
-                                               data-issue-id="${issue.issueId}"
-                                               data-price="${tier.price_modifier}"
-                                               ${shouldBeChecked ? 'checked' : ''}>
-                                        <label class="form-check-label w-100 cursor-pointer ps-2" for="tier_${issue.issueId}_${tier.id}">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <strong class="fs-16">${tier.name}</strong>
-                                                <span class="badge bg-light text-dark border">${priceText}</span>
-                                            </div>
-                                            ${tier.description ? `<small class="text-muted d-block mt-1">${tier.description}</small>` : ''}
-                                        </label>
-                                    </div>
-                                `;
+                                        <div class="form-check custom-check p-3 border rounded bg-white mb-2">
+                                            <input class="form-check-input tier-checkbox mt-1" type="checkbox" 
+                                                   name="quality_tier_${issue.issueId}[]" 
+                                                   id="tier_${issue.issueId}_${tier.id}" 
+                                                   value="${tier.id}" 
+                                                   data-issue-id="${issue.issueId}"
+                                                   data-price="${tier.price_modifier}"
+                                                   ${shouldBeChecked ? 'checked' : ''}>
+                                            <label class="form-check-label w-100 cursor-pointer ps-2" for="tier_${issue.issueId}_${tier.id}">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <strong class="fs-16">${tier.name}</strong>
+                                                    <span class="badge bg-light text-dark border">${priceText}</span>
+                                                </div>
+                                                ${tier.description ? `<small class="text-muted d-block mt-1">${tier.description}</small>` : ''}
+                                            </label>
+                                        </div>
+                                    `;
                     });
 
                     // Determine selected tiers for this issue (support multiple)
@@ -1124,15 +1124,15 @@
 
                     // Create card for this issue
                     allCardsHtml += `
-                                                            <div class="issue-tier-card p-4 rounded border mb-3" style="background-color: #f8f9fa; border-color: #e9ecef !important;">
-                                                                <h6 class="fw-bold mb-3 text-primary-custom">
-                                                                    <i class="fas fa-wrench me-2"></i>${issue.issueName}
-                                                                </h6>
-                                                                <div class="tier-options">
-                                                                    ${tierOptionsHtml}
+                                                                <div class="issue-tier-card p-4 rounded border mb-3" style="background-color: #f8f9fa; border-color: #e9ecef !important;">
+                                                                    <h6 class="fw-bold mb-3 text-primary-custom">
+                                                                        <i class="fas fa-wrench me-2"></i>${issue.issueName}
+                                                                    </h6>
+                                                                    <div class="tier-options">
+                                                                        ${tierOptionsHtml}
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        `;
+                                                            `;
                 });
 
                 qualityTierOptions.innerHTML = allCardsHtml;

@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'stripe' => [
+        'header_key' => 'Authorization',
+        'header_value' => 'Bearer ' . env('STRIPE_SECRET'),
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+    ],
+
 ];

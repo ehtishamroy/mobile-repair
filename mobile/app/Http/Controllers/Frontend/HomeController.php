@@ -836,9 +836,32 @@ class HomeController extends Controller
         // Process payment
         $paymentStatus = 'pending';
         if ($validated['payment_method'] === 'stripe') {
-            // In a real implementation, you would charge the card using Stripe API
-            // For now, we'll mark as paid if token is provided
-            $paymentStatus = $validated['stripe_token'] ? 'paid' : 'pending';
+            if (!empty($validated['stripe_token'])) {
+                try {
+                    \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+
+                    $charge = \Stripe\Charge::create([
+                        'amount' => (int) ($total * 100),
+                        'currency' => strtolower($settings->currency ?? 'GBP'),
+                        'source' => $validated['stripe_token'],
+                        'description' => 'Order from ' . $validated['email'],
+                        'metadata' => [
+                            'customer_name' => $validated['first_name'] . ' ' . $validated['last_name'],
+                        ],
+                    ]);
+
+                    if ($charge->status == 'succeeded') {
+                        $paymentStatus = 'paid';
+                    } else {
+                        return back()->with('error', 'Payment failed: ' . $charge->failure_message)->withInput();
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Stripe Payment Error: ' . $e->getMessage());
+                    return back()->with('error', 'Payment error: ' . $e->getMessage())->withInput();
+                }
+            } else {
+                return back()->with('error', 'Stripe token missing. Please try again.')->withInput();
+            }
         }
 
         DB::beginTransaction();
@@ -1520,10 +1543,37 @@ class HomeController extends Controller
             $paymentIntentId = $validated['payment_intent_id'] ?? null;
             $paypalOrderId = $validated['paypal_order_id'] ?? null;
 
-            if (!empty($validated['payment_method']) && $validated['payment_method'] === 'stripe' && !empty($validated['stripe_token'])) {
-                // Here you would process the Stripe payment
-                // For now, we'll just store the token
-                $paymentIntentId = $validated['stripe_token'];
+            if (!empty($validated['payment_method']) && $validated['payment_method'] === 'stripe' && !empty($validated['stripe_token']) && $total > 0) {
+                try {
+                    \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                    $settings = \App\Models\Setting::getSettings();
+
+                    $charge = \Stripe\Charge::create([
+                        'amount' => (int) ($total * 100),
+                        'currency' => strtolower($settings->currency ?? 'GBP'),
+                        'source' => $validated['stripe_token'],
+                        'description' => 'Repair Order for ' . $validated['customer_email'],
+                        'metadata' => [
+                            'customer_name' => $validated['customer_name'],
+                            'service_id' => $validated['service_id'],
+                        ]
+                    ]);
+
+                    if ($charge->status == 'succeeded') {
+                        $paymentIntentId = $charge->id;
+                    } else {
+                        throw new \Exception('Payment failed: ' . $charge->failure_message);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Stripe Repair Payment Error: ' . $e->getMessage());
+                    if ($request->wantsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Payment failed: ' . $e->getMessage()
+                        ], 422);
+                    }
+                    return back()->with('error', 'Payment error: ' . $e->getMessage())->withInput();
+                }
             }
 
             // Determine order status based on delivery method
