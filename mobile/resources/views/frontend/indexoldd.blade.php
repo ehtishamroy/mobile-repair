@@ -1,6 +1,10 @@
 ﻿@extends('frontend.layouts.app')
 
-
+@php
+  // Use settings from view composer, fallback to default
+  $pageTitle = $settings->meta_title ?? $settings->website_title ?? $settings->website_name ?? 'Home';
+@endphp
+@section('title', $pageTitle)
 
 @section('content')
   <!-- Swiper Hero Section -->

@@ -131,7 +131,13 @@
           <!-- Google Map -->
           <div class="col">
             <div class="map-container h-100">
-             <iframe width="100%" height="650px" frameborder="0" style="border:0" src="https://www.google.com/maps/embed/v1/place?key=AIzaSyB2NIWI3Tv9iDPrlnowr_0ZqZWoAQydKJU&q=Harrow%20Mobiles%20%26%20Laptops%20Repairs%2C%20Streatfield%20Road%2C%20Harrow%2C%20UK&maptype=roadmap" allowfullscreen></iframe>
+              <iframe
+                title="Google Map"
+                src="https://www.google.com/maps?q=Suzuki%20Islamabad%20Motors&output=embed"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                allowfullscreen
+              ></iframe>
             </div>
           </div>
         </div>

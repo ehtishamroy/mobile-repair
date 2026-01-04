@@ -8,7 +8,7 @@
 
   @php
     // Get site title from settings
-    $siteTitle = $settings->meta_title;
+    $siteTitle = $settings->meta_title ?? $settings->website_title ?? $settings->website_name ?? 'Harrow Mobiles';
 
     // Default meta description from settings
     $defaultMetaDescription = $settings->meta_description ?? $settings->website_description ?? '';
@@ -118,7 +118,7 @@
         default => 'image/x-icon',
       };
     @endphp
-    <link rel="icon" type="{{ $faviconType }}" href="{{ asset('front-assets/img/favicon.png') }}">
+    <link rel="icon" type="{{ $faviconType }}" href="{{ $faviconPath }}">
     <link rel="shortcut icon" type="{{ $faviconType }}" href="{{ $faviconPath }}">
     <link rel="apple-touch-icon" href="{{ $faviconPath }}">
   @endif
@@ -693,27 +693,11 @@
           </div>
 
           <div class="flex-center gap-3">
-              <!-- Cart -->
-              <a href="{{ route('frontend.cart') }}" class="cart-icon">
-                <img src="{{ asset('front-assets/img/cart.svg') }}" alt="Cart">
-              </a>
-            
-              <!-- WhatsApp -->
-              <a 
-                href="https://wa.me/447503683786" 
-                target="_blank" 
-                class="whatsapp-icon"
-                aria-label="Chat on WhatsApp"
-              >
-                <img src="{{ asset('front-assets/img/whatsapp-business-bg.svg') }}" alt="WhatsApp" height="45">
-              </a>
-            
-              <!-- Contact -->
-              <a href="{{ route('frontend.contact') }}" class="btn-gradient">
-                Contact Us
-              </a>
-            </div>
-
+            <a href="{{ route('frontend.cart') }}" class="cart-icon">
+              <img src="{{ asset('front-assets/img/cart.svg') }}" alt="">
+            </a>
+            <a href="{{ route('frontend.contact') }}" class="btn-gradient">Contact Us</a>
+          </div>
         </div>
       </div>
     </div>
