@@ -144,41 +144,57 @@
                                     $searchText = strtolower($deviceType->name . ' ' . $brandName);
                                 @endphp
 
-                                <div class="device-item" data-search="{{ $searchText }}">
-                                    <input type="radio" class="btn-check" name="device_type_id" id="device_{{ $deviceType->id }}"
-                                        value="{{ $deviceType->id }}" autocomplete="off" />
-                                    <label class="device-card flex-center gap-2" for="device_{{ $deviceType->id }}"
-                                        style="padding: 10px 10px; font-size: 15px;">
-                                        @if($brandModel && $brandModel->logo)
-                                            <img src="{{ asset('storage/' . $brandModel->logo) }}" alt="{{ $deviceType->name }}"
-                                                style="height: 20px;">
-                                        @elseif($deviceType->brand === 'Apple')
-                                            <i class="bi bi-apple"></i>
-                                        @elseif($deviceType->brand === 'Samsung')
-                                            <img src="{{ asset('front-assets/img/repair-samsung-2.svg') }}" alt="{{ $deviceType->name }}"
-                                                style="height: 25px;">
-                                        @elseif($deviceType->brand === 'Google Pixel')
-                                            <img src="{{ asset('front-assets/img/Googlep.png') }}" alt="{{ $deviceType->name }}"
-                                                style="height: 25px;">
-                                        @elseif($deviceType->brand === 'Dell')
-                                            <img src="{{ asset('front-assets/img/dell-logo.png') }}" alt="{{ $deviceType->name }}"
-                                                style="height: 25px;">
-                                        @elseif($deviceType->brand === 'HP')
-                                            <img src="{{ asset('front-assets/img/hp-logo.png') }}" alt="{{ $deviceType->name }}"
-                                                style="height: 25px;">
-                                        @elseif($deviceType->brand === 'Asus')
-                                            <img src="{{ asset('front-assets/img/asus-logo.png') }}" alt="{{ $deviceType->name }}"
-                                                style="height: 25px;">
-                                        @elseif($deviceType->brand === 'Lenovo')
-                                            <img src="{{ asset('front-assets/img/lenovo-logo.jpg') }}" alt="{{ $deviceType->name }}"
-                                                style="height: 25px;">
-                                        @endif
-                                        {{ $deviceType->name }}
-                                        <span class="check-icon">
-                                            <img src="{{ asset('front-assets/img/select-check.svg') }}" alt="" />
-                                        </span>
-                                    </label>
-                                </div>
+                                @if($deviceType->featured_image)
+                                    {{-- Featured Image Card Design --}}
+                                    <div class="device-item" data-search="{{ $searchText }}">
+                                        <input type="radio" class="btn-check" name="device_type_id" id="device_{{ $deviceType->id }}"
+                                            value="{{ $deviceType->id }}" autocomplete="off" />
+                                        <label class="featured-device-card" for="device_{{ $deviceType->id }}">
+                                            <div class="featured-device-image">
+                                                <img src="{{ asset('storage/' . $deviceType->featured_image) }}"
+                                                    alt="{{ $deviceType->name }}">
+                                            </div>
+                                            <span class="featured-device-name">{{ $deviceType->name }}</span>
+                                        </label>
+                                    </div>
+                                @else
+                                    {{-- Default Button Design --}}
+                                    <div class="device-item" data-search="{{ $searchText }}">
+                                        <input type="radio" class="btn-check" name="device_type_id" id="device_{{ $deviceType->id }}"
+                                            value="{{ $deviceType->id }}" autocomplete="off" />
+                                        <label class="device-card flex-center gap-2" for="device_{{ $deviceType->id }}"
+                                            style="padding: 10px 10px; font-size: 15px;">
+                                            @if($brandModel && $brandModel->logo)
+                                                <img src="{{ asset('storage/' . $brandModel->logo) }}" alt="{{ $deviceType->name }}"
+                                                    style="height: 20px;">
+                                            @elseif($deviceType->brand === 'Apple')
+                                                <i class="bi bi-apple"></i>
+                                            @elseif($deviceType->brand === 'Samsung')
+                                                <img src="{{ asset('front-assets/img/repair-samsung-2.svg') }}" alt="{{ $deviceType->name }}"
+                                                    style="height: 25px;">
+                                            @elseif($deviceType->brand === 'Google Pixel')
+                                                <img src="{{ asset('front-assets/img/Googlep.png') }}" alt="{{ $deviceType->name }}"
+                                                    style="height: 25px;">
+                                            @elseif($deviceType->brand === 'Dell')
+                                                <img src="{{ asset('front-assets/img/dell-logo.png') }}" alt="{{ $deviceType->name }}"
+                                                    style="height: 25px;">
+                                            @elseif($deviceType->brand === 'HP')
+                                                <img src="{{ asset('front-assets/img/hp-logo.png') }}" alt="{{ $deviceType->name }}"
+                                                    style="height: 25px;">
+                                            @elseif($deviceType->brand === 'Asus')
+                                                <img src="{{ asset('front-assets/img/asus-logo.png') }}" alt="{{ $deviceType->name }}"
+                                                    style="height: 25px;">
+                                            @elseif($deviceType->brand === 'Lenovo')
+                                                <img src="{{ asset('front-assets/img/lenovo-logo.jpg') }}" alt="{{ $deviceType->name }}"
+                                                    style="height: 25px;">
+                                            @endif
+                                            {{ $deviceType->name }}
+                                            <span class="check-icon">
+                                                <img src="{{ asset('front-assets/img/select-check.svg') }}" alt="" />
+                                            </span>
+                                        </label>
+                                    </div>
+                                @endif
                             @endforeach
 
                             <div class="device-item device-item-others" data-search="others">
@@ -390,6 +406,80 @@
             .device-card i {
                 font-size: 20px;
                 margin-bottom: 0;
+            }
+
+            /* Featured Device Card Styles */
+            .featured-device-card {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                padding: 15px 5px;
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+
+            .featured-device-image {
+                position: relative;
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .featured-device-image img {
+                max-height: 220px;
+                max-width: 100%;
+                width: auto;
+                height: auto !important;
+                object-fit: contain;
+            }
+
+            .featured-device-name {
+                margin-top: 15px;
+                font-size: 16px;
+                font-weight: 600;
+                color: #000000;
+                transition: color 0.3s ease;
+            }
+
+            .featured-device-card:hover .featured-device-name {
+                color: var(--primary, #684471);
+            }
+
+            .featured-device-card:hover .featured-device-image img {
+                transform: scale(1.05);
+                transition: transform 0.3s ease;
+            }
+
+            /* Selected state for featured device card */
+            .btn-check:checked+.featured-device-card .featured-device-name {
+                color: var(--primary, #684471);
+            }
+
+            @media (max-width: 768px) {
+                .featured-device-image img {
+                    max-height: 180px;
+                }
+
+                .featured-device-name {
+                    font-size: 14px;
+                    margin-top: 10px;
+                }
+            }
+
+            @media (max-width: 576px) {
+                .featured-device-card {
+                    padding: 10px 5px;
+                }
+
+                .featured-device-image img {
+                    max-height: 150px;
+                }
+
+                .featured-device-name {
+                    font-size: 13px;
+                }
             }
         </style>
     @endpush

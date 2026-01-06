@@ -78,11 +78,11 @@ class RepairBrandController extends Controller
     public function destroy(string $id)
     {
         $brand = RepairBrand::findOrFail($id);
-        
+
         if ($brand->logo && Storage::disk('public')->exists($brand->logo)) {
             Storage::disk('public')->delete($brand->logo);
         }
-        
+
         $brand->delete();
 
         return redirect()->route('admin.repair-brands.index')->with('success', 'Repair brand deleted successfully.');

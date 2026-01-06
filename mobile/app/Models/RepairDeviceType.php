@@ -10,6 +10,7 @@ class RepairDeviceType extends Model
         'repair_service_id',
         'repair_brand_id',
         'name',
+        'featured_image',
         'brand', // Keep for backward compatibility
         'order',
         'is_active',

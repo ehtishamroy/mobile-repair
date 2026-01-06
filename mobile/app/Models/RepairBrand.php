@@ -23,7 +23,7 @@ class RepairBrand extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($brand) {
             if (empty($brand->slug)) {
                 $brand->slug = Str::slug($brand->name);
